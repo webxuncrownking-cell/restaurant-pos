@@ -382,6 +382,23 @@ Database::query("DELETE FROM orders WHERE id = ?", [$syncRes['server_order_id']]
 Database::query("DELETE FROM inventory_movements WHERE reference_id = ?", [$syncRes['server_order_id']]);
 Database::query("DELETE FROM pos_device_sequences WHERE client_uuid = ?", [$testClientUuid]);
 
+// 20. Phase 7: Analytics Reports & SaaS Subscription Billing
+echo PHP_EOL . "20. Testing BI Reports & SaaS Billing Subscriptions:" . PHP_EOL;
+$reportKpis = \App\Services\ReportService::getKpiSummary(1, date('Y-01-01'), date('Y-12-31'));
+assertTest("Report KPI Summary Executed", is_numeric($reportKpis['gross_sales']) && is_numeric($reportKpis['total_orders']));
+
+$dailyTrend = \App\Services\ReportService::getDailySalesTrend(1, 30);
+assertTest("Daily Sales Trend Query Executed", is_array($dailyTrend));
+
+$sub = \App\Services\BillingService::getCurrentSubscription(1);
+assertTest("Active Restaurant Subscription Retrieved", $sub && !empty($sub['plan_name']));
+
+$plans = \App\Services\BillingService::getAvailablePlans();
+assertTest("Available SaaS Pricing Plans Loaded (>= 3)", count($plans) >= 3);
+
+$invoices = \App\Services\BillingService::getInvoices(1);
+assertTest("Platform Invoices Query Executed", is_array($invoices));
+
 echo PHP_EOL . "================================================================================" . PHP_EOL;
 echo "  TEST SUMMARY: {$passed} PASSED, {$failed} FAILED" . PHP_EOL;
 echo "================================================================================" . PHP_EOL;

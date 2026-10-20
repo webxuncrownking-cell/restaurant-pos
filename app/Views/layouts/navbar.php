@@ -54,6 +54,16 @@ $isSubValid = \App\Core\TenantContext::isSubscriptionValid();
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="<?= BASE_URL ?>/reports">
+            <i class="bi bi-graph-up me-1"></i> Reports
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="<?= BASE_URL ?>/billing">
+            <i class="bi bi-credit-card me-1"></i> Billing
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="<?= BASE_URL ?>/install">
             <i class="bi bi-tools me-1"></i> Tests
           </a>

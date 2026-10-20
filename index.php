@@ -42,6 +42,8 @@ use App\Controllers\TableController;
 use App\Controllers\DeviceController;
 use App\Controllers\ShiftController;
 use App\Controllers\PosController;
+use App\Controllers\ReportController;
+use App\Controllers\BillingController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -113,6 +115,12 @@ $router->post('/shifts/close', [ShiftController::class, 'close']);
 $router->get('/pos', [PosController::class, 'showTerminal']);
 $router->get('/api/pos/bootstrap', [PosController::class, 'bootstrapApi']);
 $router->post('/api/pos/sync', [PosController::class, 'syncApi']);
+
+// Phase 7: Business Intelligence Reports & SaaS Billing Routes
+$router->get('/reports', [ReportController::class, 'index']);
+$router->get('/reports/data.json', [ReportController::class, 'dataJson']);
+$router->get('/billing', [BillingController::class, 'index']);
+$router->post('/billing/upgrade', [BillingController::class, 'upgrade']);
 
 // Diagnostics & Setup Routes
 $router->get('/install', [InstallController::class, 'index']);
