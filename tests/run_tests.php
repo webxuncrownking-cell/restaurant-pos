@@ -243,6 +243,69 @@ assertTest("Recipe Food Cost Calculated (> 0)", $costInfo['total_cost'] > 0);
 $posCatalog = \App\Services\MenuService::getPosCatalog(1);
 assertTest("POS Offline Catalog Export Formatted", !empty($posCatalog['version']) && !empty($posCatalog['products']));
 
+// 15. Phase 3: Tables & Floor Zones
+echo PHP_EOL . "15. Testing Tables, Floor Zones & Soft-Delete:" . PHP_EOL;
+$tableId = \App\Services\TableService::createTable(1, [
+    'table_number' => 'TEST-99',
+    'name' => 'Test Patio Booth',
+    'capacity' => 6,
+    'floor_zone' => 'Patio',
+    'status' => 'available'
+]);
+assertTest("Table Created Successfully", $tableId > 0);
+
+\App\Services\TableService::updateStatus(1, $tableId, 'occupied');
+$tbl = \App\Services\TableService::getTableById(1, $tableId);
+assertTest("Table Status Updated to 'occupied'", $tbl && $tbl['status'] === 'occupied');
+
+\App\Services\TableService::softDelete(1, $tableId);
+$tblAfterDelete = \App\Services\TableService::getTableById(1, $tableId);
+assertTest("Table Soft-Deleted (Zero Cascade)", $tblAfterDelete === null);
+
+// Cleanup test table
+Database::query("DELETE FROM restaurant_tables WHERE id = ? AND restaurant_id = 1", [$tableId]);
+
+// 16. Phase 3: POS Devices & Staff Authorizations
+echo PHP_EOL . "16. Testing POS Devices & Staff Authorizations:" . PHP_EOL;
+$devReg = \App\Services\DeviceService::registerDevice(1, 'Test Terminal Suite');
+assertTest("Device Registered with UUIDv4", strlen($devReg['device_uuid']) === 36);
+assertTest("Device Plain Token Generated", str_starts_with($devReg['plain_token'], 'devtok_'));
+
+$devInDb = \App\Services\DeviceService::getDeviceById(1, $devReg['device_id']);
+assertTest("Device Token Stored as SHA-256 Hash", $devInDb['device_token_hash'] === hash('sha256', $devReg['plain_token']));
+
+$rotated = \App\Services\DeviceService::rotateCredentials(1, $devReg['device_id']);
+$devAfterRot = \App\Services\DeviceService::getDeviceById(1, $devReg['device_id']);
+assertTest("Device Credentials Rotated", $devAfterRot['device_token_hash'] === hash('sha256', $rotated));
+
+\App\Services\DeviceService::setDeviceStatus(1, $devReg['device_id'], 'revoked');
+$devRevoked = \App\Services\DeviceService::getDeviceById(1, $devReg['device_id']);
+assertTest("Device Status Revoked", $devRevoked['status'] === 'revoked');
+
+// 17. Phase 3: Cashier Shift Sessions & Cash Drawer
+echo PHP_EOL . "17. Testing Cashier Shifts & Cash Drawer Reconciliation:" . PHP_EOL;
+\App\Services\DeviceService::setDeviceStatus(1, $devReg['device_id'], 'active');
+$shiftId = \App\Services\ShiftService::openShift(1, 1, $devReg['device_id'], 1500.00, 'Test Float Opening');
+assertTest("Cashier Shift Opened with Float ₱1500.00", $shiftId > 0);
+
+$activeShift = \App\Services\ShiftService::getActiveShift(1, 1, $devReg['device_id']);
+assertTest("Active Shift Retrieved", $activeShift && (int)$activeShift['id'] === $shiftId);
+
+\App\Services\ShiftService::recordCashMovement(1, $shiftId, 1, 'cash_in', 500.00, 'Added Petty Cash');
+\App\Services\ShiftService::recordCashMovement(1, $shiftId, 1, 'cash_out', 200.00, 'Bought Ice');
+$shiftSummary = \App\Services\ShiftService::calculateShiftSummary(1, $shiftId);
+// Expected = 1500 (float) + 500 (cash in) - 200 (cash out) = 1800.00
+assertTest("Expected Cash Calculated (₱1800.00)", abs($shiftSummary['expected_cash'] - 1800.00) < 0.01);
+
+$closeRes = \App\Services\ShiftService::closeShift(1, $shiftId, 1800.00, 'Exact Balance Close');
+assertTest("Shift Closed Balanced (Variance ₱0.00)", abs($closeRes['difference']) < 0.01 && $closeRes['status'] === 'closed');
+
+// Cleanup test shift & device
+Database::query("DELETE FROM cash_movements WHERE shift_id = ? AND restaurant_id = 1", [$shiftId]);
+Database::query("DELETE FROM cashier_shifts WHERE id = ? AND restaurant_id = 1", [$shiftId]);
+Database::query("DELETE FROM pos_device_staff_authorizations WHERE device_id = ? AND restaurant_id = 1", [$devReg['device_id']]);
+Database::query("DELETE FROM pos_devices WHERE id = ? AND restaurant_id = 1", [$devReg['device_id']]);
+
 echo PHP_EOL . "================================================================================" . PHP_EOL;
 echo "  TEST SUMMARY: {$passed} PASSED, {$failed} FAILED" . PHP_EOL;
 echo "================================================================================" . PHP_EOL;

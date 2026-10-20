@@ -39,8 +39,23 @@ $isSubValid = \App\Core\TenantContext::isSubscriptionValid();
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="<?= BASE_URL ?>/tables">
+            <i class="bi bi-grid-3x3-gap me-1"></i> Tables
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="<?= BASE_URL ?>/devices">
+            <i class="bi bi-tablet-landscape me-1"></i> Terminals
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="<?= BASE_URL ?>/shifts">
+            <i class="bi bi-safe me-1"></i> Shifts
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="<?= BASE_URL ?>/install">
-            <i class="bi bi-tools me-1"></i> Diagnostics & Tests
+            <i class="bi bi-tools me-1"></i> Tests
           </a>
         </li>
       </ul>

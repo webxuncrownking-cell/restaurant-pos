@@ -38,6 +38,9 @@ use App\Controllers\DashboardController;
 use App\Controllers\InstallController;
 use App\Controllers\MenuController;
 use App\Controllers\InventoryController;
+use App\Controllers\TableController;
+use App\Controllers\DeviceController;
+use App\Controllers\ShiftController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -83,6 +86,27 @@ $router->get('/inventory', [InventoryController::class, 'index']);
 $router->get('/inventory/stock-in', [InventoryController::class, 'showStockIn']);
 $router->post('/inventory/stock-in', [InventoryController::class, 'processStockIn']);
 $router->get('/inventory/ledger', [InventoryController::class, 'ledger']);
+
+// Phase 3: Tables & Floor Plan Routes
+$router->get('/tables', [TableController::class, 'index']);
+$router->post('/tables/create', [TableController::class, 'create']);
+$router->post('/tables/status', [TableController::class, 'updateStatus']);
+$router->post('/tables/delete', [TableController::class, 'delete']);
+
+// Phase 3: POS Terminals & Devices Routes
+$router->get('/devices', [DeviceController::class, 'index']);
+$router->post('/devices/register', [DeviceController::class, 'register']);
+$router->post('/devices/rotate', [DeviceController::class, 'rotate']);
+$router->post('/devices/status', [DeviceController::class, 'toggleStatus']);
+$router->post('/devices/authorizations', [DeviceController::class, 'updateAuthorizations']);
+
+// Phase 3: Cashier Shift Sessions & Cash Drawer Routes
+$router->get('/shifts', [ShiftController::class, 'index']);
+$router->get('/shifts/open', [ShiftController::class, 'showOpen']);
+$router->post('/shifts/open', [ShiftController::class, 'open']);
+$router->get('/shifts/active', [ShiftController::class, 'showActive']);
+$router->post('/shifts/movement', [ShiftController::class, 'addMovement']);
+$router->post('/shifts/close', [ShiftController::class, 'close']);
 
 // Diagnostics & Setup Routes
 $router->get('/install', [InstallController::class, 'index']);
