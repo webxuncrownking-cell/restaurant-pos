@@ -1,0 +1,21 @@
+# Restaurant POS & Management SaaS
+# Apache Front-Controller Rewrite Rules (XAMPP & cPanel Compatible)
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent directory indexing
+    Options -Indexes
+
+    # Handle Authorization Header for API & Basic Auth
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Serve static assets directly if file or directory physically exists
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Otherwise route all requests through index.php
+    RewriteRule ^ index.php [L,QSA]
+</IfModule>

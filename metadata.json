@@ -1,0 +1,6 @@
+{
+  "name": "Restaurant POS & Management System",
+  "description": "Multi-tenant, offline-first Restaurant Point of Sale (POS) and SaaS Management System built with PHP 8.2+, MySQL, Bootstrap 5, and vanilla JS.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
