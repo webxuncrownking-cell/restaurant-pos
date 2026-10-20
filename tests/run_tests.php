@@ -306,6 +306,82 @@ Database::query("DELETE FROM cashier_shifts WHERE id = ? AND restaurant_id = 1",
 Database::query("DELETE FROM pos_device_staff_authorizations WHERE device_id = ? AND restaurant_id = 1", [$devReg['device_id']]);
 Database::query("DELETE FROM pos_devices WHERE id = ? AND restaurant_id = 1", [$devReg['device_id']]);
 
+// 18. Phase 4 & 5: POS Catalog Versioning & Bootstrap Payload
+echo PHP_EOL . "18. Testing POS Catalog Versioning & Offline Bootstrap:" . PHP_EOL;
+$catVersion = \App\Services\PosSyncService::getOrCreateCatalogVersion(1);
+assertTest("Catalog Version Snapshot Generated", !empty($catVersion['snapshot_hash']) && strlen($catVersion['snapshot_hash']) === 64);
+
+$lease = \App\Services\PosSyncService::getOrCreateOfflineLease(1, 1, (int)$catVersion['id']);
+assertTest("Offline Authorization Lease Created", !empty($lease['lease_id']) && !empty($lease['signature']));
+
+$bootstrap = \App\Services\PosSyncService::getBootstrapPayload(1, 1);
+assertTest("POS Bootstrap Delivers Restaurant & Tables", !empty($bootstrap['restaurant']) && count($bootstrap['tables']) >= 1);
+assertTest("POS Bootstrap Delivers Offline Lease & Staff", !empty($bootstrap['lease']) && !empty($bootstrap['staff']));
+
+// 19. Phase 6: Idempotent Sync & Recipe BOM Stock Deduction
+echo PHP_EOL . "19. Testing Idempotent Order Sync & Stock Deductions:" . PHP_EOL;
+$testClientUuid = \App\Services\DeviceService::generateUuidV4();
+$orderPayload = [
+    'client_uuid' => $testClientUuid,
+    'device_id' => 1,
+    'order_number' => 'TEST-ORD-001',
+    'order_type' => 'dine_in',
+    'table_id' => 1,
+    'cashier_id' => 1,
+    'catalog_version_id' => (int)$catVersion['id'],
+    'sequence_number' => 101,
+    'subtotal' => 380.00,
+    'discount_amount' => 0.00,
+    'tax_amount' => 40.71,
+    'total_amount' => 380.00,
+    'paid_amount' => 500.00,
+    'change_amount' => 120.00,
+    'items' => [
+        [
+            'product_id' => 1,
+            'variant_id' => 1,
+            'name' => 'Sizzling Pork Sisig',
+            'variant_name' => 'Solo',
+            'unit_price' => 220.00,
+            'quantity' => 1,
+            'addons' => []
+        ],
+        [
+            'product_id' => 2,
+            'variant_id' => null,
+            'name' => 'San Miguel Pale Pilsen',
+            'variant_name' => null,
+            'unit_price' => 80.00,
+            'quantity' => 2,
+            'addons' => []
+        ]
+    ],
+    'payment' => [
+        'payment_method' => 'cash',
+        'amount' => 380.00,
+        'tendered_amount' => 500.00,
+        'change_amount' => 120.00,
+        'client_payment_uuid' => \App\Services\DeviceService::generateUuidV4()
+    ]
+];
+
+$syncRes = \App\Services\PosSyncService::processOrderSync(1, $orderPayload);
+assertTest("Offline Order Synced Successfully", $syncRes['status'] === 'synced' && $syncRes['server_order_id'] > 0);
+
+// Retry exact same order payload -> must be idempotent (already_synced, zero duplicate rows)
+$retryRes = \App\Services\PosSyncService::processOrderSync(1, $orderPayload);
+assertTest("Idempotency: Duplicate Sync Acknowledged Without Duplication", $retryRes['status'] === 'already_synced' && $retryRes['server_order_id'] === $syncRes['server_order_id']);
+
+$orderInDb = Database::fetchOne("SELECT total_amount, payment_status FROM orders WHERE id = ?", [$syncRes['server_order_id']]);
+assertTest("Order Stored in DB with Correct Total (₱380.00)", abs((float)$orderInDb['total_amount'] - 380.00) < 0.01 && $orderInDb['payment_status'] === 'paid');
+
+// Cleanup test sync order and related rows
+Database::query("DELETE FROM payments WHERE order_id = ?", [$syncRes['server_order_id']]);
+Database::query("DELETE FROM order_items WHERE order_id = ?", [$syncRes['server_order_id']]);
+Database::query("DELETE FROM orders WHERE id = ?", [$syncRes['server_order_id']]);
+Database::query("DELETE FROM inventory_movements WHERE reference_id = ?", [$syncRes['server_order_id']]);
+Database::query("DELETE FROM pos_device_sequences WHERE client_uuid = ?", [$testClientUuid]);
+
 echo PHP_EOL . "================================================================================" . PHP_EOL;
 echo "  TEST SUMMARY: {$passed} PASSED, {$failed} FAILED" . PHP_EOL;
 echo "================================================================================" . PHP_EOL;

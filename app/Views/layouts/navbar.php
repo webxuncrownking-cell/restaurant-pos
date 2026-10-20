@@ -62,6 +62,11 @@ $isSubValid = \App\Core\TenantContext::isSubscriptionValid();
 
       <!-- Status Indicators & User Profile -->
       <div class="d-flex align-items-center flex-wrap gap-2">
+        <!-- Launch POS Terminal Button -->
+        <a href="<?= BASE_URL ?>/pos" class="btn btn-primary btn-sm fw-bold px-3 d-flex align-items-center gap-1 shadow-sm">
+          <i class="bi bi-display"></i> POS Terminal
+        </a>
+
         <!-- Connectivity Status Pill -->
         <span class="badge bg-success bg-opacity-25 text-success border border-success status-pill d-flex align-items-center gap-1">
           <span class="spinner-grow spinner-grow-sm text-success" style="width: 8px; height: 8px;" role="status"></span>

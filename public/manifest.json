@@ -1,0 +1,17 @@
+{
+  "name": "Restaurant POS & Management SaaS",
+  "short_name": "RestaurantPOS",
+  "description": "Multi-tenant offline-first Point of Sale & Restaurant Management System",
+  "start_url": "/pos",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#111827",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/public/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
