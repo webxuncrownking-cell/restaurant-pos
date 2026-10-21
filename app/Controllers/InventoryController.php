@@ -20,6 +20,7 @@ class InventoryController
 {
     public function index(Request $request): void
     {
+        Auth::requirePermission('inventory.view_stock');
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) {
             Response::redirect('/dashboard');
@@ -49,6 +50,7 @@ class InventoryController
 
     public function showStockIn(Request $request): void
     {
+        Auth::requirePermission('inventory.stock_in');
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) {
             Response::redirect('/dashboard');
@@ -81,6 +83,7 @@ class InventoryController
 
     public function processStockIn(Request $request): void
     {
+        Auth::requirePermission('inventory.stock_in');
         if (!CSRF::validate($request->csrfToken())) {
             Response::redirect('/inventory?error=Invalid+security+token');
             return;
@@ -89,9 +92,15 @@ class InventoryController
         $restaurant = TenantContext::getRestaurant();
         $restaurantId = (int)$restaurant['id'];
         $user = Auth::user();
-        $userId = $user ? (int)$user['id'] : 1;
+        $userId = ($user && isset($user['restaurant_id']) && (int)$user['restaurant_id'] === $restaurantId)
+            ? (int)$user['id']
+            : null;
 
-        $mode = $request->post('mode'); // 'package' or 'base'
+        $mode = (string)$request->post('mode', '');
+        if (!in_array($mode, ['package', 'base'], true)) {
+            Response::redirect('/inventory/stock-in?error=Please+choose+a+stock-in+method');
+            return;
+        }
         $notes = trim((string)$request->post('notes', ''));
 
         try {
@@ -136,13 +145,17 @@ class InventoryController
             }
 
             Response::redirect('/inventory?success=Stock+successfully+received');
-        } catch (\Throwable $e) {
+        } catch (\InvalidArgumentException $e) {
             Response::redirect('/inventory/stock-in?error=' . urlencode($e->getMessage()));
+        } catch (\Throwable $e) {
+            error_log('Inventory stock-in failed: ' . $e);
+            Response::redirect('/inventory/stock-in?error=' . urlencode('Stock could not be recorded. Please verify the selected ingredient, unit, and quantity.'));
         }
     }
 
     public function ledger(Request $request): void
     {
+        Auth::requirePermission('inventory.view_stock');
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) {
             Response::redirect('/dashboard');
@@ -152,6 +165,10 @@ class InventoryController
         $restaurantId = (int)$restaurant['id'];
         $ingredientId = $request->get('ingredient_id') ? (int)$request->get('ingredient_id') : null;
         $referenceType = $request->get('type') ? trim((string)$request->get('type')) : null;
+        $allowedTypes = ['purchase_receipt', 'order_sale', 'order_cancellation', 'order_refund', 'manual_adjustment', 'spoilage_waste'];
+        if ($referenceType !== null && !in_array($referenceType, $allowedTypes, true)) {
+            $referenceType = null;
+        }
 
         $ingredients = Database::fetchAll(
             "SELECT id, name FROM ingredients WHERE restaurant_id = ? ORDER BY name ASC",
