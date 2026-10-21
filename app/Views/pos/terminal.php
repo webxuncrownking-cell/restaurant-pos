@@ -459,7 +459,7 @@
 </div>
 
 <!-- Load Client IndexedDB Database Script -->
-<script src="/public/assets/js/pos-db.js"></script>
+<script src="<?= BASE_URL ?>/public/assets/js/pos-db.js"></script>
 
 <!-- Embedded Client POS Application Logic -->
 <script>
@@ -498,7 +498,7 @@
 
       // 3. Register Service Worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/public/sw.js').catch(console.warn);
+        navigator.serviceWorker.register('<?= BASE_URL ?>/public/sw.js').catch(console.warn);
       }
 
       // 4. Online/Offline Listeners
@@ -1013,7 +1013,7 @@
       syncBtn.querySelector('i').classList.add('spin-icon');
 
       try {
-        const response = await fetch('/api/pos/sync', {
+        const response = await fetch('<?= BASE_URL ?>/api/pos/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orders: pending })
