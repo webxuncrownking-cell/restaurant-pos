@@ -500,7 +500,10 @@ CREATE TABLE `recipes` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_recipe_spec` (`restaurant_id`, `product_id`, `recipe_variant_key`, `ingredient_id`),
   FOREIGN KEY (`restaurant_id`, `product_id`) REFERENCES `products` (`restaurant_id`, `id`) ON DELETE CASCADE,
-  FOREIGN KEY (`restaurant_id`, `product_id`, `variant_id`) REFERENCES `product_variants` (`restaurant_id`, `product_id`, `id`) ON DELETE CASCADE,
+  -- variant_id participates in the stored generated recipe_variant_key above.
+  -- MySQL prohibits cascading FK actions on a base column of a stored generated column.
+  -- Keep the tenant/product relationship strict and require variants to be unused before deletion.
+  FOREIGN KEY (`restaurant_id`, `product_id`, `variant_id`) REFERENCES `product_variants` (`restaurant_id`, `product_id`, `id`) ON DELETE RESTRICT,
   FOREIGN KEY (`restaurant_id`, `ingredient_id`) REFERENCES `ingredients` (`restaurant_id`, `id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
