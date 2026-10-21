@@ -34,7 +34,8 @@ class DeviceController
             "SELECT u.id, u.full_name, u.username, r.name as role_name 
              FROM users u 
              JOIN roles r ON r.restaurant_id = u.restaurant_id AND r.id = u.role_id
-             WHERE u.restaurant_id = :restaurant_id AND u.is_active = 1
+             WHERE u.restaurant_id = :restaurant_id
+               AND u.status = 'active' AND u.deleted_at IS NULL
              ORDER BY u.full_name ASC",
             [':restaurant_id' => $restaurantId]
         );
