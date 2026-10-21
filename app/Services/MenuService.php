@@ -275,7 +275,7 @@ class MenuService
         array $addonIds = []
     ): array {
         $product = Database::fetchOne(
-            "SELECT product_type, direct_stock_ingredient_id FROM products WHERE restaurant_id = ? AND id = ?",
+            "SELECT product_type, direct_stock_ingredient_id, cost_price FROM products WHERE restaurant_id = ? AND id = ?",
             [$restaurantId, $productId]
         );
         if (!$product) {
@@ -306,6 +306,24 @@ class MenuService
             }
         }
         
+        // If there is no recipe BOM, use the stored estimate rather than showing a misleading zero cost.
+        if (empty($recipeItems)) {
+            $fallbackCost = (float)$product['cost_price'];
+            if ($fallbackCost > 0) {
+                return [
+                    'total_cost' => round($fallbackCost, 2),
+                    'breakdown' => [[
+                        'ingredient_id' => null,
+                        'name' => 'Configured product cost (no recipe saved)',
+                        'quantity' => 1,
+                        'unit' => 'product',
+                        'normalized' => '1 product',
+                        'cost' => round($fallbackCost, 4)
+                    ]]
+                ];
+            }
+        }
+
         // If variantId is not specified and all recipes are variant-specific, default to primary variant
         if ($variantId === null && !empty($recipeItems)) {
             $hasBase = false;
@@ -353,7 +371,6 @@ class MenuService
 
         // Add add-ons ingredient costs
         if (!empty($addonIds)) {
-            $placeholders = implode(',', array_fill(0, count($addonIds), '?'));
             $uniqueAddonIds = array_values(array_unique(array_filter(array_map('intval', $addonIds), static fn(int $id): bool => $id > 0)));
             if ($uniqueAddonIds) {
                 $placeholders = implode(',', array_fill(0, count($uniqueAddonIds), '?'));
