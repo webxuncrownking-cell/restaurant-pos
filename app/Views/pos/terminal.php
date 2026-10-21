@@ -978,30 +978,40 @@
         }
       };
 
-      // 1. Enqueue into IndexedDB
+      // 1. Save the paid order to the local offline queue first.
+      // Once queued, this order must not be submitted again with a new UUID.
       await window.PosDB.queueOrder(orderPayload);
       await this.refreshQueueCount();
 
-      // 2. Hide checkout modal
-      bootstrap.Modal.getInstance(document.getElementById('checkoutModal')).hide();
+      // 2. Close checkout and clear the live ticket even if receipt display fails.
+      const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
+      if (checkoutModal) checkoutModal.hide();
 
-      // 3. Prepare & Show Thermal Receipt
-      this.displayReceipt(orderPayload);
-
-      // 4. Clear current ticket
       this.ticket = [];
       this.renderTicket();
 
-      // 5. Trigger background sync if online
+      // 3. Start sync immediately while the network is available.
       if (navigator.onLine) {
         this.syncQueue();
+      }
+
+      // 4. Receipt rendering must never interrupt clearing or syncing a queued sale.
+      try {
+        this.displayReceipt(orderPayload);
+      } catch (receiptError) {
+        console.error('[POS Receipt] Order was queued, but receipt rendering failed:', receiptError);
+        alert('The order was saved to this terminal, but the receipt preview could not be displayed. Check the Sync badge before retrying; do not submit this order again.');
       }
     },
 
     displayReceipt(order) {
-      document.getElementById('recRestaurantName').textContent = this.catalog.restaurant.name || 'RESTAURANT POS';
-      document.getElementById('recRestaurantAddress').textContent = this.catalog.restaurant.address || 'Dining Terminal';
-      document.getElementById('recRestaurantTin').textContent = this.catalog.restaurant.tin || '000-000-000-000';
+      // Keep receipts robust for old cached catalogs or catalog payloads without metadata.
+      const restaurant = this.catalog && this.catalog.restaurant && typeof this.catalog.restaurant === 'object'
+        ? this.catalog.restaurant
+        : {};
+      document.getElementById('recRestaurantName').textContent = restaurant.name || 'RESTAURANT POS';
+      document.getElementById('recRestaurantAddress').textContent = restaurant.address || 'Dining Terminal';
+      document.getElementById('recRestaurantTin').textContent = restaurant.tin || '000-000-000-000';
       document.getElementById('recOrderNumber').textContent = order.order_number;
       document.getElementById('recOrderDate').textContent = new Date().toLocaleString();
       document.getElementById('recCashierName').textContent = document.getElementById('activeCashierName').textContent;
@@ -1055,12 +1065,27 @@
           body: JSON.stringify({ orders: pending })
         });
 
-        if (response.ok) {
-          const res = await response.json();
-          if (res.results) {
-            for (const r of res.results) {
-              await window.PosDB.markOrderSynced(r.client_uuid, r.server_order_id);
-            }
+        const res = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          console.error('[POS Sync] Server rejected queued order batch:', response.status, res.error || res);
+          return;
+        }
+
+        if (res.status !== 'success' || !Array.isArray(res.results)) {
+          console.error('[POS Sync] Unexpected server response for queued orders:', res);
+          return;
+        }
+
+        for (const result of res.results) {
+          if (
+            result &&
+            ['synced', 'already_synced'].includes(result.status) &&
+            result.client_uuid &&
+            Number(result.server_order_id) > 0
+          ) {
+            await window.PosDB.markOrderSynced(result.client_uuid, result.server_order_id);
+          } else {
+            console.error('[POS Sync] An order was not acknowledged by the server:', result);
           }
         }
       } catch (err) {
