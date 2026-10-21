@@ -49,6 +49,10 @@ jobs:
         run: cp config/database.example.php config/database.php
       - name: Import schema
         run: mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/schema.sql
+      - name: Diagnose schema import failure
+        if: failure()
+        run: |
+          mysql --host=127.0.0.1 --user=root --password=root -e "SHOW ENGINE INNODB STATUS\\G" | sed -n '/LATEST FOREIGN KEY ERROR/,/LATEST DETECTED DEADLOCK/p'
       - name: Import demo seed data
         run: mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/seed.sql
       - name: Run integration tests
