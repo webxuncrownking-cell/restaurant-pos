@@ -278,6 +278,133 @@ assertTest("Recipe Food Cost Calculated (> 0)", $costInfo['total_cost'] > 0);
 $posCatalog = \App\Services\MenuService::getPosCatalog(1);
 assertTest("POS Offline Catalog Export Formatted", !empty($posCatalog['version']) && !empty($posCatalog['products']));
 
+// POS order-sync regression: validate the actual MySQL order/item/payment schema and idempotency.
+echo PHP_EOL . "14b. Testing POS Order Synchronization & Inventory Deduction:" . PHP_EOL;
+$syncProduct = Database::fetchOne(
+    "SELECT id, direct_stock_ingredient_id FROM products WHERE restaurant_id = ? AND id = ? AND is_active = 1",
+    [1, 3]
+);
+$syncIngredientId = (int)($syncProduct['direct_stock_ingredient_id'] ?? 0);
+$syncIngredient = $syncIngredientId > 0
+    ? Database::fetchOne("SELECT current_stock FROM ingredients WHERE restaurant_id = ? AND id = ?", [1, $syncIngredientId])
+    : null;
+$syncDevice = Database::fetchOne("SELECT id, last_sync_at FROM pos_devices WHERE restaurant_id = ? AND id = ? AND status = 'active'", [1, 1]);
+$syncUuid = \App\Services\DeviceService::generateUuidV4();
+$syncOrderId = 0;
+$syncOriginalStock = $syncIngredient ? (float)$syncIngredient['current_stock'] : null;
+$syncOriginalLastSync = $syncDevice['last_sync_at'] ?? null;
+$syncPayload = [
+    'client_uuid' => $syncUuid,
+    'device_id' => 1,
+    'cashier_id' => 1,
+    'order_number' => 'TESTSYNC-' . substr(str_replace('-', '', $syncUuid), 0, 16),
+    'order_type' => 'takeout',
+    'created_at' => date('c'),
+    'subtotal' => 0,
+    'discount_amount' => 0,
+    'paid_amount' => 100,
+    'payment' => [
+        'payment_method' => 'cash',
+        'tendered_amount' => 100
+    ],
+    'items' => [
+        [
+            'product_id' => 3,
+            'variant_id' => null,
+            'quantity' => 1,
+            'addons' => []
+        ]
+    ]
+];
+
+try {
+    if (!$syncProduct || !$syncIngredient || !$syncDevice) {
+        throw new \RuntimeException('Seed product 3, its linked ingredient, or active device 1 is missing.');
+    }
+
+    $syncResult = \App\Services\PosSyncService::processOrderSync(1, $syncPayload);
+    $syncOrderId = (int)($syncResult['server_order_id'] ?? 0);
+    $syncOrder = $syncOrderId > 0
+        ? Database::fetchOne("SELECT order_status, payment_status, total_amount, client_reported_at, server_received_at FROM orders WHERE restaurant_id = ? AND id = ?", [1, $syncOrderId])
+        : null;
+    $syncItem = $syncOrderId > 0
+        ? Database::fetchOne("SELECT product_name, unit_price, quantity, subtotal FROM order_items WHERE restaurant_id = ? AND order_id = ?", [1, $syncOrderId])
+        : null;
+    $syncPayment = $syncOrderId > 0
+        ? Database::fetchOne("SELECT cashier_id, amount, tendered_amount, change_amount FROM payments WHERE restaurant_id = ? AND order_id = ?", [1, $syncOrderId])
+        : null;
+    $syncStockAfter = Database::fetchOne("SELECT current_stock FROM ingredients WHERE restaurant_id = ? AND id = ?", [1, $syncIngredientId]);
+
+    assertTest(
+        "POS Sync Inserts Order Using Required Schema Fields",
+        ($syncResult['status'] ?? '') === 'synced'
+            && $syncOrder
+            && $syncOrder['order_status'] === 'completed'
+            && $syncOrder['payment_status'] === 'paid'
+            && !empty($syncOrder['client_reported_at'])
+            && !empty($syncOrder['server_received_at'])
+    );
+    assertTest(
+        "POS Sync Inserts Product Line with Schema-Compatible Columns",
+        $syncItem
+            && $syncItem['product_name'] !== ''
+            && abs((float)$syncItem['quantity'] - 1.0) < 0.001
+            && abs((float)$syncItem['subtotal'] - (float)$syncItem['unit_price']) < 0.01
+    );
+    assertTest(
+        "POS Sync Inserts Payment with Cashier and Correct Change",
+        $syncPayment
+            && (int)$syncPayment['cashier_id'] === 1
+            && abs((float)$syncPayment['tendered_amount'] - 100.0) < 0.01
+            && abs((float)$syncPayment['change_amount'] - ((float)$syncPayment['tendered_amount'] - (float)$syncPayment['amount'])) < 0.01
+    );
+    assertTest(
+        "POS Sync Deducts Direct Stock and Links Movement to Order",
+        $syncOrderId > 0
+            && $syncStockAfter
+            && abs((float)$syncStockAfter['current_stock'] - ($syncOriginalStock - 1.0)) < 0.01
+            && (bool)Database::fetchOne(
+                "SELECT id FROM inventory_movements WHERE restaurant_id = ? AND reference_type = 'order_sale' AND reference_id = ? AND ingredient_id = ?",
+                [1, $syncOrderId, $syncIngredientId]
+            )
+    );
+
+    $duplicateResult = \App\Services\PosSyncService::processOrderSync(1, $syncPayload);
+    $stockAfterDuplicate = Database::fetchOne("SELECT current_stock FROM ingredients WHERE restaurant_id = ? AND id = ?", [1, $syncIngredientId]);
+    assertTest(
+        "POS Sync Is Idempotent and Does Not Deduct Stock Twice",
+        ($duplicateResult['status'] ?? '') === 'already_synced'
+            && (int)($duplicateResult['server_order_id'] ?? 0) === $syncOrderId
+            && $stockAfterDuplicate
+            && abs((float)$stockAfterDuplicate['current_stock'] - ($syncOriginalStock - 1.0)) < 0.01
+    );
+} catch (\Throwable $e) {
+    assertTest("POS Order Sync Integration Executes Without Schema Errors", false, $e->getMessage());
+} finally {
+    if ($syncOrderId > 0) {
+        Database::query(
+            "DELETE FROM inventory_movements WHERE restaurant_id = ? AND reference_type = 'order_sale' AND reference_id = ?",
+            [1, $syncOrderId]
+        );
+        if ($syncOriginalStock !== null) {
+            Database::query("UPDATE ingredients SET current_stock = ? WHERE restaurant_id = ? AND id = ?", [$syncOriginalStock, 1, $syncIngredientId]);
+        }
+        Database::query(
+            "DELETE FROM order_item_addons WHERE restaurant_id = ? AND order_item_id IN (SELECT id FROM order_items WHERE restaurant_id = ? AND order_id = ?)",
+            [1, 1, $syncOrderId]
+        );
+        Database::query("DELETE FROM order_items WHERE restaurant_id = ? AND order_id = ?", [1, $syncOrderId]);
+        Database::query("DELETE FROM payments WHERE restaurant_id = ? AND order_id = ?", [1, $syncOrderId]);
+        Database::query("DELETE FROM orders WHERE restaurant_id = ? AND id = ?", [1, $syncOrderId]);
+    }
+    if ($syncDevice) {
+        Database::query(
+            "UPDATE pos_devices SET last_sync_at = ? WHERE restaurant_id = ? AND id = ?",
+            [$syncOriginalLastSync, 1, 1]
+        );
+    }
+}
+
 // Optional phase gate for focused CI runs. The default still executes the complete suite.
 if (in_array('--through-phase=2', $argv, true)) {
     echo PHP_EOL . "================================================================================" . PHP_EOL;
