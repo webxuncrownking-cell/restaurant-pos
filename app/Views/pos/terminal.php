@@ -829,12 +829,18 @@
 
     renderTicket() {
       const container = document.getElementById('ticketItemsList');
-      const emptyNotice = document.getElementById('emptyCartNotice');
+      if (!container) return;
 
       if (this.ticket.length === 0) {
-        container.innerHTML = '';
-        container.appendChild(emptyNotice);
-        emptyNotice.style.display = 'block';
+        // Recreate the placeholder each time. The prior placeholder is removed
+        // when the cart is rendered, so an old DOM reference must not be reused.
+        container.innerHTML = `
+          <div class="text-center text-muted py-5" id="emptyCartNotice">
+            <i class="bi bi-receipt fs-1 d-block mb-2 text-white-50"></i>
+            <h5>No Items in Order</h5>
+            <p class="small text-white-50">Tap any menu product on the left to add it to the ticket.</p>
+          </div>
+        `;
         document.getElementById('ticketSubtotal').textContent = '₱0.00';
         document.getElementById('ticketDiscount').textContent = '-₱0.00';
         document.getElementById('ticketVat').textContent = '₱0.00';
@@ -843,7 +849,6 @@
         return;
       }
 
-      emptyNotice.style.display = 'none';
       const calcs = this.getCalculations();
 
       container.innerHTML = this.ticket.map((item, index) => {
