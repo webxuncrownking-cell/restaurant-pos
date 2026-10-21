@@ -90,6 +90,8 @@ $router->get('/menu/catalog.json', [MenuController::class, 'catalogJson']);
 $router->get('/inventory', [InventoryController::class, 'index']);
 $router->get('/inventory/stock-in', [InventoryController::class, 'showStockIn']);
 $router->post('/inventory/stock-in', [InventoryController::class, 'processStockIn']);
+$router->get('/inventory/adjustment', [InventoryController::class, 'showAdjustment']);
+$router->post('/inventory/adjustment', [InventoryController::class, 'processAdjustment']);
 $router->get('/inventory/ledger', [InventoryController::class, 'ledger']);
 
 // Phase 3: Tables & Floor Plan Routes
