@@ -278,6 +278,14 @@ assertTest("Recipe Food Cost Calculated (> 0)", $costInfo['total_cost'] > 0);
 $posCatalog = \App\Services\MenuService::getPosCatalog(1);
 assertTest("POS Offline Catalog Export Formatted", !empty($posCatalog['version']) && !empty($posCatalog['products']));
 
+// Optional phase gate for focused CI runs. The default still executes the complete suite.
+if (in_array('--through-phase=2', $argv, true)) {
+    echo PHP_EOL . "================================================================================" . PHP_EOL;
+    echo "  PHASE 2 TEST SUMMARY: {$passed} PASSED, {$failed} FAILED" . PHP_EOL;
+    echo "================================================================================" . PHP_EOL;
+    exit($failed > 0 ? 1 : 0);
+}
+
 // 15. Phase 3: Tables & Floor Zones
 echo PHP_EOL . "15. Testing Tables, Floor Zones & Soft-Delete:" . PHP_EOL;
 $tableId = \App\Services\TableService::createTable(1, [
