@@ -193,7 +193,7 @@ class ShiftService
              WHERE p.restaurant_id = :restaurant_id 
                AND o.shift_id = :shift_id 
                AND p.payment_method = 'cash' 
-               AND p.status = 'completed'",
+               AND p.is_verified = 1",
             [':restaurant_id' => $restaurantId, ':shift_id' => $shiftId]
         );
         $totalCashSales = (float)($salesRow['total_cash_sales'] ?? 0);
