@@ -1118,15 +1118,18 @@
     async syncQueue() {
       if (!navigator.onLine || this.isSyncingQueue) return;
 
-      const pending = await window.PosDB.getPendingOrders();
-      if (pending.length === 0) return;
-
+      // Acquire the sync lock before the first await so simultaneous calls
+      // cannot both submit the same pending batch.
       this.isSyncingQueue = true;
       const syncBtn = document.getElementById('posSyncBtn');
-      syncBtn.classList.add('disabled');
-      syncBtn.querySelector('i').classList.add('spin-icon');
 
       try {
+        const pending = await window.PosDB.getPendingOrders();
+        if (pending.length === 0) return;
+
+        syncBtn.classList.add('disabled');
+        syncBtn.querySelector('i').classList.add('spin-icon');
+
         const response = await fetch('<?= BASE_URL ?>/api/pos/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1162,7 +1165,11 @@
         syncBtn.classList.remove('disabled');
         syncBtn.querySelector('i').classList.remove('spin-icon');
         this.isSyncingQueue = false;
-        await this.refreshQueueCount();
+        try {
+          await this.refreshQueueCount();
+        } catch (queueCountError) {
+          console.warn('[POS Queue] Unable to refresh pending order count:', queueCountError);
+        }
       }
     },
 
