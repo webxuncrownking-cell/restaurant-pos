@@ -153,6 +153,95 @@ class InventoryController
         }
     }
 
+    public function showAdjustment(Request $request): void
+    {
+        Auth::requirePermission('inventory.adjust');
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant) {
+            Response::redirect('/dashboard');
+            return;
+        }
+
+        $restaurantId = (int)$restaurant['id'];
+        $ingredients = Database::fetchAll(
+            "SELECT id, name, base_unit, current_stock
+             FROM ingredients
+             WHERE restaurant_id = ? AND is_active = 1
+             ORDER BY name ASC",
+            [$restaurantId]
+        );
+        $unitConversions = Database::fetchAll(
+            "SELECT ingredient_id, unit_name, multiplier_to_base
+             FROM ingredient_unit_conversions
+             WHERE restaurant_id = ?
+             ORDER BY ingredient_id ASC, unit_name ASC",
+            [$restaurantId]
+        );
+
+        Response::view('inventory/adjustment', [
+            'pageTitle' => 'Adjust Ingredient Stock',
+            'restaurant' => $restaurant,
+            'ingredients' => $ingredients,
+            'unitConversions' => $unitConversions,
+            'csrf_token' => CSRF::generate()
+        ]);
+    }
+
+    public function processAdjustment(Request $request): void
+    {
+        Auth::requirePermission('inventory.adjust');
+        if (!CSRF::validate($request->csrfToken())) {
+            Response::redirect('/inventory/adjustment?error=Invalid+security+token');
+            return;
+        }
+
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant) {
+            Response::redirect('/dashboard');
+            return;
+        }
+        $restaurantId = (int)$restaurant['id'];
+        $user = Auth::user();
+        $userId = ($user && isset($user['restaurant_id']) && (int)$user['restaurant_id'] === $restaurantId)
+            ? (int)$user['id']
+            : null;
+
+        $ingredientId = (int)$request->post('ingredient_id', 0);
+        $quantityRaw = $request->post('quantity', '');
+        $unit = trim((string)$request->post('unit', ''));
+        $direction = (string)$request->post('direction', '');
+        $reason = trim((string)$request->post('reason', ''));
+
+        if ($ingredientId <= 0 || !is_numeric($quantityRaw) || !is_finite((float)$quantityRaw) ||
+            (float)$quantityRaw <= 0 || $unit === '' ||
+            !in_array($direction, ['increase', 'decrease'], true) ||
+            $reason === '' || mb_strlen($reason) > 255) {
+            Response::redirect('/inventory/adjustment?error=Enter+a+valid+ingredient%2C+quantity%2C+unit%2C+direction%2C+and+reason');
+            return;
+        }
+
+        try {
+            InventoryService::recordMovement(
+                $restaurantId,
+                $ingredientId,
+                'manual_adjustment',
+                (float)$quantityRaw,
+                $unit,
+                null,
+                null,
+                $reason,
+                $userId,
+                $direction
+            );
+            Response::redirect('/inventory?success=Stock+adjustment+recorded');
+        } catch (\\InvalidArgumentException $e) {
+            Response::redirect('/inventory/adjustment?error=' . urlencode($e->getMessage()));
+        } catch (\\Throwable $e) {
+            error_log('Manual inventory adjustment failed: ' . $e);
+            Response::redirect('/inventory/adjustment?error=Unable+to+record+the+adjustment.+Please+check+the+ingredient+and+quantity');
+        }
+    }
+
     public function ledger(Request $request): void
     {
         Auth::requirePermission('inventory.view_stock');
