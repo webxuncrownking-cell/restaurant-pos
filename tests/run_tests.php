@@ -693,6 +693,18 @@ assertTest("Report KPI Summary Executed", is_numeric($reportKpis['gross_sales'])
 $dailyTrend = \App\Services\ReportService::getDailySalesTrend(1, 30);
 assertTest("Daily Sales Trend Query Executed", is_array($dailyTrend));
 
+$paymentBreakdown = \App\Services\ReportService::getPaymentMethodBreakdown(1, date('Y-01-01'), date('Y-12-31'));
+assertTest("Payment Method Breakdown Uses Verified Payments", is_array($paymentBreakdown));
+
+$topProducts = \App\Services\ReportService::getTopSellingProducts(1, 10);
+assertTest(
+    "Top Selling Products Uses Schema-Compatible Order Item Fields",
+    is_array($topProducts)
+        && (empty($topProducts)
+            || (array_key_exists('item_name', $topProducts[0])
+                && array_key_exists('total_revenue', $topProducts[0])))
+);
+
 $sub = \App\Services\BillingService::getCurrentSubscription(1);
 assertTest("Active Restaurant Subscription Retrieved", $sub && !empty($sub['plan_name']));
 
