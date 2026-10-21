@@ -234,9 +234,9 @@ class InventoryController
                 $direction
             );
             Response::redirect('/inventory?success=Stock+adjustment+recorded');
-        } catch (\\InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException $e) {
             Response::redirect('/inventory/adjustment?error=' . urlencode($e->getMessage()));
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             error_log('Manual inventory adjustment failed: ' . $e);
             Response::redirect('/inventory/adjustment?error=Unable+to+record+the+adjustment.+Please+check+the+ingredient+and+quantity');
         }
