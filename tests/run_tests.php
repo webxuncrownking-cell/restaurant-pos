@@ -199,6 +199,12 @@ assertTest("Standard Metric Mass (2.5 kg -> 2500 g)", abs($kgToG - 2500.0) < 0.0
 $lToMl = \App\Services\UnitConversionService::convert(1, 1.75, 'l', 'ml');
 assertTest("Standard Metric Volume (1.75 L -> 1750 ml)", abs($lToMl - 1750.0) < 0.001);
 
+$sackToKg = \App\Services\UnitConversionService::convert(1, 1.0, 'sack_25kg', 'kg', 8);
+assertTest("Ingredient-Specific Packaging Converts 1 Sack of Rice to 25 kg", abs($sackToKg - 25.0) < 0.001);
+
+$kgToSacks = \App\Services\UnitConversionService::convert(1, 50.0, 'kg', 'sack_25kg', 8);
+assertTest("Ingredient-Specific Packaging Converts 50 kg of Rice to 2 Sacks", abs($kgToSacks - 2.0) < 0.001);
+
 $pkgConv = \App\Services\UnitConversionService::convertPackageToBase(1, 7, 4.0); // 4 trays of 30 eggs = 120 pcs
 assertTest("Packaging Normalization (4 trays @ 30 pcs = 120 pcs)", abs($pkgConv['total_base_quantity'] - 120.0) < 0.001 && $pkgConv['base_unit'] === 'pcs');
 
@@ -223,6 +229,30 @@ assertTest("Ingredient Current Stock Increased by 5000g", abs((float)$afterStock
 $afterDeduct = Database::fetchOne("SELECT current_stock FROM ingredients WHERE id = 1 AND restaurant_id = 1");
 assertTest("Ingredient Current Stock Decreased by 250g", abs((float)$afterDeduct['current_stock'] - ($initialStock + 4750.0)) < 0.01);
 
+$manualUpId = \App\Services\InventoryService::recordMovement(
+    1, 1, 'manual_adjustment', 500.0, 'g', null, null, 'Test manual adjustment increase', 1, 'increase'
+);
+assertTest("Manual Stock Increase Creates Ledger Entry", $manualUpId > 0);
+$afterManualUp = Database::fetchOne("SELECT current_stock FROM ingredients WHERE id = 1 AND restaurant_id = 1");
+assertTest("Manual Increase Adds the Requested Base Quantity", abs((float)$afterManualUp['current_stock'] - ($initialStock + 5250.0)) < 0.01);
+
+$manualDownId = \App\Services\InventoryService::recordMovement(
+    1, 1, 'manual_adjustment', 250.0, 'g', null, null, 'Test manual adjustment decrease', 1, 'decrease'
+);
+assertTest("Manual Stock Decrease Creates Ledger Entry", $manualDownId > 0);
+$afterManualDown = Database::fetchOne("SELECT current_stock FROM ingredients WHERE id = 1 AND restaurant_id = 1");
+assertTest("Manual Decrease Subtracts the Requested Base Quantity", abs((float)$afterManualDown['current_stock'] - ($initialStock + 5000.0)) < 0.01);
+
+$missingAdjustmentDirectionRejected = false;
+try {
+    \App\Services\InventoryService::recordMovement(
+        1, 1, 'manual_adjustment', 10.0, 'g', null, null, 'Test missing direction', 1
+    );
+} catch (\InvalidArgumentException $e) {
+    $missingAdjustmentDirectionRejected = true;
+}
+assertTest("Manual Adjustment Requires Explicit Direction", $missingAdjustmentDirectionRejected);
+
 // Revert test adjustments to keep seed clean
 Database::query("UPDATE ingredients SET current_stock = ? WHERE id = 1 AND restaurant_id = 1", [$initialStock]);
 Database::query("DELETE FROM inventory_movements WHERE notes LIKE 'Test %' AND restaurant_id = 1");
@@ -236,6 +266,11 @@ $sisig = \App\Services\MenuService::getProduct(1, 1);
 assertTest("Product 1 (Sisig) Variants Loaded", count($sisig['variants']) >= 2);
 assertTest("Product 1 Add-on Groups Loaded", count($sisig['addon_groups']) >= 1);
 assertTest("Product 1 Recipe BOM Loaded", count($sisig['recipe_bom']) >= 2);
+
+assertTest("Recipe Rows Expose Schema-Compatible Base Units", !empty($sisig['recipe_bom'][0]['base_ingredient_unit']) && array_key_exists('quantity_required', $sisig['recipe_bom'][0]));
+
+$directDrinkCost = \App\Services\MenuService::calculateProductCost(1, 3);
+assertTest("Direct-Stock Drink Cost Uses Linked Ingredient Cost", abs($directDrinkCost['total_cost'] - 28.0) < 0.01);
 
 $costInfo = \App\Services\MenuService::calculateProductCost(1, 1);
 assertTest("Recipe Food Cost Calculated (> 0)", $costInfo['total_cost'] > 0);
