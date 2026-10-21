@@ -975,7 +975,7 @@
         }
 
         const clientUuid = crypto.randomUUID();
-        const orderNumber = \`ORD-\${Date.now().toString().slice(-6)}-\${Math.floor(Math.random() * 1000)}\`;
+        const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
         orderPayload = {
           client_uuid: clientUuid,
