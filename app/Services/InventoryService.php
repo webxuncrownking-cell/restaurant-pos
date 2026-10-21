@@ -25,7 +25,8 @@ class InventoryService
         ?float $newCostPerUnit = null,
         ?int $referenceId = null,
         ?string $notes = null,
-        ?int $createdBy = null
+        ?int $createdBy = null,
+        ?string $adjustmentDirection = null
     ): int {
         $allowedTypes = [
             'purchase_receipt',
@@ -38,6 +39,14 @@ class InventoryService
 
         if (!in_array($referenceType, $allowedTypes, true)) {
             throw new InvalidArgumentException("Invalid reference type '{$referenceType}'.");
+        }
+
+        if ($referenceType === 'manual_adjustment') {
+            if (!in_array($adjustmentDirection, ['increase', 'decrease'], true)) {
+                throw new InvalidArgumentException('Manual stock adjustments must specify increase or decrease.');
+            }
+        } elseif ($adjustmentDirection !== null) {
+            throw new InvalidArgumentException('Adjustment direction is only valid for manual adjustments.');
         }
 
         if (!is_finite($quantity) || $quantity <= 0) {
@@ -91,9 +100,14 @@ class InventoryService
 
             // 4. Calculate stock before & after
             $stockBefore = (float)$ingredient['current_stock'];
-            $isAddition = in_array($referenceType, ['purchase_receipt', 'order_cancellation', 'order_refund'], true);
+            $isAddition = in_array($referenceType, ['purchase_receipt', 'order_cancellation', 'order_refund'], true)
+                || ($referenceType === 'manual_adjustment' && $adjustmentDirection === 'increase');
             $quantityChange = $isAddition ? $baseQty : -$baseQty;
             $stockAfter = $stockBefore + $quantityChange;
+
+            if ($referenceType === 'manual_adjustment' && $stockAfter < 0) {
+                throw new InvalidArgumentException('A manual decrease cannot make stock negative. Check the available stock or enter a smaller quantity.');
+            }
 
             // 5. Update ingredient current stock
             $updateSql = "UPDATE ingredients SET current_stock = ?";
