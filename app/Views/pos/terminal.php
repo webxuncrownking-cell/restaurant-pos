@@ -974,6 +974,22 @@
           return;
         }
 
+        // Re-check at the final payment action too: a pending order may have
+        // appeared after the checkout modal was opened (for example, another tab).
+        if (navigator.onLine) {
+          const pendingBeforeSale = await window.PosDB.getPendingOrders();
+          if (pendingBeforeSale.length > 0) {
+            await this.syncQueue();
+            const pendingAfterSaleCheck = await window.PosDB.getPendingOrders();
+            alert(
+              `No new sale was created because ${pendingBeforeSale.length} earlier order(s) were pending. ` +
+              `Sync was attempted; ${pendingAfterSaleCheck.length} order(s) remain pending. ` +
+              'Check the Orders page and confirm the earlier sales before submitting this ticket.'
+            );
+            return;
+          }
+        }
+
         const clientUuid = crypto.randomUUID();
         const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
