@@ -347,6 +347,14 @@ class MenuController
             [$restaurantId]
         );
 
+        $unitConversions = Database::fetchAll(
+            "SELECT ingredient_id, unit_name, multiplier_to_base
+             FROM ingredient_unit_conversions
+             WHERE restaurant_id = ?
+             ORDER BY ingredient_id ASC, unit_name ASC",
+            [$restaurantId]
+        );
+
         $selectedVariantId = $request->get('variant_id') !== null && $request->get('variant_id') !== ''
             ? (int)$request->get('variant_id')
             : null;
@@ -360,6 +368,7 @@ class MenuController
             'restaurant'   => $restaurant,
             'product'      => $product,
             'ingredients'  => $ingredients,
+            'unitConversions' => $unitConversions,
             'costInfo'     => $costInfo,
             'selectedVariantId' => $selectedVariantId,
             'csrf_token'   => CSRF::generate()
