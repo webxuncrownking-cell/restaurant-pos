@@ -483,6 +483,8 @@
     activeItemForModal: null,
     failedPinAttempts: 0,
     lockoutUntil: 0,
+    isProcessingSale: false,
+    isSyncingQueue: false,
 
     async init() {
       // 1. Init IndexedDB
@@ -889,8 +891,25 @@
       document.getElementById('checkoutBtn').disabled = false;
     },
 
-    openCheckoutModal() {
-      if (this.ticket.length === 0) return;
+    async openCheckoutModal() {
+      if (this.ticket.length === 0 || this.isProcessingSale) return;
+
+      // If the browser is online but has unresolved orders, don't open a new
+      // checkout. Try syncing the existing order(s), then require the cashier
+      // to verify them before starting another sale.
+      if (navigator.onLine) {
+        const pendingBefore = await window.PosDB.getPendingOrders();
+        if (pendingBefore.length > 0) {
+          await this.syncQueue();
+          const pendingAfter = await window.PosDB.getPendingOrders();
+          alert(
+            `The terminal had ${pendingBefore.length} pending order(s), so checkout was paused to prevent duplicate sales. ` +
+            `Sync was attempted; ${pendingAfter.length} order(s) remain pending. Check the Orders page and Sync badge before starting another sale.`
+          );
+          return;
+        }
+      }
+
       const calcs = this.getCalculations();
       document.getElementById('checkoutTotalDisplay').textContent = `₱${calcs.total.toFixed(2)}`;
       document.getElementById('tenderInput').value = calcs.total.toFixed(2);
@@ -934,73 +953,120 @@
     },
 
     async processSale() {
-      const calcs = this.getCalculations();
-      const tendered = parseFloat(document.getElementById('tenderInput').value) || 0;
-      if (tendered < calcs.total) {
-        alert('Tendered cash is less than the total due.');
-        return;
-      }
+      // Prevent a rapid double-click from generating multiple UUIDs/orders.
+      if (this.isProcessingSale) return;
+      if (!Array.isArray(this.ticket) || this.ticket.length === 0) return;
 
-      const clientUuid = crypto.randomUUID();
-      const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+      this.isProcessingSale = true;
+      const confirmButton = document.getElementById('confirmSaleBtn');
+      const originalButtonHtml = confirmButton.innerHTML;
+      confirmButton.disabled = true;
+      confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Saving Sale...';
 
-      const orderPayload = {
-        client_uuid: clientUuid,
-        device_id: deviceId,
-        shift_id: shiftId,
-        order_number: orderNumber,
-        order_type: this.orderType,
-        table_id: this.currentTableId,
-        cashier_id: cashierId,
-        catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
-        subtotal: calcs.subtotal,
-        discount_amount: calcs.discount,
-        tax_amount: calcs.vat,
-        total_amount: calcs.total,
-        paid_amount: tendered,
-        change_amount: round(tendered - calcs.total),
-        created_at: new Date().toISOString(),
-        items: this.ticket.map(item => ({
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          name: item.name,
-          variant_name: item.variant_name,
-          unit_price: item.unit_price,
-          quantity: item.quantity,
-          addons: item.addons
-        })),
-        payment: {
-          client_payment_uuid: crypto.randomUUID(),
-          payment_method: 'cash',
-          amount: calcs.total,
-          tendered_amount: tendered,
-          change_amount: round(tendered - calcs.total)
-        }
-      };
+      let orderPayload = null;
+      let queued = false;
 
-      // 1. Save the paid order to the local offline queue first.
-      // Once queued, this order must not be submitted again with a new UUID.
-      await window.PosDB.queueOrder(orderPayload);
-      await this.refreshQueueCount();
-
-      // 2. Close checkout and clear the live ticket even if receipt display fails.
-      const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
-      if (checkoutModal) checkoutModal.hide();
-
-      this.ticket = [];
-      this.renderTicket();
-
-      // 3. Start sync immediately while the network is available.
-      if (navigator.onLine) {
-        this.syncQueue();
-      }
-
-      // 4. Receipt rendering must never interrupt clearing or syncing a queued sale.
       try {
-        this.displayReceipt(orderPayload);
-      } catch (receiptError) {
-        console.error('[POS Receipt] Order was queued, but receipt rendering failed:', receiptError);
-        alert('The order was saved to this terminal, but the receipt preview could not be displayed. Check the Sync badge before retrying; do not submit this order again.');
+        const calcs = this.getCalculations();
+        const tendered = parseFloat(document.getElementById('tenderInput').value) || 0;
+        if (tendered < calcs.total) {
+          alert('Tendered cash is less than the total due.');
+          return;
+        }
+
+        const clientUuid = crypto.randomUUID();
+        const orderNumber = \`ORD-\${Date.now().toString().slice(-6)}-\${Math.floor(Math.random() * 1000)}\`;
+
+        orderPayload = {
+          client_uuid: clientUuid,
+          device_id: deviceId,
+          shift_id: shiftId,
+          order_number: orderNumber,
+          order_type: this.orderType,
+          table_id: this.currentTableId,
+          cashier_id: cashierId,
+          catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
+          subtotal: calcs.subtotal,
+          discount_amount: calcs.discount,
+          tax_amount: calcs.vat,
+          total_amount: calcs.total,
+          paid_amount: tendered,
+          change_amount: round(tendered - calcs.total),
+          created_at: new Date().toISOString(),
+          items: this.ticket.map(item => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            name: item.name,
+            variant_name: item.variant_name,
+            unit_price: item.unit_price,
+            quantity: item.quantity,
+            addons: item.addons
+          })),
+          payment: {
+            client_payment_uuid: crypto.randomUUID(),
+            payment_method: 'cash',
+            amount: calcs.total,
+            tendered_amount: tendered,
+            change_amount: round(tendered - calcs.total)
+          }
+        };
+
+        // A successful local queue write is the commit point for this browser checkout.
+        // Never generate a second UUID for the same in-flight click.
+        await window.PosDB.queueOrder(orderPayload);
+        queued = true;
+
+        try {
+          await this.refreshQueueCount();
+        } catch (queueCountError) {
+          console.warn('[POS Queue] Order saved, but queue badge refresh failed:', queueCountError);
+        }
+
+        const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
+        if (checkoutModal) checkoutModal.hide();
+
+        // Clear the live ticket before receipt display so preview errors cannot
+        // cause the cashier to submit the same ticket again.
+        this.ticket = [];
+        this.renderTicket();
+
+        if (navigator.onLine) {
+          void this.syncQueue();
+        }
+
+        try {
+          this.displayReceipt(orderPayload);
+        } catch (receiptError) {
+          console.error('[POS Receipt] Order was queued, but receipt rendering failed:', receiptError);
+          alert('The order was saved to this terminal, but the receipt preview could not be displayed. Do not submit it again; check the Sync badge and Orders page.');
+        }
+      } catch (error) {
+        console.error('[POS Sale] Checkout handling failed:', error);
+
+        if (queued && orderPayload) {
+          // If the local write succeeded, treat it as a sale already recorded locally.
+          this.ticket = [];
+          this.renderTicket();
+          const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
+          if (checkoutModal) checkoutModal.hide();
+
+          try {
+            this.displayReceipt(orderPayload);
+          } catch (receiptError) {
+            console.error('[POS Receipt] Receipt fallback failed:', receiptError);
+          }
+          alert('This sale was already saved to the terminal. Do not submit it again. Check the Sync badge and Orders page.');
+        } else {
+          alert('The sale could not be saved to this terminal, so it was not submitted. Check the browser Console before retrying.');
+        }
+      } finally {
+        this.isProcessingSale = false;
+        confirmButton.innerHTML = originalButtonHtml;
+        if (this.ticket.length > 0) {
+          this.computeChange();
+        } else {
+          confirmButton.disabled = true;
+        }
       }
     },
 
@@ -1050,10 +1116,12 @@
     },
 
     async syncQueue() {
-      if (!navigator.onLine) return;
+      if (!navigator.onLine || this.isSyncingQueue) return;
+
       const pending = await window.PosDB.getPendingOrders();
       if (pending.length === 0) return;
 
+      this.isSyncingQueue = true;
       const syncBtn = document.getElementById('posSyncBtn');
       syncBtn.classList.add('disabled');
       syncBtn.querySelector('i').classList.add('spin-icon');
@@ -1093,6 +1161,7 @@
       } finally {
         syncBtn.classList.remove('disabled');
         syncBtn.querySelector('i').classList.remove('spin-icon');
+        this.isSyncingQueue = false;
         await this.refreshQueueCount();
       }
     },
