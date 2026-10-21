@@ -261,8 +261,8 @@ class ShiftService
                     cash_difference = :difference,
                     status = 'closed',
                     closed_at = NOW(),
-                    notes = CASE WHEN :notes IS NOT NULL AND :notes != '' 
-                                 THEN CONCAT(COALESCE(notes, ''), '\n[Closing Note]: ', :notes)
+                    notes = CASE WHEN :closing_note_check IS NOT NULL AND :closing_note_empty != ''
+                                 THEN CONCAT(COALESCE(notes, ''), '\n[Closing Note]: ', :closing_note_append)
                                  ELSE notes END
                 WHERE restaurant_id = :restaurant_id AND id = :id AND status = 'open'";
         
@@ -272,7 +272,9 @@ class ShiftService
             ':closing_cash' => $closingCash,
             ':expected_cash' => $expectedCash,
             ':difference' => $difference,
-            ':notes' => $notes
+            ':closing_note_check' => $notes,
+            ':closing_note_empty' => $notes,
+            ':closing_note_append' => $notes
         ]);
 
         return [
