@@ -71,7 +71,14 @@ class PosSyncService
         );
 
         if ($existing) {
-            return $existing;
+            return [
+                'lease_id' => $existing['lease_id'],
+                'device_id' => (int)$existing['device_id'],
+                'catalog_version_id' => (int)$existing['catalog_version_id'],
+                'expires_at' => $existing['expires_at'],
+                'grace_expires_at' => $existing['grace_expires_at'],
+                'signature' => $existing['signature_base64']
+            ];
         }
 
         // Get subscription ID for restaurant
@@ -121,7 +128,14 @@ class PosSyncService
      */
     public static function getBootstrapPayload(int $restaurantId, int $deviceId): array
     {
-        $restaurant = Database::fetchOne("SELECT id, name, code, address, phone, email, tin FROM restaurants WHERE id = :id", [':id' => $restaurantId]);
+        $restaurant = Database::fetchOne(
+            "SELECT id, name, slug AS code, receipt_header AS address,
+                    contact_phone AS phone, contact_email AS email,
+                    business_registration_number AS tin
+             FROM restaurants
+             WHERE id = :id AND status = 'active' AND deleted_at IS NULL",
+            [':id' => $restaurantId]
+        );
         $device = DeviceService::getDeviceById($restaurantId, $deviceId);
         if (!$device || $device['status'] !== 'active') {
             throw new RuntimeException('Device not found or not active.');
