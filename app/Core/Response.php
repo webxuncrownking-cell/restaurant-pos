@@ -50,6 +50,14 @@ class Response
     }
 
     /**
+     * Backwards-compatible alias for controllers using Response::view().
+     */
+    public static function view(string $viewPath, array $data = [], string $layout = 'app', int $status = 200): void
+    {
+        self::render($viewPath, $data, $layout, $status);
+    }
+
+    /**
      * Render a view file with layout wrapping.
      */
     public static function render(string $viewPath, array $data = [], string $layout = 'app', int $status = 200): void
