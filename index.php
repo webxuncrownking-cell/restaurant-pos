@@ -78,8 +78,10 @@ $router->get('/dashboard/switch-tenant', [DashboardController::class, 'switchTen
 
 // Phase 2: Menu, Variants, Addons & Recipe BOM Routes
 $router->get('/menu', [MenuController::class, 'index']);
+$router->post('/menu/categories', [MenuController::class, 'createCategory']);
 $router->get('/menu/products/create', [MenuController::class, 'showCreateProduct']);
 $router->post('/menu/products', [MenuController::class, 'createProduct']);
+$router->post('/menu/products/status', [MenuController::class, 'setProductVisibility']);
 $router->get('/menu/products/{id}/recipe', [MenuController::class, 'showRecipeBOM']);
 $router->post('/menu/products/{id}/recipe', [MenuController::class, 'saveRecipeBOM']);
 $router->get('/menu/catalog.json', [MenuController::class, 'catalogJson']);
