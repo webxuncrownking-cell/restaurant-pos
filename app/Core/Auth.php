@@ -124,6 +124,14 @@ class Auth
     }
 
     /**
+     * Backwards-compatible alias for legacy controllers.
+     */
+    public static function requireAuth(): void
+    {
+        self::requireLogin();
+    }
+
+    /**
      * Guard middleware requiring active login.
      */
     public static function requireLogin(): void
