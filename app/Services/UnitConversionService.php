@@ -157,11 +157,15 @@ class UnitConversionService
         int $conversionId,
         float $packageCount
     ): array {
+        if ($restaurantId <= 0 || $conversionId <= 0 || !is_finite($packageCount) || $packageCount <= 0) {
+            throw new InvalidArgumentException('Restaurant, packaging unit, and package count must be valid positive values.');
+        }
+
         $conv = Database::fetchOne(
-            "SELECT c.*, i.base_unit, i.name as ingredient_name, i.cost_per_base_unit 
+            "SELECT c.*, i.base_unit, i.name as ingredient_name, i.cost_per_base_unit
              FROM ingredient_unit_conversions c
              JOIN ingredients i ON c.ingredient_id = i.id AND c.restaurant_id = i.restaurant_id
-             WHERE c.id = ? AND c.restaurant_id = ?",
+             WHERE c.id = ? AND c.restaurant_id = ? AND i.is_active = 1",
             [$conversionId, $restaurantId]
         );
 
@@ -170,7 +174,13 @@ class UnitConversionService
         }
 
         $multiplier = (float)$conv['multiplier_to_base'];
+        if (!is_finite($multiplier) || $multiplier <= 0) {
+            throw new InvalidArgumentException('The selected packaging conversion has an invalid multiplier.');
+        }
         $totalBaseQuantity = $packageCount * $multiplier;
+        if (!is_finite($totalBaseQuantity) || $totalBaseQuantity <= 0) {
+            throw new InvalidArgumentException('The normalized stock quantity is invalid.');
+        }
         $costPerBase = (float)$conv['cost_per_base_unit'];
 
         return [
