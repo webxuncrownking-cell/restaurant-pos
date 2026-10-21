@@ -411,6 +411,133 @@ try {
     }
 }
 
+// Regression test: add-on rows require addon_name and ingredient-backed add-ons must deduct stock.
+echo PHP_EOL . "14c. Testing POS Add-on Sync & Inventory Deduction:" . PHP_EOL;
+$addonSyncDevice = Database::fetchOne(
+    "SELECT id, last_sync_at FROM pos_devices WHERE restaurant_id = ? AND id = ? AND status = 'active'",
+    [1, 1]
+);
+$addonSyncUuid = \App\Services\DeviceService::generateUuidV4();
+$addonSyncOrderId = 0;
+$addonSyncOriginalLastSync = $addonSyncDevice['last_sync_at'] ?? null;
+$addonIngredientIds = [1, 2, 3, 4, 5, 6, 9];
+$addonSyncOriginalStocks = [];
+foreach ($addonIngredientIds as $ingredientId) {
+    $stockRow = Database::fetchOne(
+        "SELECT current_stock FROM ingredients WHERE restaurant_id = ? AND id = ?",
+        [1, $ingredientId]
+    );
+    if ($stockRow) {
+        $addonSyncOriginalStocks[$ingredientId] = (float)$stockRow['current_stock'];
+    }
+}
+$addonSyncPayload = [
+    'client_uuid' => $addonSyncUuid,
+    'device_id' => 1,
+    'cashier_id' => 1,
+    'order_number' => 'TESTADDON-' . substr(str_replace('-', '', $addonSyncUuid), 0, 16),
+    'order_type' => 'takeout',
+    'created_at' => date('c'),
+    'subtotal' => 215.00,
+    'discount_amount' => 0.00,
+    'paid_amount' => 215.00,
+    'payment' => [
+        'payment_method' => 'cash',
+        'tendered_amount' => 215.00
+    ],
+    'items' => [[
+        'product_id' => 1,
+        'variant_id' => 1,
+        'quantity' => 1,
+        'addons' => [
+            ['id' => 1, 'name' => 'Extra Adobo Sauce', 'price' => 15.00],
+            ['id' => 2, 'name' => 'Sunny Side-up Egg', 'price' => 20.00]
+        ]
+    ]]
+];
+
+try {
+    if (!$addonSyncDevice || count($addonSyncOriginalStocks) !== count($addonIngredientIds)) {
+        throw new \RuntimeException('Seed device or ingredient stock needed for add-on sync test is missing.');
+    }
+
+    $addonSyncResult = \App\Services\PosSyncService::processOrderSync(1, $addonSyncPayload);
+    $addonSyncOrderId = (int)($addonSyncResult['server_order_id'] ?? 0);
+    $savedAddons = $addonSyncOrderId > 0
+        ? Database::fetchAll(
+            "SELECT addon_id, addon_name, unit_price, quantity, subtotal
+             FROM order_item_addons
+             WHERE restaurant_id = ? AND order_item_id IN
+               (SELECT id FROM order_items WHERE restaurant_id = ? AND order_id = ?)
+             ORDER BY addon_id",
+            [1, 1, $addonSyncOrderId]
+        )
+        : [];
+
+    assertTest(
+        "POS Sync Saves Required Add-on Names and Prices",
+        ($addonSyncResult['status'] ?? '') === 'synced'
+            && count($savedAddons) === 2
+            && (int)$savedAddons[0]['addon_id'] === 1
+            && $savedAddons[0]['addon_name'] === 'Extra Adobo Sauce'
+            && abs((float)$savedAddons[0]['unit_price'] - 15.00) < 0.01
+            && (int)$savedAddons[1]['addon_id'] === 2
+            && $savedAddons[1]['addon_name'] === 'Sunny Side-up Egg'
+            && abs((float)$savedAddons[1]['unit_price'] - 20.00) < 0.01
+    );
+
+    $addonStockMovements = $addonSyncOrderId > 0
+        ? Database::fetchAll(
+            "SELECT ingredient_id, quantity_change
+             FROM inventory_movements
+             WHERE restaurant_id = ? AND reference_type = 'order_sale'
+               AND reference_id = ? AND notes LIKE 'Add-on sale:%'",
+            [1, $addonSyncOrderId]
+        )
+        : [];
+    $sauceMovement = null;
+    $eggMovement = null;
+    foreach ($addonStockMovements as $movement) {
+        if ((int)$movement['ingredient_id'] === 2) $sauceMovement = $movement;
+        if ((int)$movement['ingredient_id'] === 9) $eggMovement = $movement;
+    }
+    assertTest(
+        "POS Sync Deducts Ingredient-Backed Add-ons",
+        $sauceMovement && $eggMovement
+            && abs((float)$sauceMovement['quantity_change'] - (-40.0)) < 0.01
+            && abs((float)$eggMovement['quantity_change'] - (-1.0)) < 0.01
+    );
+} catch (\Throwable $e) {
+    assertTest("POS Add-on Sync Integration Executes Without Schema Errors", false, $e->getMessage());
+} finally {
+    if ($addonSyncOrderId > 0) {
+        Database::query(
+            "DELETE FROM inventory_movements WHERE restaurant_id = ? AND reference_type = 'order_sale' AND reference_id = ?",
+            [1, $addonSyncOrderId]
+        );
+        foreach ($addonSyncOriginalStocks as $ingredientId => $stock) {
+            Database::query(
+                "UPDATE ingredients SET current_stock = ? WHERE restaurant_id = ? AND id = ?",
+                [$stock, 1, $ingredientId]
+            );
+        }
+        Database::query(
+            "DELETE FROM order_item_addons WHERE restaurant_id = ? AND order_item_id IN
+                (SELECT id FROM order_items WHERE restaurant_id = ? AND order_id = ?)",
+            [1, 1, $addonSyncOrderId]
+        );
+        Database::query("DELETE FROM order_items WHERE restaurant_id = ? AND order_id = ?", [1, $addonSyncOrderId]);
+        Database::query("DELETE FROM payments WHERE restaurant_id = ? AND order_id = ?", [1, $addonSyncOrderId]);
+        Database::query("DELETE FROM orders WHERE restaurant_id = ? AND id = ?", [1, $addonSyncOrderId]);
+    }
+    if ($addonSyncDevice) {
+        Database::query(
+            "UPDATE pos_devices SET last_sync_at = ? WHERE restaurant_id = ? AND id = ?",
+            [$addonSyncOriginalLastSync, 1, 1]
+        );
+    }
+}
+
 // Optional phase gate for focused CI runs. The default still executes the complete suite.
 if (in_array('--through-phase=2', $argv, true)) {
     echo PHP_EOL . "================================================================================" . PHP_EOL;
