@@ -568,13 +568,14 @@ class PosSyncService
                     $deductionSnapshot = round((float)$addon['deduction_quantity'] * $addonQuantity, 4);
                     Database::query(
                         "INSERT INTO order_item_addons (
-                            restaurant_id, order_item_id, addon_id, unit_price, cost_price, quantity, subtotal,
+                            restaurant_id, order_item_id, addon_id, addon_name, unit_price, cost_price, quantity, subtotal,
                             deduction_quantity_snapshot, ingredient_id_snapshot
-                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         [
                             $restaurantId,
                             $orderItemId,
                             $addon['id'],
+                            $addon['name'],
                             $addon['price'],
                             $addon['cost_price'],
                             $addonQuantity,
