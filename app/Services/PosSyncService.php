@@ -685,4 +685,5 @@ class PosSyncService
             Database::rollBack();
             throw $e;
         }
-    }}
+    }
+}
