@@ -25,6 +25,14 @@ class CSRF
     }
 
     /**
+     * Backwards-compatible alias used by the application controllers.
+     */
+    public static function generate(): string
+    {
+        return self::getToken();
+    }
+
+    /**
      * Regenerate the CSRF token on privilege escalation.
      */
     public static function regenerate(): string
