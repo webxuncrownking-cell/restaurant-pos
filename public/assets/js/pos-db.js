@@ -86,16 +86,28 @@
       });
     },
 
-    // Save full catalog snapshot
+    // Save full catalog snapshot atomically in the local offline database.
     async saveCatalog(products, categories, versionInfo) {
-      await this.tx(['catalog', 'meta'], 'readwrite', (stores) => {
-        const catStore = this.db.transaction(['catalog', 'meta'], 'readwrite').objectStore('catalog');
-        catStore.clear();
-        products.forEach(p => catStore.put(p));
+      if (!this.db) await this.init(this.tenantId, this.deviceId);
 
-        const metaStore = this.db.transaction(['catalog', 'meta'], 'readwrite').objectStore('meta');
-        metaStore.put({ key: 'catalog_version', value: versionInfo });
-        metaStore.put({ key: 'categories', value: categories });
+      return new Promise((resolve, reject) => {
+        let transaction;
+        try {
+          transaction = this.db.transaction(['catalog', 'meta'], 'readwrite');
+          const catalogStore = transaction.objectStore('catalog');
+          const metaStore = transaction.objectStore('meta');
+
+          catalogStore.clear();
+          (Array.isArray(products) ? products : []).forEach(product => catalogStore.put(product));
+          metaStore.put({ key: 'catalog_version', value: versionInfo });
+          metaStore.put({ key: 'categories', value: Array.isArray(categories) ? categories : [] });
+
+          transaction.oncomplete = () => resolve(true);
+          transaction.onerror = () => reject(transaction.error || new Error('Unable to save POS catalog.'));
+          transaction.onabort = () => reject(transaction.error || new Error('POS catalog save was aborted.'));
+        } catch (error) {
+          reject(error);
+        }
       });
     },
 
