@@ -687,7 +687,9 @@
         aSec.style.display = 'block';
         let addonHtml = '';
         product.addon_groups.forEach(g => {
-          (g.addons || []).forEach(a => {
+          // MenuService exposes each group's selectable entries as "options".
+          // Keep "addons" as a fallback for older cached catalog data.
+          (g.options || g.addons || []).forEach(a => {
             addonHtml += `
               <label class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center">
                 <div>
