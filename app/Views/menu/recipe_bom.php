@@ -142,7 +142,7 @@ $unitConversionsJson = json_encode($unitConversions, $jsonFlags | JSON_THROW_ON_
                       <select name="items[<?= $rowIndex ?>][unit]" class="form-select form-select-sm unit-select" required>
                         <?php
                           $ingId = (int)$item['ingredient_id'];
-                          $baseUnit = (string)$item['base_unit'];
+                          $baseUnit = (string)$item['base_ingredient_unit'];
                           foreach (($standardUnits[$baseUnit] ?? [$baseUnit => $baseUnit]) as $unitCode => $unitLabel):
                         ?>
                           <option value="<?= htmlspecialchars($unitCode, ENT_QUOTES, 'UTF-8') ?>" <?= $unitCode === $baseUnit ? 'selected' : '' ?>><?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?></option>
