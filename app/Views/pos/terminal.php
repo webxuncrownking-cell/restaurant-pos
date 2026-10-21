@@ -488,6 +488,29 @@
       // 1. Init IndexedDB
       await window.PosDB.init(tenantId, deviceId);
 
+      // Use delegated click handling for ticket controls because ticket markup
+      // is rebuilt with innerHTML after every cart change.
+      const ticketContainer = document.getElementById('ticketItemsList');
+      ticketContainer.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-ticket-action]');
+        if (!button || !ticketContainer.contains(button)) return;
+
+        const index = Number.parseInt(button.dataset.index, 10);
+        if (!Number.isInteger(index) || index < 0) return;
+
+        switch (button.dataset.ticketAction) {
+          case 'increase':
+            this.updateQty(index, 1);
+            break;
+          case 'decrease':
+            this.updateQty(index, -1);
+            break;
+          case 'remove':
+            this.removeItem(index);
+            break;
+        }
+      });
+
       // 2. Prime IndexedDB with Catalog & Tables
       if (this.catalog && this.catalog.products) {
         await window.PosDB.saveCatalog(this.catalog.products, this.catalog.categories, this.catalog.version);
@@ -757,9 +780,15 @@
     },
 
     updateQty(index, delta) {
-      if (!this.ticket[index]) return;
-      this.ticket[index].quantity += delta;
-      if (this.ticket[index].quantity <= 0) {
+      const item = this.ticket[index];
+      if (!item) return;
+
+      const currentQuantity = Number(item.quantity);
+      const increment = Number(delta);
+      if (!Number.isFinite(currentQuantity) || !Number.isFinite(increment)) return;
+
+      item.quantity = currentQuantity + increment;
+      if (item.quantity <= 0) {
         this.ticket.splice(index, 1);
       }
       this.renderTicket();
@@ -833,13 +862,13 @@
               <span class="font-monospace fw-bold text-white fs-6">₱${itemTotal.toFixed(2)}</span>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top border-secondary">
-              <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="window.posApp.removeItem(${index})">
+              <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" data-ticket-action="remove" data-index="${index}">
                 <i class="bi bi-x-circle"></i> Remove
               </button>
               <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-sm btn-outline-secondary text-white px-2 py-0" onclick="window.posApp.updateQty(${index}, -1)">-</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-2 py-0" data-ticket-action="decrease" data-index="${index}" aria-label="Decrease quantity">-</button>
                 <span class="fw-bold font-monospace px-1 text-white">${item.quantity}</span>
-                <button class="btn btn-sm btn-outline-secondary text-white px-2 py-0" onclick="window.posApp.updateQty(${index}, 1)">+</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-2 py-0" data-ticket-action="increase" data-index="${index}" aria-label="Increase quantity">+</button>
               </div>
             </div>
           </div>
