@@ -147,7 +147,11 @@ $unitConversionsJson = json_encode($unitConversions, $jsonFlags | JSON_THROW_ON_
                         ?>
                           <option value="<?= htmlspecialchars($unitCode, ENT_QUOTES, 'UTF-8') ?>" <?= $unitCode === $baseUnit ? 'selected' : '' ?>><?= htmlspecialchars($unitLabel, ENT_QUOTES, 'UTF-8') ?></option>
                         <?php endforeach; ?>
-                        <?php foreach ($unitConversions as $conversion): if ((int)$conversion['ingredient_id'] !== $ingId) continue; ?>
+                        <?php
+                          $standardUnitCodes = array_map('strtolower', array_keys($standardUnits[$baseUnit] ?? [$baseUnit => $baseUnit]));
+                          foreach ($unitConversions as $conversion):
+                            if ((int)$conversion['ingredient_id'] !== $ingId || in_array(strtolower((string)$conversion['unit_name']), $standardUnitCodes, true)) continue;
+                        ?>
                           <option value="<?= htmlspecialchars($conversion['unit_name'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($conversion['unit_name'], ENT_QUOTES, 'UTF-8') ?> (×<?= number_format((float)$conversion['multiplier_to_base'], 4) ?> <?= htmlspecialchars($baseUnit, ENT_QUOTES, 'UTF-8') ?>)</option>
                         <?php endforeach; ?>
                       </select>
