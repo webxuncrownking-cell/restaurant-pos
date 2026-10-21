@@ -277,6 +277,12 @@ assertTest("Recipe Food Cost Calculated (> 0)", $costInfo['total_cost'] > 0);
 
 $posCatalog = \App\Services\MenuService::getPosCatalog(1);
 assertTest("POS Offline Catalog Export Formatted", !empty($posCatalog['version']) && !empty($posCatalog['products']));
+assertTest(
+    "POS Catalog Includes Restaurant Metadata for Receipt Rendering",
+    !empty($posCatalog['restaurant']['name'])
+        && array_key_exists('address', $posCatalog['restaurant'])
+        && array_key_exists('tin', $posCatalog['restaurant'])
+);
 
 // POS order-sync regression: validate the actual MySQL order/item/payment schema and idempotency.
 echo PHP_EOL . "14b. Testing POS Order Synchronization & Inventory Deduction:" . PHP_EOL;
