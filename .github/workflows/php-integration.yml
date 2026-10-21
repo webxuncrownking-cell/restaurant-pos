@@ -52,7 +52,10 @@ jobs:
       - name: Diagnose schema import failure
         if: failure()
         run: |
-          mysql --host=127.0.0.1 --user=root --password=root -e "SHOW ENGINE INNODB STATUS\\G" | sed -n '/LATEST FOREIGN KEY ERROR/,/LATEST DETECTED DEADLOCK/p'
+          set +e
+          mysql --host=127.0.0.1 --user=root --password=root --batch --raw -e "SHOW ENGINE INNODB STATUS" > /tmp/innodb-status.txt 2>&1
+          cat /tmp/innodb-status.txt | sed -n '/LATEST FOREIGN KEY ERROR/,/LATEST DETECTED DEADLOCK/p'
+          cat /tmp/innodb-status.txt | tail -n 120
       - name: Import demo seed data
         run: mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/seed.sql
       - name: Run integration tests
