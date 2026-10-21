@@ -419,12 +419,22 @@ class MenuService
      */
     public static function getPosCatalog(int $restaurantId): array
     {
+        $restaurant = Database::fetchOne(
+            "SELECT id, name, contact_phone AS phone, contact_email AS email,
+                    business_registration_number AS tin, receipt_header AS address,
+                    receipt_footer
+             FROM restaurants
+             WHERE id = ? AND status = 'active' AND deleted_at IS NULL",
+            [$restaurantId]
+        );
+
         $categories = self::getCategories($restaurantId, true);
         $products = self::getProducts($restaurantId, null, true);
 
         return [
             'version'       => date('YmdHis'),
             'restaurant_id' => $restaurantId,
+            'restaurant'    => $restaurant ?: [],
             'categories'    => $categories,
             'products'      => $products
         ];
