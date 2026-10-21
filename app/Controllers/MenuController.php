@@ -361,7 +361,7 @@ class MenuController
         if ($selectedVariantId !== null && !array_filter($product['variants'], static fn(array $variant): bool => (int)$variant['id'] === $selectedVariantId)) {
             $selectedVariantId = null;
         }
-        $costInfo = MenuService::calculateProductCost($restaurantId, $productId, $selectedVariantId);
+        $costInfo = MenuService::calculateProductCost($restaurantId, $productId, $selectedVariantId ?? 0);
 
         Response::view('menu/recipe_bom', [
             'pageTitle'    => 'Recipe Bill of Materials: ' . $product['name'],
