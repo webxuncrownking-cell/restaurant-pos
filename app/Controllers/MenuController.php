@@ -333,6 +333,10 @@ class MenuController
     {
         Auth::requirePermission('menu.manage_recipes');
         $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant) {
+            Response::redirect('/dashboard');
+            return;
+        }
         $restaurantId = (int)$restaurant['id'];
         $productId = (int)($params['id'] ?? 0);
 
@@ -384,6 +388,10 @@ class MenuController
         }
 
         $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant) {
+            Response::redirect('/dashboard');
+            return;
+        }
         $restaurantId = (int)$restaurant['id'];
         $productId = (int)($params['id'] ?? 0);
 
