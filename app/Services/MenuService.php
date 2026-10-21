@@ -139,9 +139,9 @@ class MenuService
     public static function getRecipeBOM(int $restaurantId, int $productId): array
     {
         return Database::fetchAll(
-            "SELECT r.*, i.name as ingredient_name, i.base_unit as base_ingredient_unit, 
-                    i.cost_per_base_unit as ingredient_cost_per_base_unit,
-                    v.name as variant_name
+            "SELECT r.*, i.name AS ingredient_name, i.base_unit AS base_ingredient_unit,
+                    i.base_unit AS unit, i.cost_per_base_unit AS ingredient_cost_per_base_unit,
+                    i.cost_per_base_unit AS cost_per_unit, v.name AS variant_name
              FROM recipes r
              JOIN ingredients i ON r.ingredient_id = i.id AND r.restaurant_id = i.restaurant_id
              LEFT JOIN product_variants v ON r.variant_id = v.id AND r.restaurant_id = v.restaurant_id
@@ -160,61 +160,107 @@ class MenuService
         ?int $variantId,
         array $ingredientsList
     ): void {
-        $pdo = Database::getConnection();
-        $pdo->beginTransaction();
+        if ($restaurantId <= 0 || $productId <= 0) {
+            throw new \InvalidArgumentException('A valid restaurant and product are required.');
+        }
 
-        try {
-            if ($variantId === null) {
-                $deleteStmt = $pdo->prepare(
-                    "DELETE FROM recipes WHERE restaurant_id = ? AND product_id = ? AND variant_id IS NULL"
-                );
-                $deleteStmt->execute([$restaurantId, $productId]);
-            } else {
-                $deleteStmt = $pdo->prepare(
-                    "DELETE FROM recipes WHERE restaurant_id = ? AND product_id = ? AND variant_id = ?"
-                );
-                $deleteStmt->execute([$restaurantId, $productId, $variantId]);
+        $product = Database::fetchOne(
+            "SELECT id, product_type FROM products WHERE id = ? AND restaurant_id = ? AND is_active = 1",
+            [$productId, $restaurantId]
+        );
+        if (!$product) {
+            throw new \InvalidArgumentException('The selected product is not active or does not belong to this restaurant.');
+        }
+
+        if ($variantId !== null) {
+            $variant = Database::fetchOne(
+                "SELECT id FROM product_variants
+                 WHERE id = ? AND product_id = ? AND restaurant_id = ? AND is_active = 1",
+                [$variantId, $productId, $restaurantId]
+            );
+            if (!$variant) {
+                throw new \InvalidArgumentException('The selected variant is not active or does not belong to this product.');
+            }
+        }
+
+        if (count($ingredientsList) > 200) {
+            throw new \InvalidArgumentException('A recipe cannot contain more than 200 ingredient rows.');
+        }
+
+        // Validate and normalize everything before deleting the saved recipe. A malformed
+        // submission must never erase the current BOM.
+        $normalizedItems = [];
+        $seenIngredientIds = [];
+        foreach ($ingredientsList as $item) {
+            if (!is_array($item)) {
+                throw new \InvalidArgumentException('Invalid ingredient row in recipe.');
             }
 
-            $insertStmt = $pdo->prepare(
-                "INSERT INTO recipes (
-                    restaurant_id, product_id, variant_id, ingredient_id, quantity_required
-                ) VALUES (?, ?, ?, ?, ?)"
+            $ingId = filter_var($item['ingredient_id'] ?? null, FILTER_VALIDATE_INT);
+            $qtyRaw = $item['quantity'] ?? null;
+            $qty = is_numeric($qtyRaw) ? (float)$qtyRaw : 0.0;
+            $unit = trim((string)($item['unit'] ?? ''));
+
+            // Blank rows from dynamic form UI are ignored; partially-filled rows are rejected.
+            if (($ingId === false || $ingId === null || $ingId <= 0) && ($qtyRaw === null || trim((string)$qtyRaw) === '')) {
+                continue;
+            }
+            if ($ingId === false || $ingId === null || $ingId <= 0 || !is_finite($qty) || $qty <= 0 || $unit === '') {
+                throw new \InvalidArgumentException('Each recipe row needs an ingredient, a positive quantity, and a unit.');
+            }
+            if (isset($seenIngredientIds[(int)$ingId])) {
+                throw new \InvalidArgumentException('An ingredient can appear only once per recipe. Combine its quantities into one row.');
+            }
+
+            $ing = Database::fetchOne(
+                "SELECT id, base_unit FROM ingredients
+                 WHERE id = ? AND restaurant_id = ? AND is_active = 1",
+                [(int)$ingId, $restaurantId]
             );
+            if (!$ing) {
+                throw new \InvalidArgumentException('A selected ingredient is unavailable for this restaurant.');
+            }
 
-            foreach ($ingredientsList as $item) {
-                $ingId = (int)($item['ingredient_id'] ?? 0);
-                $qty = (float)($item['quantity'] ?? 0);
-                $unit = trim((string)($item['unit'] ?? ''));
+            $baseUnit = (string)$ing['base_unit'];
+            $baseQty = UnitConversionService::convert($restaurantId, $qty, $unit, $baseUnit, (int)$ingId);
+            if (!is_finite($baseQty) || $baseQty <= 0) {
+                throw new \InvalidArgumentException('Recipe quantity must normalize to a positive base quantity.');
+            }
 
-                if ($ingId <= 0 || $qty <= 0) {
-                    continue;
-                }
+            $seenIngredientIds[(int)$ingId] = true;
+            $normalizedItems[] = [(int)$ingId, $baseQty];
+        }
 
-                $ing = Database::fetchOne(
-                    "SELECT base_unit FROM ingredients WHERE id = ? AND restaurant_id = ?",
-                    [$ingId, $restaurantId]
+        $pdo = Database::getConnection();
+        $pdo->beginTransaction();
+        try {
+            $deleteSql = "DELETE FROM recipes WHERE restaurant_id = ? AND product_id = ?";
+            $deleteParams = [$restaurantId, $productId];
+            if ($variantId === null) {
+                $deleteSql .= " AND variant_id IS NULL";
+            } else {
+                $deleteSql .= " AND variant_id = ?";
+                $deleteParams[] = $variantId;
+            }
+            $deleteStmt = $pdo->prepare($deleteSql);
+            $deleteStmt->execute($deleteParams);
+
+            if ($normalizedItems) {
+                $insertStmt = $pdo->prepare(
+                    "INSERT INTO recipes
+                        (restaurant_id, product_id, variant_id, ingredient_id, quantity_required)
+                     VALUES (?, ?, ?, ?, ?)"
                 );
-
-                if (!$ing) continue;
-
-                $baseUnit = $ing['base_unit'];
-                $baseQty = $unit !== '' && $unit !== $baseUnit
-                    ? UnitConversionService::convert($restaurantId, $qty, $unit, $baseUnit, $ingId)
-                    : $qty;
-
-                $insertStmt->execute([
-                    $restaurantId,
-                    $productId,
-                    $variantId,
-                    $ingId,
-                    $baseQty
-                ]);
+                foreach ($normalizedItems as [$ingId, $baseQty]) {
+                    $insertStmt->execute([$restaurantId, $productId, $variantId, $ingId, $baseQty]);
+                }
             }
 
             $pdo->commit();
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $e;
         }
     }
@@ -228,7 +274,37 @@ class MenuService
         ?int $variantId = null,
         array $addonIds = []
     ): array {
+        $product = Database::fetchOne(
+            "SELECT product_type, direct_stock_ingredient_id FROM products WHERE restaurant_id = ? AND id = ?",
+            [$restaurantId, $productId]
+        );
+        if (!$product) {
+            throw new \InvalidArgumentException('Product not found for this restaurant.');
+        }
+
         $recipeItems = self::getRecipeBOM($restaurantId, $productId);
+        if ($product['product_type'] === 'direct' && empty($recipeItems) && !empty($product['direct_stock_ingredient_id'])) {
+            $ingredient = Database::fetchOne(
+                "SELECT id, name, base_unit, cost_per_base_unit FROM ingredients
+                 WHERE restaurant_id = ? AND id = ? AND is_active = 1",
+                [$restaurantId, (int)$product['direct_stock_ingredient_id']]
+            );
+            if ($ingredient) {
+                $qty = 1.0;
+                $cost = $qty * (float)$ingredient['cost_per_base_unit'];
+                return [
+                    'total_cost' => round($cost, 2),
+                    'breakdown' => [[
+                        'ingredient_id' => (int)$ingredient['id'],
+                        'name' => $ingredient['name'],
+                        'quantity' => $qty,
+                        'unit' => $ingredient['base_unit'],
+                        'normalized' => $qty . ' ' . $ingredient['base_unit'],
+                        'cost' => round($cost, 4)
+                    ]]
+                ];
+            }
+        }
         
         // If variantId is not specified and all recipes are variant-specific, default to primary variant
         if ($variantId === null && !empty($recipeItems)) {
@@ -278,31 +354,40 @@ class MenuService
         // Add add-ons ingredient costs
         if (!empty($addonIds)) {
             $placeholders = implode(',', array_fill(0, count($addonIds), '?'));
-            $addons = Database::fetchAll(
-                "SELECT pa.*, i.name as ingredient_name, i.base_unit as base_ingredient_unit, 
-                        i.cost_per_base_unit as ingredient_cost_per_base_unit
-                 FROM product_addons pa
-                 JOIN ingredients i ON pa.ingredient_id = i.id AND pa.restaurant_id = i.restaurant_id
-                 WHERE pa.restaurant_id = ? AND pa.id IN ({$placeholders})",
-                array_merge([$restaurantId], $addonIds)
-            );
+            $uniqueAddonIds = array_values(array_unique(array_filter(array_map('intval', $addonIds), static fn(int $id): bool => $id > 0)));
+            if ($uniqueAddonIds) {
+                $placeholders = implode(',', array_fill(0, count($uniqueAddonIds), '?'));
+                $addons = Database::fetchAll(
+                    "SELECT pa.*, i.name AS ingredient_name, i.base_unit AS base_ingredient_unit,
+                            i.cost_per_base_unit AS ingredient_cost_per_base_unit
+                     FROM product_addons pa
+                     JOIN product_addon_group_assignments pag
+                       ON pag.restaurant_id = pa.restaurant_id AND pag.group_id = pa.group_id
+                     LEFT JOIN ingredients i
+                       ON pa.ingredient_id = i.id AND pa.restaurant_id = i.restaurant_id
+                     WHERE pa.restaurant_id = ? AND pag.product_id = ? AND pa.is_active = 1
+                       AND pa.id IN ({$placeholders})",
+                    array_merge([$restaurantId, $productId], $uniqueAddonIds)
+                );
 
-            foreach ($addons as $addonItem) {
-                $baseQty = (float)$addonItem['deduction_quantity'];
-                $baseUnit = $addonItem['base_ingredient_unit'];
-                $costPerBaseUnit = (float)$addonItem['ingredient_cost_per_base_unit'];
+                foreach ($addons as $addonItem) {
+                    $hasIngredient = !empty($addonItem['ingredient_id']) && $addonItem['base_ingredient_unit'] !== null;
+                    $baseQty = $hasIngredient ? (float)$addonItem['deduction_quantity'] : 1.0;
+                    $baseUnit = $hasIngredient ? (string)$addonItem['base_ingredient_unit'] : 'addon';
+                    $itemCost = $hasIngredient
+                        ? $baseQty * (float)$addonItem['ingredient_cost_per_base_unit']
+                        : (float)$addonItem['cost_price'];
+                    $totalCost += $itemCost;
 
-                $itemCost = $baseQty * $costPerBaseUnit;
-                $totalCost += $itemCost;
-
-                $breakdown[] = [
-                    'ingredient_id' => $addonItem['ingredient_id'],
-                    'name'          => 'Add-on: ' . $addonItem['name'],
-                    'quantity'      => $baseQty,
-                    'unit'          => $baseUnit,
-                    'normalized'    => $baseQty . ' ' . $baseUnit,
-                    'cost'          => round($itemCost, 4)
-                ];
+                    $breakdown[] = [
+                        'ingredient_id' => $hasIngredient ? (int)$addonItem['ingredient_id'] : null,
+                        'name'          => 'Add-on: ' . $addonItem['name'],
+                        'quantity'      => $baseQty,
+                        'unit'          => $baseUnit,
+                        'normalized'    => $baseQty . ' ' . $baseUnit,
+                        'cost'          => round($itemCost, 4)
+                    ];
+                }
             }
         }
 
