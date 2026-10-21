@@ -75,7 +75,10 @@ class Response
         require $viewFile;
         $content = ob_get_clean();
 
-        if ($layout === 'none') {
+        // Some legacy views include their own header/navbar/footer and therefore
+        // already produce a complete HTML document. Do not wrap those a second time.
+        $isCompleteDocument = preg_match('/<!doctype\\s+html|<html(?:\\s|>)/i', $content) === 1;
+        if ($layout === 'none' || $isCompleteDocument) {
             self::html($content, $status);
             return;
         }
