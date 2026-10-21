@@ -37,7 +37,7 @@ class PosSyncService
         $versionUuid = DeviceService::generateUuidV4();
 
         Database::query(
-            "INSERT INTO restaurant_catalog_versions (restaurant_id, version_uuid, snapshot_hash, snapshot_json, created_at)
+            "INSERT INTO restaurant_catalog_versions (restaurant_id, version_uuid, snapshot_hash, snapshot_json, published_at)
              VALUES (:restaurant_id, :version_uuid, :snapshot_hash, :snapshot_json, NOW())",
             [
                 ':restaurant_id' => $restaurantId,
