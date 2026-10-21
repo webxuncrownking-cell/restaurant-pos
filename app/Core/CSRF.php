@@ -57,6 +57,20 @@ class CSRF
     }
 
     /**
+     * Backwards-compatible validator for legacy POST controllers.
+     * Invalid or missing tokens terminate the request before any mutation.
+     */
+    public static function validateToken(?string $token): void
+    {
+        if (!self::validate($token)) {
+            Response::html(
+                'Invalid or expired security token. Refresh the page and try again.',
+                419
+            );
+        }
+    }
+
+    /**
      * Output a hidden HTML input field containing the CSRF token.
      */
     public static function formField(): string
