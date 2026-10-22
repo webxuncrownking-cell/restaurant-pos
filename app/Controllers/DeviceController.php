@@ -123,6 +123,7 @@ class DeviceController
     public function updateAuthorizations(Request $request): void
     {
         Auth::requireAuth();
+        $isAjax = $request->isAjax();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
 
@@ -224,8 +225,41 @@ class DeviceController
             if (count($pinUpdates) > 0) {
                 $message .= ' Offline PIN saved for ' . count($pinUpdates) . ' staff member(s).';
             }
+            // Re-read configured status after commit so the UI confirms
+            // that the credentials persisted, not merely that UPDATE ran.
+            $configuredRows = Database::fetchAll(
+                "SELECT id, offline_pin_salt, offline_pin_hash
+                 FROM users
+                 WHERE restaurant_id = :restaurant_id AND status = 'active' AND deleted_at IS NULL",
+                [':restaurant_id' => $restaurantId]
+            );
+            $configuredUserIds = [];
+            foreach ($configuredRows as $row) {
+                if (!empty($row['offline_pin_salt'])
+                    && preg_match('/^[a-f0-9]{32}$/i', (string)$row['offline_pin_salt'])
+                    && !empty($row['offline_pin_hash'])
+                    && preg_match('/^[a-f0-9]{64}$/i', (string)$row['offline_pin_hash'])) {
+                    $configuredUserIds[] = (int)$row['id'];
+                }
+            }
+
+            if ($isAjax) {
+                Response::json([
+                    'status' => 'success',
+                    'message' => $message,
+                    'configured_user_ids' => $configuredUserIds,
+                    'authorized_user_ids' => $selectedUserIds
+                ]);
+            }
+
             $_SESSION['flash_success'] = $message;
         } catch (\Throwable $e) {
+            if ($isAjax) {
+                Response::json([
+                    'status' => 'error',
+                    'message' => $e->getMessage()
+                ], 422);
+            }
             $_SESSION['flash_error'] = $e->getMessage();
         }
 
