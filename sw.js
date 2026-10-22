@@ -5,7 +5,7 @@
  * This file lives at the application root (next to index.php) so its default
  * scope includes /pos when the app is installed under an XAMPP subdirectory.
  */
-const CACHE_NAME = 'restaurant-pos-shell-v2';
+const CACHE_NAME = 'restaurant-pos-shell-v3';
 const APP_BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '');
 const appUrl = (path) => `${APP_BASE_PATH}${path.startsWith('/') ? path : '/' + path}`;
 
@@ -90,7 +90,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for app/static assets; cache successful same-origin responses.
+  // Never cache authenticated/dynamic HTML pages such as /devices, /shifts,
+  // or /reports. A stale cached form can hide new validation handlers and
+  // make a successful code update appear to have no effect.
+  const acceptsHtml = (request.headers.get('accept') || '').includes('text/html');
+  if (request.mode === 'navigate' || acceptsHtml) {
+    event.respondWith(
+      fetch(request).catch(() => new Response(
+        '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title><body style="font-family:system-ui;padding:2rem"><h1>Admin pages require a connection</h1><p>Reconnect to open management pages. The offline POS is available at <a href="' + POS_URL + '">the POS terminal</a>.</p></body></html>',
+        { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+      ))
+    );
+    return;
+  }
+
+  // Only cache known static files. Never cache arbitrary JSON/API responses
+  // or PHP routes; /api/pos/bootstrap is handled explicitly above.
+  const isStaticAsset = /\\.(?:js|mjs|css|svg|png|jpe?g|webp|gif|ico|woff2?|ttf|eot|json)$/i.test(url.pathname);
+  if (!isStaticAsset) {
+    event.respondWith(
+      fetch(request).catch(() => new Response('Offline; this resource requires a connection.', {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+      }))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
