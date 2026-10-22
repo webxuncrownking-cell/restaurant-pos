@@ -202,7 +202,7 @@ class DeviceController
                 }
 
                 Database::commit();
-            } catch (\\Throwable $e) {
+            } catch (\Throwable $e) {
                 Database::rollBack();
                 throw $e;
             }
@@ -212,7 +212,7 @@ class DeviceController
                 $message .= ' Offline PIN saved for ' . count($pinUpdates) . ' staff member(s).';
             }
             $_SESSION['flash_success'] = $message;
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             $_SESSION['flash_error'] = $e->getMessage();
         }
 
