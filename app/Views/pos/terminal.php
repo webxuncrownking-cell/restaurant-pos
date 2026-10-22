@@ -437,7 +437,19 @@
       </div>
       <div class="modal-body p-4">
         <div class="mb-3">
-          <input type="password" id="pinDisplay" class="form-control form-control-lg bg-black border-secondary text-white text-center fs-2 font-monospace tracking-widest" maxlength="6" readonly placeholder="&bull; &bull; &bull; &bull;">
+          <input
+            type="password"
+            id="pinDisplay"
+            class="form-control form-control-lg bg-black border-secondary text-white text-center fs-2 font-monospace tracking-widest"
+            maxlength="6"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-label="Cashier PIN"
+            placeholder="&bull; &bull; &bull; &bull;"
+          >
         </div>
         <div id="pinError" class="text-danger small mb-3" style="display: none;"></div>
 
@@ -1317,9 +1329,11 @@
 
     // PIN Pad Lockout & Brute-Force Protection
     showLockModal() {
-      document.getElementById('pinDisplay').value = '';
+      const pinInput = document.getElementById('pinDisplay');
+      pinInput.value = '';
       document.getElementById('pinError').style.display = 'none';
       new bootstrap.Modal(document.getElementById('lockModal')).show();
+      window.setTimeout(() => pinInput.focus(), 150);
     },
 
     pinKey(num) {
@@ -1398,7 +1412,26 @@
   }
 
   window.posApp = app;
-  document.addEventListener('DOMContentLoaded', () => app.init());
+
+  // Support both hardware keyboards and the on-screen POS keypad. Keep
+  // keyboard input numeric-only and capped at six digits; Enter submits PIN.
+  document.addEventListener('DOMContentLoaded', () => {
+    const pinInput = document.getElementById('pinDisplay');
+    if (pinInput) {
+      pinInput.addEventListener('input', () => {
+        const digitsOnly = pinInput.value.replace(/[^0-9]/g, '').slice(0, 6);
+        if (pinInput.value !== digitsOnly) pinInput.value = digitsOnly;
+      });
+      pinInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          void app.pinSubmit();
+        }
+      });
+      document.getElementById('lockModal')?.addEventListener('shown.bs.modal', () => pinInput.focus());
+    }
+    app.init();
+  });
 })();
 </script>
 
