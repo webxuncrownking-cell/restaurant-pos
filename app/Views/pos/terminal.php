@@ -141,6 +141,9 @@
   </div>
 </header>
 
+<!-- Visible sync diagnostics: keep queued orders safe and explain retry failures to the cashier. -->
+<div id="posSyncNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="alert" aria-live="polite"></div>
+
 <!-- Main POS Workspace -->
 <div class="container-fluid p-0">
   <div class="row g-0">
@@ -527,7 +530,12 @@
       }
 
       // 4. Online/Offline Listeners
-      window.addEventListener('online', () => this.updateNetworkStatus(true));
+      window.addEventListener('online', () => {
+        this.updateNetworkStatus(true);
+        // Reconnect should resume queued orders automatically. syncQueue has
+        // a lock and remains idempotent on the server, so concurrent triggers are safe.
+        void this.syncQueue();
+      });
       window.addEventListener('offline', () => this.updateNetworkStatus(false));
       this.updateNetworkStatus(navigator.onLine);
 
@@ -558,6 +566,20 @@
     async refreshQueueCount() {
       const pending = await window.PosDB.getPendingOrders();
       document.getElementById('unsyncedCount').textContent = pending.length;
+    },
+
+    showSyncNotice(message, variant = 'warning') {
+      const notice = document.getElementById('posSyncNotice');
+      if (!notice) return;
+      notice.className = `alert alert-${variant} py-2 px-3 mx-3 mt-2 mb-0`;
+      notice.textContent = message;
+    },
+
+    clearSyncNotice() {
+      const notice = document.getElementById('posSyncNotice');
+      if (!notice) return;
+      notice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none';
+      notice.textContent = '';
     },
 
     setOrderType(type) {
@@ -1138,13 +1160,21 @@
       // cannot both submit the same pending batch.
       this.isSyncingQueue = true;
       const syncBtn = document.getElementById('posSyncBtn');
+      let pendingOrderCount = 0;
 
       try {
         const pending = await window.PosDB.getPendingOrders();
-        if (pending.length === 0) return;
+        pendingOrderCount = pending.length;
+        if (pending.length === 0) {
+          this.clearSyncNotice();
+          return;
+        }
 
-        syncBtn.classList.add('disabled');
-        syncBtn.querySelector('i').classList.add('spin-icon');
+        if (syncBtn) {
+          syncBtn.classList.add('disabled');
+          const spinner = syncBtn.querySelector('i');
+          if (spinner) spinner.classList.add('spin-icon');
+        }
 
         const response = await fetch('<?= BASE_URL ?>/api/pos/sync', {
           method: 'POST',
@@ -1154,12 +1184,21 @@
 
         const res = await response.json().catch(() => ({}));
         if (!response.ok) {
-          console.error('[POS Sync] Server rejected queued order batch:', response.status, res.error || res);
+          const detail = res && res.error ? String(res.error) : `HTTP ${response.status}`;
+          console.error('[POS Sync] Server rejected queued order batch:', response.status, detail);
+          this.showSyncNotice(
+            `Sync failed for ${pending.length} queued order(s): ${detail}. The orders remain saved locally; do not submit them again.`,
+            'danger'
+          );
           return;
         }
 
         if (res.status !== 'success' || !Array.isArray(res.results)) {
           console.error('[POS Sync] Unexpected server response for queued orders:', res);
+          this.showSyncNotice(
+            `The server returned an unexpected sync response. ${pending.length} order(s) remain queued locally; do not submit them again.`,
+            'danger'
+          );
           return;
         }
 
@@ -1175,11 +1214,36 @@
             console.error('[POS Sync] An order was not acknowledged by the server:', result);
           }
         }
+
+        const remaining = await window.PosDB.getPendingOrders();
+        if (remaining.length > 0) {
+          const rejected = (res.results || []).find(result =>
+            !result ||
+            !['synced', 'already_synced'].includes(result.status) ||
+            !result.client_uuid ||
+            Number(result.server_order_id) <= 0
+          );
+          const reason = rejected && (rejected.error || rejected.message || rejected.reason);
+          this.showSyncNotice(
+            `Sync did not complete. ${remaining.length} order(s) remain queued locally${reason ? `: ${String(reason)}` : ''}. Do not submit them again.`,
+            'warning'
+          );
+        } else {
+          this.clearSyncNotice();
+        }
       } catch (err) {
         console.warn('[POS Sync] Background sync delayed:', err);
+        const detail = err && err.message ? String(err.message) : 'Unknown sync error';
+        this.showSyncNotice(
+          `Could not sync ${pendingOrderCount || 'the queued'} order(s): ${detail}. Queued orders remain saved locally; do not submit them again.`,
+          'danger'
+        );
       } finally {
-        syncBtn.classList.remove('disabled');
-        syncBtn.querySelector('i').classList.remove('spin-icon');
+        if (syncBtn) {
+          syncBtn.classList.remove('disabled');
+          const spinner = syncBtn.querySelector('i');
+          if (spinner) spinner.classList.remove('spin-icon');
+        }
         this.isSyncingQueue = false;
         try {
           await this.refreshQueueCount();
