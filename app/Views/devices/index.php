@@ -230,6 +230,7 @@
                                 </div>
                               <?php endforeach; ?>
                             </div>
+                            <div class="mt-3" data-staff-save-feedback role="status" aria-live="polite"></div>
                           </div>
                           <div class="modal-footer">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
@@ -291,6 +292,100 @@
     const staffRow = input.closest('.list-group-item');
     const checkbox = staffRow ? staffRow.querySelector('input[name="user_ids[]"]') : null;
     if (checkbox) checkbox.checked = true;
+  });
+
+  // Save authorizations via AJAX so the outcome and server validation errors
+  // remain visible inside the modal instead of being hidden behind a redirect.
+  document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.action.endsWith('/devices/authorizations')) return;
+
+    event.preventDefault();
+    if (form.dataset.saving === '1') return;
+
+    const feedback = form.querySelector('[data-staff-save-feedback]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton ? submitButton.textContent : 'Save Authorizations';
+    const showFeedback = (message, kind) => {
+      if (!feedback) return;
+      feedback.innerHTML = '';
+      const alert = document.createElement('div');
+      alert.className = 'alert alert-' + kind + ' py-2 mb-0 small';
+      alert.setAttribute('role', 'alert');
+      alert.textContent = message;
+      feedback.appendChild(alert);
+    };
+
+    form.dataset.saving = '1';
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Saving…';
+    }
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        credentials: 'same-origin',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        await response.text();
+        if (response.status === 419) {
+          throw new Error('Security token expired. Reload the Terminals page and reopen Staff Access.');
+        }
+        throw new Error('The server returned a non-JSON response (HTTP ' + response.status + '). Check the PHP error log.');
+      }
+
+      const result = await response.json();
+      if (!response.ok || result.status !== 'success') {
+        throw new Error(result.message || 'The server rejected the staff authorization save.');
+      }
+
+      const configuredIds = new Set((result.configured_user_ids || []).map(Number));
+      const authorizedIds = new Set((result.authorized_user_ids || []).map(Number));
+
+      form.querySelectorAll('input[name^="offline_pins["]').forEach((input) => {
+        const match = input.name.match(/^offline_pins\[(\d+)\]$/);
+        if (!match) return;
+        const userId = Number(match[1]);
+        const row = input.closest('.list-group-item');
+        const label = row ? row.querySelector('label.form-label') : null;
+        const checkbox = row ? row.querySelector('input[name="user_ids[]"]') : null;
+
+        if (checkbox) checkbox.checked = authorizedIds.has(userId);
+
+        if (label) {
+          const oldBadge = label.querySelector('.badge');
+          if (oldBadge) oldBadge.remove();
+          const badge = document.createElement('span');
+          badge.className = configuredIds.has(userId)
+            ? 'badge bg-success-subtle text-success ms-1'
+            : 'badge bg-warning-subtle text-dark ms-1';
+          badge.textContent = configuredIds.has(userId) ? 'Configured' : 'Not configured';
+          label.appendChild(document.createTextNode(' '));
+          label.appendChild(badge);
+        }
+
+        // Never keep the newly submitted PIN visible in the form.
+        input.value = '';
+      });
+
+      showFeedback(result.message || 'Staff authorizations saved and verified.', 'success');
+    } catch (error) {
+      showFeedback(error && error.message ? error.message : 'Unable to save staff authorizations.', 'danger');
+    } finally {
+      form.dataset.saving = '0';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = originalButtonText;
+      }
+    }
   });
 </script>
 
