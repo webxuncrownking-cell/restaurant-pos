@@ -675,8 +675,36 @@ assertTest("Offline Order Synced Successfully", $syncRes['status'] === 'synced' 
 $retryRes = \App\Services\PosSyncService::processOrderSync(1, $orderPayload);
 assertTest("Idempotency: Duplicate Sync Acknowledged Without Duplication", $retryRes['status'] === 'already_synced' && $retryRes['server_order_id'] === $syncRes['server_order_id']);
 
+// The sync service must rebuild prices from the server catalog instead of trusting
+// the deliberately stale client-side line prices and total in $orderPayload.
+$expectedCatalogTotal = 0.0;
+foreach ($orderPayload['items'] as $fixtureItem) {
+    $fixtureProduct = Database::fetchOne(
+        "SELECT base_price FROM products WHERE restaurant_id = ? AND id = ? AND is_active = 1",
+        [1, (int)$fixtureItem['product_id']]
+    );
+    $fixtureVariantAdditional = 0.0;
+    if (!empty($fixtureItem['variant_id'])) {
+        $fixtureVariant = Database::fetchOne(
+            "SELECT additional_price FROM product_variants
+             WHERE restaurant_id = ? AND product_id = ? AND id = ? AND is_active = 1",
+            [1, (int)$fixtureItem['product_id'], (int)$fixtureItem['variant_id']]
+        );
+        $fixtureVariantAdditional = (float)($fixtureVariant['additional_price'] ?? 0);
+    }
+    $expectedCatalogTotal += (
+        (float)$fixtureProduct['base_price'] + $fixtureVariantAdditional
+    ) * (float)$fixtureItem['quantity'];
+}
+$expectedCatalogTotal = round($expectedCatalogTotal, 2);
+
 $orderInDb = Database::fetchOne("SELECT total_amount, payment_status FROM orders WHERE id = ?", [$syncRes['server_order_id']]);
-assertTest("Order Stored in DB with Correct Total (₱380.00)", abs((float)$orderInDb['total_amount'] - 380.00) < 0.01 && $orderInDb['payment_status'] === 'paid');
+assertTest(
+    "Order Total Rebuilt from Authoritative Catalog Prices",
+    abs((float)$orderInDb['total_amount'] - $expectedCatalogTotal) < 0.01
+        && abs((float)$orderInDb['total_amount'] - (float)$orderPayload['total_amount']) > 0.01
+        && $orderInDb['payment_status'] === 'paid'
+);
 
 // Cleanup test sync order and related rows
 Database::query("DELETE FROM payments WHERE order_id = ?", [$syncRes['server_order_id']]);
