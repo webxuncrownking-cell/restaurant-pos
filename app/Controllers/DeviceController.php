@@ -133,6 +133,19 @@ class DeviceController
         )));
         $pinInputs = (array)$request->post('offline_pins', []);
 
+        // Entering a PIN implicitly selects that staff member for offline
+        // authorization; this prevents silent failures when the checkbox was
+        // accidentally left unchecked in the modal.
+        foreach ($pinInputs as $rawUserId => $rawPin) {
+            if (trim((string)$rawPin) !== '') {
+                $selectedUserIds[] = (int)$rawUserId;
+            }
+        }
+        $selectedUserIds = array_values(array_unique(array_filter(
+            array_map('intval', $selectedUserIds),
+            static fn(int $id): bool => $id > 0
+        )));
+
         try {
             if ($deviceId <= 0 || !DeviceService::getDeviceById($restaurantId, $deviceId)) {
                 throw new Exception('The selected POS device was not found for this restaurant.');
