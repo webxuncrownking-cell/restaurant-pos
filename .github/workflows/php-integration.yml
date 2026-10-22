@@ -1,4 +1,4 @@
-Full MySQL Integration Tests
+name: Full MySQL Integration Tests
 
 on:
   push:
