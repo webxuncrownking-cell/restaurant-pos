@@ -164,24 +164,51 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
                           <div class="modal-body">
-                            <p class="small text-muted mb-3">
-                              Select staff members authorized to log in and conduct sales on this terminal device while offline:
+                            <p class="small text-muted mb-2">
+                              Select staff members authorized to use this terminal while offline.
                             </p>
-                            <?php 
-                              $deviceAuths = \App\Services\DeviceService::getDeviceStaff((int)$dev['restaurant_id'], (int)$dev['id']);
-                              $authMap = array_column($deviceAuths, 'user_id');
+                            <div class="alert alert-info small py-2">
+                              Set or reset an offline PIN for each selected staff member. PINs must contain 4–6 digits.
+                              Leave the PIN field blank to keep the current PIN. No shared demo PIN is used.
+                            </div>
+                            <?php
+                              $deviceAuths = \\App\\Services\\DeviceService::getDeviceStaff((int)$dev['restaurant_id'], (int)$dev['id']);
+                              $authMap = array_map('intval', array_column($deviceAuths, 'user_id'));
                             ?>
                             <div class="list-group">
-                              <?php foreach ($staffMembers as $sm): 
-                                $isAuth = in_array($sm['id'], $authMap);
+                              <?php foreach ($staffMembers as $sm):
+                                $staffId = (int)$sm['id'];
+                                $isAuth = in_array($staffId, $authMap, true);
                               ?>
-                                <label class="list-group-item d-flex gap-3 align-items-center">
-                                  <input class="form-check-input flex-shrink-0" type="checkbox" name="user_ids[]" value="<?= $sm['id'] ?>" <?= $isAuth ? 'checked' : '' ?>>
-                                  <span class="pt-1 form-checked-content">
-                                    <strong><?= htmlspecialchars($sm['full_name']) ?></strong>
-                                    <small class="d-block text-muted">@<?= htmlspecialchars($sm['username']) ?> &bull; <?= htmlspecialchars($sm['role_name']) ?></small>
-                                  </span>
-                                </label>
+                                <div class="list-group-item">
+                                  <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="device_<?= (int)$dev['id'] ?>_staff_<?= $staffId ?>" name="user_ids[]" value="<?= $staffId ?>" <?= $isAuth ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="device_<?= (int)$dev['id'] ?>_staff_<?= $staffId ?>">
+                                      <strong><?= htmlspecialchars($sm['full_name']) ?></strong>
+                                      <small class="d-block text-muted">@<?= htmlspecialchars($sm['username']) ?> &bull; <?= htmlspecialchars($sm['role_name']) ?></small>
+                                    </label>
+                                  </div>
+                                  <label class="form-label small mb-1" for="device_<?= (int)$dev['id'] ?>_pin_<?= $staffId ?>">
+                                    Offline PIN
+                                    <?php if (!empty($sm['offline_pin_configured'])): ?>
+                                      <span class="badge bg-success-subtle text-success">Configured</span>
+                                    <?php else: ?>
+                                      <span class="badge bg-warning-subtle text-dark">Not configured</span>
+                                    <?php endif; ?>
+                                  </label>
+                                  <input
+                                    class="form-control form-control-sm"
+                                    type="password"
+                                    id="device_<?= (int)$dev['id'] ?>_pin_<?= $staffId ?>"
+                                    name="offline_pins[<?= $staffId ?>]"
+                                    inputmode="numeric"
+                                    pattern="[0-9]{4,6}"
+                                    minlength="4"
+                                    maxlength="6"
+                                    autocomplete="new-password"
+                                    placeholder="Enter 4–6 digits to set/reset"
+                                  >
+                                </div>
                               <?php endforeach; ?>
                             </div>
                           </div>
