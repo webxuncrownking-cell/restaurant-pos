@@ -1,6 +1,25 @@
 <?php include APP_ROOT . '/app/Views/layouts/header.php'; ?>
 <?php include APP_ROOT . '/app/Views/layouts/navbar.php'; ?>
 
+<?php if (!empty($_SESSION['flash_success'])): ?>
+  <div class="container pt-3">
+    <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+      <?= htmlspecialchars((string)$_SESSION['flash_success'], ENT_QUOTES, 'UTF-8') ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  </div>
+  <?php unset($_SESSION['flash_success']); ?>
+<?php endif; ?>
+<?php if (!empty($_SESSION['flash_error'])): ?>
+  <div class="container pt-3">
+    <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+      <?= htmlspecialchars((string)$_SESSION['flash_error'], ENT_QUOTES, 'UTF-8') ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  </div>
+  <?php unset($_SESSION['flash_error']); ?>
+<?php endif; ?>
+
 <div class="container py-4">
   <!-- Page Header -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -260,5 +279,19 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Entering an offline PIN also selects that staff member for offline access.
+  // The server repeats this behavior as a safeguard against unchecked boxes.
+  document.addEventListener('input', (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.name.startsWith('offline_pins[')) return;
+    if (input.value.trim() === '') return;
+
+    const staffRow = input.closest('.list-group-item');
+    const checkbox = staffRow ? staffRow.querySelector('input[name="user_ids[]"]') : null;
+    if (checkbox) checkbox.checked = true;
+  });
+</script>
 
 <?php include APP_ROOT . '/app/Views/layouts/footer.php'; ?>
