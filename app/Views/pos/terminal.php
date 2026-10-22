@@ -488,6 +488,7 @@
     lockoutUntil: 0,
     isProcessingSale: false,
     isSyncingQueue: false,
+    offlineLease: null,
 
     async init() {
       // 1. Init IndexedDB
@@ -524,6 +525,13 @@
         await window.PosDB.saveTables(this.tables);
       }
 
+      // Restore the last cached offline authorization lease, then refresh staff
+      // credentials from the authenticated bootstrap API whenever we're online.
+      this.offlineLease = await window.PosDB.getLease();
+      if (navigator.onLine) {
+        await this.refreshOfflineAuthorizationCache();
+      }
+
       // 3. Register Service Worker
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js', { scope: '<?= BASE_URL ?>/' }).catch((error) => {
@@ -534,9 +542,8 @@
       // 4. Online/Offline Listeners
       window.addEventListener('online', () => {
         this.updateNetworkStatus(true);
-        // Reconnect should resume queued orders automatically. syncQueue has
-        // a lock and remains idempotent on the server, so concurrent triggers are safe.
-        void this.syncQueue();
+        // Refresh authorized offline credentials first, then resume queued orders.
+        void this.refreshOfflineAuthorizationCache().finally(() => this.syncQueue());
       });
       window.addEventListener('offline', () => this.updateNetworkStatus(false));
       this.updateNetworkStatus(navigator.onLine);
@@ -562,6 +569,58 @@
       } else {
         el.className = 'badge bg-warning bg-opacity-25 text-warning border border-warning d-flex align-items-center gap-1 px-2 py-1';
         text.textContent = 'Offline (PWA)';
+      }
+    },
+
+    async refreshOfflineAuthorizationCache() {
+      if (!navigator.onLine) return false;
+
+      try {
+        const response = await fetch(
+          '<?= BASE_URL ?>/api/pos/bootstrap?device_id=' + encodeURIComponent(deviceId),
+          {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { 'Accept': 'application/json' }
+          }
+        );
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload || !Array.isArray(payload.staff)) {
+          const detail = payload && payload.error ? String(payload.error) : 'Bootstrap request failed.';
+          throw new Error(detail);
+        }
+
+        await window.PosDB.saveStaff(payload.staff.filter(staff =>
+          staff &&
+          Number(staff.id) > 0 &&
+          typeof staff.pin_salt === 'string' &&
+          typeof staff.pin_hash === 'string' &&
+          staff.pin_salt.length > 0 &&
+          staff.pin_hash.length === 64
+        ));
+
+        if (payload.lease && payload.lease.lease_id) {
+          await window.PosDB.saveLease(payload.lease);
+          this.offlineLease = payload.lease;
+        }
+        if (payload.catalog_version && Number(payload.catalog_version.id) > 0) {
+          this.catalog.version = {
+            ...(this.catalog.version || {}),
+            ...payload.catalog_version
+          };
+          await window.PosDB.saveCatalog(
+            this.catalog.products || [],
+            this.catalog.categories || [],
+            this.catalog.version
+          );
+        }
+
+        console.info('[POS Offline Auth] Cached ' + payload.staff.length + ' authorized staff credential(s).');
+        return true;
+      } catch (error) {
+        console.warn('[POS Offline Auth] Unable to refresh offline authorization cache:', error);
+        return false;
       }
     },
 
@@ -1026,6 +1085,7 @@
           table_id: this.currentTableId,
           cashier_id: cashierId,
           catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
+          offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
           subtotal: calcs.subtotal,
           discount_amount: calcs.discount,
           tax_amount: calcs.vat,
@@ -1291,17 +1351,40 @@
         return;
       }
 
-      // Default demo pin 1234 or verify against cached staff
-      if (pin === '1234' || pin === '0000') {
-        this.failedPinAttempts = 0;
-        bootstrap.Modal.getInstance(document.getElementById('lockModal')).hide();
+      if (!/^[0-9]{4,6}$/.test(pin)) {
+        errEl.textContent = 'PIN must contain 4 to 6 digits.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const staff = await window.PosDB.getStaff(cashierId);
+        if (!staff || !staff.pin_salt || !staff.pin_hash) {
+          errEl.textContent = navigator.onLine
+            ? 'No offline PIN is configured for this cashier on this device. Open Terminals → Staff Authorizations and set one first.'
+            : 'This cashier has no authorized offline PIN cached on this device. Reconnect and configure the PIN before locking the terminal.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        const valid = await window.PosDB.verifyStaffPin(pin, staff.pin_salt, staff.pin_hash);
+        if (valid) {
+          this.failedPinAttempts = 0;
+          const modal = bootstrap.Modal.getInstance(document.getElementById('lockModal'));
+          if (modal) modal.hide();
+          return;
+        }
+      } catch (error) {
+        console.error('[POS Offline Auth] PIN verification failed:', error);
+        errEl.textContent = 'PIN verification could not be completed. Reconnect and check the device authorization setup.';
+        errEl.style.display = 'block';
         return;
       }
 
       this.failedPinAttempts += 1;
       if (this.failedPinAttempts >= 5) {
         this.lockoutUntil = Date.now() + 60000;
-        errEl.textContent = '5 failed attempts! Terminal locked for 60 seconds.';
+        errEl.textContent = '5 failed attempts! Locked for 60 seconds.';
       } else {
         errEl.textContent = `Invalid PIN (${5 - this.failedPinAttempts} attempts left).`;
       }
