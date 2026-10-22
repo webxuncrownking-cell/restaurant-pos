@@ -243,6 +243,16 @@ class DeviceController
                 }
             }
 
+            $expectedPinUserIds = array_map('intval', array_keys($pinUpdates));
+            $missingPinUserIds = array_values(array_diff($expectedPinUserIds, $configuredUserIds));
+            if (!empty($missingPinUserIds)) {
+                throw new \\RuntimeException(
+                    'The authorization form was processed, but the saved PIN could not be verified for staff ID(s): '
+                    . implode(', ', $missingPinUserIds)
+                    . '. No PIN was reported as configured; check the local database schema and PHP error log.'
+                );
+            }
+
             if ($isAjax) {
                 Response::json([
                     'status' => 'success',
