@@ -106,7 +106,7 @@ self.addEventListener('fetch', (event) => {
 
   // Only cache known static files. Never cache arbitrary JSON/API responses
   // or PHP routes; /api/pos/bootstrap is handled explicitly above.
-  const isStaticAsset = /\\.(?:js|mjs|css|svg|png|jpe?g|webp|gif|ico|woff2?|ttf|eot|json)$/i.test(url.pathname);
+  const isStaticAsset = /\.(?:js|mjs|css|svg|png|jpe?g|webp|gif|ico|woff2?|ttf|eot|json)$/i.test(url.pathname);
   if (!isStaticAsset) {
     event.respondWith(
       fetch(request).catch(() => new Response('Offline; this resource requires a connection.', {
