@@ -581,7 +581,7 @@
         const notice = document.getElementById('posOfflineGuardNotice');
         if (notice) {
           notice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0';
-          notice.textContent = 'Reload shortcuts are disabled while offline. Keep using the POS; reconnect before refreshing the page.';
+          notice.textContent = 'A reload shortcut was detected. Chrome may still reload the page; the unfinished ticket is saved locally and will be restored when the POS opens again.';
         }
       }, true);
 
