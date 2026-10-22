@@ -1,0 +1,62 @@
+name: Full MySQL Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: Full MySQL integration suite
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: restaurant_pos
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+    env:
+      DB_DRIVER: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: restaurant_pos
+      DB_USER: root
+      DB_PASS: root
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo_mysql
+          coverage: none
+      - name: Configure database connection
+        run: cp config/database.example.php config/database.php
+      - name: Import schema
+        run: mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/schema.sql
+      - name: Diagnose schema import failure
+        if: failure()
+        run: |
+          set +e
+          mysql --host=127.0.0.1 --user=root --password=root --batch --raw -e "SHOW ENGINE INNODB STATUS" > /tmp/innodb-status.txt 2>&1
+          cat /tmp/innodb-status.txt | sed -n '/LATEST FOREIGN KEY ERROR/,/LATEST DETECTED DEADLOCK/p'
+          cat /tmp/innodb-status.txt | tail -n 120
+      - name: Import demo seed data
+        run: mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/seed.sql
+      - name: Run integration tests
+        run: php tests/run_tests.php

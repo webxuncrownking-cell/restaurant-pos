@@ -86,16 +86,28 @@
       });
     },
 
-    // Save full catalog snapshot
+    // Save full catalog snapshot atomically in the local offline database.
     async saveCatalog(products, categories, versionInfo) {
-      await this.tx(['catalog', 'meta'], 'readwrite', (stores) => {
-        const catStore = this.db.transaction(['catalog', 'meta'], 'readwrite').objectStore('catalog');
-        catStore.clear();
-        products.forEach(p => catStore.put(p));
+      if (!this.db) await this.init(this.tenantId, this.deviceId);
 
-        const metaStore = this.db.transaction(['catalog', 'meta'], 'readwrite').objectStore('meta');
-        metaStore.put({ key: 'catalog_version', value: versionInfo });
-        metaStore.put({ key: 'categories', value: categories });
+      return new Promise((resolve, reject) => {
+        let transaction;
+        try {
+          transaction = this.db.transaction(['catalog', 'meta'], 'readwrite');
+          const catalogStore = transaction.objectStore('catalog');
+          const metaStore = transaction.objectStore('meta');
+
+          catalogStore.clear();
+          (Array.isArray(products) ? products : []).forEach(product => catalogStore.put(product));
+          metaStore.put({ key: 'catalog_version', value: versionInfo });
+          metaStore.put({ key: 'categories', value: Array.isArray(categories) ? categories : [] });
+
+          transaction.oncomplete = () => resolve(true);
+          transaction.onerror = () => reject(transaction.error || new Error('Unable to save POS catalog.'));
+          transaction.onabort = () => reject(transaction.error || new Error('POS catalog save was aborted.'));
+        } catch (error) {
+          reject(error);
+        }
       });
     },
 
@@ -157,6 +169,29 @@
       });
     },
 
+    // Save or clear the in-progress ticket draft in IndexedDB so an
+    // accidental offline page reload does not lose the current cart.
+    async saveDraftTicket(draft) {
+      return this.tx('meta', 'readwrite', (store) => {
+        if (!draft || !Array.isArray(draft.ticket) || draft.ticket.length === 0) {
+          store.delete('draft_ticket');
+          return;
+        }
+        store.put({ key: 'draft_ticket', value: draft });
+      });
+    },
+
+    // Load the last unfinished ticket draft for this tenant/device.
+    async getDraftTicket() {
+      if (!this.db) await this.init(this.tenantId, this.deviceId);
+      return new Promise((resolve, reject) => {
+        const store = this.db.transaction('meta', 'readonly').objectStore('meta');
+        const req = store.get('draft_ticket');
+        req.onsuccess = () => resolve(req.result ? req.result.value : null);
+        req.onerror = () => reject(req.error || new Error('Unable to restore saved POS ticket.'));
+      });
+    },
+
     // Save Active Authorization Lease
     async saveLease(leaseData) {
       return this.tx('meta', 'readwrite', (store) => {
@@ -199,15 +234,24 @@
       orderData.queued_at = new Date().toISOString();
 
       return new Promise((resolve, reject) => {
-        const transaction = this.db.transaction('orders_queue', 'readwrite');
+        // Commit the sale to the offline queue and discard the live draft in
+        // the same transaction. A reload after checkout must not resurrect an
+        // already-enqueued ticket and tempt the cashier to submit it twice.
+        const transaction = this.db.transaction(['orders_queue', 'meta'], 'readwrite');
         const store = transaction.objectStore('orders_queue');
         const req = store.put(orderData);
+        transaction.objectStore('meta').delete('draft_ticket');
 
-        req.onsuccess = () => {
+        transaction.oncomplete = () => {
           console.log(`[PosDB] Enqueued order #${orderData.order_number} (Seq #${seq})`);
           resolve(orderData);
         };
-        req.onerror = (e) => reject(e.target.error);
+        transaction.onerror = () => reject(transaction.error || new Error('Unable to save order to the offline queue.'));
+        transaction.onabort = () => reject(transaction.error || new Error('Offline order transaction was aborted.'));
+        req.onerror = () => {
+          try { transaction.abort(); } catch (_) {}
+          reject(req.error || new Error('Unable to queue order.'));
+        };
       });
     },
 

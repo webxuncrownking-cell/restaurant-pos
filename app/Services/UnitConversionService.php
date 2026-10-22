@@ -58,41 +58,93 @@ class UnitConversionService
         $from = strtolower(trim($fromUnit));
         $to = strtolower(trim($toUnit));
 
+        if (!is_finite($quantity) || $quantity < 0) {
+            throw new InvalidArgumentException('Quantity must be a finite, non-negative number.');
+        }
+        if ($from === '' || $to === '') {
+            throw new InvalidArgumentException('Both source and target units are required.');
+        }
         if ($from === $to) {
             return $quantity;
         }
 
-        // 1. Check ingredient-specific packaging conversions (e.g. 1 tray_30 = 30 pcs)
+        // With an ingredient context, normalize BOTH units through that ingredient's
+        // base unit. This correctly handles configured package factors such as tray_30,
+        // bottle_1L, and sack_25kg, including package-to-kg conversions.
         if ($ingredientId !== null) {
-            $custom = Database::fetchOne(
-                "SELECT multiplier_to_base FROM ingredient_unit_conversions 
+            $ingredient = Database::fetchOne(
+                "SELECT base_unit FROM ingredients WHERE id = ? AND restaurant_id = ? AND is_active = 1",
+                [$ingredientId, $restaurantId]
+            );
+            if (!$ingredient) {
+                throw new InvalidArgumentException('The selected ingredient is not available for this restaurant.');
+            }
+            $baseUnit = (string)$ingredient['base_unit'];
+
+            $fromCustom = Database::fetchOne(
+                "SELECT multiplier_to_base FROM ingredient_unit_conversions
                  WHERE restaurant_id = ? AND ingredient_id = ? AND LOWER(unit_name) = ?",
                 [$restaurantId, $ingredientId, $from]
             );
+            $toCustom = Database::fetchOne(
+                "SELECT multiplier_to_base FROM ingredient_unit_conversions
+                 WHERE restaurant_id = ? AND ingredient_id = ? AND LOWER(unit_name) = ?",
+                [$restaurantId, $ingredientId, $to]
+            );
 
-            if ($custom && (float)$custom['multiplier_to_base'] > 0) {
-                return $quantity * (float)$custom['multiplier_to_base'];
+            if ($fromCustom !== null) {
+                $fromFactor = (float)$fromCustom['multiplier_to_base'];
+            } elseif (isset(self::STANDARD_CONVERSIONS[$from])) {
+                $fromData = self::STANDARD_CONVERSIONS[$from];
+                if ($fromData['base'] !== $baseUnit) {
+                    throw new InvalidArgumentException("Unit '{$fromUnit}' is incompatible with ingredient base unit '{$baseUnit}'.");
+                }
+                $fromFactor = (float)$fromData['factor'];
+            } elseif ($from === $baseUnit) {
+                $fromFactor = 1.0;
+            } else {
+                throw new InvalidArgumentException("No conversion rule found from '{$fromUnit}' for this ingredient.");
             }
+
+            if ($fromFactor <= 0 || !is_finite($fromFactor)) {
+                throw new InvalidArgumentException("Invalid conversion factor for unit '{$fromUnit}'.");
+            }
+            $baseQuantity = $quantity * $fromFactor;
+
+            if ($to === $baseUnit) {
+                return $baseQuantity;
+            }
+            if ($toCustom !== null) {
+                $toFactor = (float)$toCustom['multiplier_to_base'];
+                if ($toFactor <= 0 || !is_finite($toFactor)) {
+                    throw new InvalidArgumentException("Invalid conversion factor for unit '{$toUnit}'.");
+                }
+                return $baseQuantity / $toFactor;
+            }
+            if (isset(self::STANDARD_CONVERSIONS[$to])) {
+                $toData = self::STANDARD_CONVERSIONS[$to];
+                if ($toData['base'] !== $baseUnit) {
+                    throw new InvalidArgumentException("Unit '{$toUnit}' is incompatible with ingredient base unit '{$baseUnit}'.");
+                }
+                return $baseQuantity / (float)$toData['factor'];
+            }
+            throw new InvalidArgumentException("No conversion rule found to '{$toUnit}' for this ingredient.");
         }
 
-        // 2. Fallback to standard metric conversions
+        // Without an ingredient, only standard dimensional units are safe to convert.
         if (isset(self::STANDARD_CONVERSIONS[$from], self::STANDARD_CONVERSIONS[$to])) {
             $fromData = self::STANDARD_CONVERSIONS[$from];
             $toData = self::STANDARD_CONVERSIONS[$to];
-
             if ($fromData['base'] !== $toData['base']) {
                 throw new InvalidArgumentException(
                     "Cannot convert between incompatible dimensions: '{$from}' ({$fromData['base']}) and '{$to}' ({$toData['base']})."
                 );
             }
-
-            // Convert to common base unit, then to target unit
-            $baseQty = $quantity * $fromData['factor'];
-            return $baseQty / $toData['factor'];
+            return ($quantity * (float)$fromData['factor']) / (float)$toData['factor'];
         }
 
         throw new InvalidArgumentException(
-            "No conversion rule found from '{$fromUnit}' to '{$toUnit}' for restaurant ID {$restaurantId}."
+            "No conversion rule found from '{$fromUnit}' to '{$toUnit}' without an ingredient context."
         );
     }
 
@@ -105,11 +157,15 @@ class UnitConversionService
         int $conversionId,
         float $packageCount
     ): array {
+        if ($restaurantId <= 0 || $conversionId <= 0 || !is_finite($packageCount) || $packageCount <= 0) {
+            throw new InvalidArgumentException('Restaurant, packaging unit, and package count must be valid positive values.');
+        }
+
         $conv = Database::fetchOne(
-            "SELECT c.*, i.base_unit, i.name as ingredient_name, i.cost_per_base_unit 
+            "SELECT c.*, i.base_unit, i.name as ingredient_name, i.cost_per_base_unit
              FROM ingredient_unit_conversions c
              JOIN ingredients i ON c.ingredient_id = i.id AND c.restaurant_id = i.restaurant_id
-             WHERE c.id = ? AND c.restaurant_id = ?",
+             WHERE c.id = ? AND c.restaurant_id = ? AND i.is_active = 1",
             [$conversionId, $restaurantId]
         );
 
@@ -118,7 +174,13 @@ class UnitConversionService
         }
 
         $multiplier = (float)$conv['multiplier_to_base'];
+        if (!is_finite($multiplier) || $multiplier <= 0) {
+            throw new InvalidArgumentException('The selected packaging conversion has an invalid multiplier.');
+        }
         $totalBaseQuantity = $packageCount * $multiplier;
+        if (!is_finite($totalBaseQuantity) || $totalBaseQuantity <= 0) {
+            throw new InvalidArgumentException('The normalized stock quantity is invalid.');
+        }
         $costPerBase = (float)$conv['cost_per_base_unit'];
 
         return [

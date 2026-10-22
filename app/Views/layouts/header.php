@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="manifest" href="<?= htmlspecialchars(BASE_URL . '/manifest.json', ENT_QUOTES, 'UTF-8') ?>">
   <title><?= htmlspecialchars($title ?? 'Restaurant POS & Management') ?></title>
   
   <!-- CSRF Meta Tag for Fetch API Requests -->

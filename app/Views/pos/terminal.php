@@ -94,7 +94,7 @@
 <!-- Top POS Header Bar -->
 <header class="pos-header py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
   <div class="d-flex align-items-center gap-3">
-    <a href="<?= BASE_URL ?>/dashboard" class="btn btn-sm btn-outline-secondary text-white-50">
+    <a id="posBackToSaaS" href="<?= BASE_URL ?>/dashboard" class="btn btn-sm btn-outline-secondary text-white-50 d-none" aria-hidden="true" tabindex="-1">
       <i class="bi bi-arrow-left me-1"></i> Back to SaaS
     </a>
     <div class="fw-bold fs-5 d-flex align-items-center gap-2">
@@ -140,6 +140,12 @@
     </div>
   </div>
 </header>
+
+<!-- Offline navigation/reload guard notices are separate from sync errors. -->
+<div id="posOfflineGuardNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="status" aria-live="polite"></div>
+
+<!-- Visible sync diagnostics: keep queued orders safe and explain retry failures to the cashier. -->
+<div id="posSyncNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="alert" aria-live="polite"></div>
 
 <!-- Main POS Workspace -->
 <div class="container-fluid p-0">
@@ -434,7 +440,19 @@
       </div>
       <div class="modal-body p-4">
         <div class="mb-3">
-          <input type="password" id="pinDisplay" class="form-control form-control-lg bg-black border-secondary text-white text-center fs-2 font-monospace tracking-widest" maxlength="6" readonly placeholder="&bull; &bull; &bull; &bull;">
+          <input
+            type="password"
+            id="pinDisplay"
+            class="form-control form-control-lg bg-black border-secondary text-white text-center fs-2 font-monospace tracking-widest"
+            maxlength="6"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-label="Cashier PIN"
+            placeholder="&bull; &bull; &bull; &bull;"
+          >
         </div>
         <div id="pinError" class="text-danger small mb-3" style="display: none;"></div>
 
@@ -459,7 +477,7 @@
 </div>
 
 <!-- Load Client IndexedDB Database Script -->
-<script src="/public/assets/js/pos-db.js"></script>
+<script src="<?= BASE_URL ?>/public/assets/js/pos-db.js"></script>
 
 <!-- Embedded Client POS Application Logic -->
 <script>
@@ -483,10 +501,37 @@
     activeItemForModal: null,
     failedPinAttempts: 0,
     lockoutUntil: 0,
+    isProcessingSale: false,
+    isSyncingQueue: false,
+    offlineLease: null,
+    restoredDraftTicket: false,
 
     async init() {
       // 1. Init IndexedDB
       await window.PosDB.init(tenantId, deviceId);
+
+      // Use delegated click handling for ticket controls because ticket markup
+      // is rebuilt with innerHTML after every cart change.
+      const ticketContainer = document.getElementById('ticketItemsList');
+      ticketContainer.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-ticket-action]');
+        if (!button || !ticketContainer.contains(button)) return;
+
+        const index = Number.parseInt(button.dataset.index, 10);
+        if (!Number.isInteger(index) || index < 0) return;
+
+        switch (button.dataset.ticketAction) {
+          case 'increase':
+            this.updateQty(index, 1);
+            break;
+          case 'decrease':
+            this.updateQty(index, -1);
+            break;
+          case 'remove':
+            this.removeItem(index);
+            break;
+        }
+      });
 
       // 2. Prime IndexedDB with Catalog & Tables
       if (this.catalog && this.catalog.products) {
@@ -496,14 +541,69 @@
         await window.PosDB.saveTables(this.tables);
       }
 
+      // Restore an unfinished cart after an accidental refresh/reopen.
+      await this.restoreDraftTicket();
+
+      // Restore the last cached offline authorization lease, then refresh staff
+      // credentials from the authenticated bootstrap API whenever we're online.
+      this.offlineLease = await window.PosDB.getLease();
+      if (navigator.onLine) {
+        await this.refreshOfflineAuthorizationCache();
+      }
+
       // 3. Register Service Worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/public/sw.js').catch(console.warn);
+        navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js', { scope: '<?= BASE_URL ?>/' }).catch((error) => {
+          console.error('[ServiceWorker] Registration failed:', error);
+        });
       }
 
       // 4. Online/Offline Listeners
-      window.addEventListener('online', () => this.updateNetworkStatus(true));
+      window.addEventListener('online', () => {
+        this.updateNetworkStatus(true);
+        // Refresh authorized offline credentials first, then resume queued orders.
+        void this.refreshOfflineAuthorizationCache().finally(() => this.syncQueue());
+      });
       window.addEventListener('offline', () => this.updateNetworkStatus(false));
+
+      // Don't allow common keyboard reload shortcuts while offline. A browser's
+      // toolbar/menu reload cannot be disabled by a web page, so use the native
+      // beforeunload confirmation for that path as an additional safeguard.
+      window.addEventListener('keydown', (event) => {
+        if (navigator.onLine) return;
+        const key = String(event.key || '').toLowerCase();
+        const isReloadShortcut = key === 'f5' ||
+          ((event.ctrlKey || event.metaKey) && key === 'r');
+        if (!isReloadShortcut) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const notice = document.getElementById('posOfflineGuardNotice');
+        if (notice) {
+          notice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0';
+          notice.textContent = 'A reload shortcut was detected. Chrome may still reload the page; the unfinished ticket is saved locally and will be restored when the POS opens again.';
+        }
+      }, true);
+
+      window.addEventListener('beforeunload', (event) => {
+        if (navigator.onLine) return;
+        event.preventDefault();
+        event.returnValue = '';
+      });
+
+      const backToSaaS = document.getElementById('posBackToSaaS');
+      if (backToSaaS) {
+        backToSaaS.addEventListener('click', (event) => {
+          if (navigator.onLine) return;
+          event.preventDefault();
+          const notice = document.getElementById('posOfflineGuardNotice');
+          if (notice) {
+            notice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0';
+            notice.textContent = 'Back to SaaS is unavailable while offline. Reconnect before leaving the POS terminal.';
+          }
+        });
+      }
+
       this.updateNetworkStatus(navigator.onLine);
 
       // 5. Update Unsynced Badge
@@ -528,11 +628,199 @@
         el.className = 'badge bg-warning bg-opacity-25 text-warning border border-warning d-flex align-items-center gap-1 px-2 py-1';
         text.textContent = 'Offline (PWA)';
       }
+
+      // Hide Back to SaaS unless the server can be reached.
+      const backToSaaS = document.getElementById('posBackToSaaS');
+      if (backToSaaS) {
+        backToSaaS.classList.toggle('d-none', !isOnline);
+        backToSaaS.setAttribute('aria-hidden', isOnline ? 'false' : 'true');
+        if (isOnline) {
+          backToSaaS.removeAttribute('tabindex');
+        } else {
+          backToSaaS.setAttribute('tabindex', '-1');
+        }
+      }
+
+      // Browsers can reload a page without delivering a cancellable keyboard
+      // event, so the reliable protection is saving/restoring the current cart.
+      const guardNotice = document.getElementById('posOfflineGuardNotice');
+      if (guardNotice) {
+        if (this.restoredDraftTicket) {
+          guardNotice.className = 'alert alert-info py-2 px-3 mx-3 mt-2 mb-0';
+          guardNotice.textContent = 'An unfinished ticket was restored from this device. Review the items and total before continuing.';
+        } else if (!isOnline) {
+          guardNotice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0';
+          guardNotice.textContent = 'Offline mode: your unfinished ticket is saved on this device. Chrome may still reload the page; if it does, the POS will restore the saved ticket when it opens again.';
+        } else {
+          guardNotice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none';
+          guardNotice.textContent = '';
+        }
+      }
+    },
+
+    async refreshOfflineAuthorizationCache() {
+      if (!navigator.onLine) return false;
+
+      try {
+        const response = await fetch(
+          '<?= BASE_URL ?>/api/pos/bootstrap?device_id=' + encodeURIComponent(deviceId),
+          {
+            method: 'GET',
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers: { 'Accept': 'application/json' }
+          }
+        );
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload || !Array.isArray(payload.staff)) {
+          const detail = payload && payload.error ? String(payload.error) : 'Bootstrap request failed.';
+          throw new Error(detail);
+        }
+
+        await window.PosDB.saveStaff(payload.staff.filter(staff =>
+          staff &&
+          Number(staff.id) > 0 &&
+          typeof staff.pin_salt === 'string' &&
+          typeof staff.pin_hash === 'string' &&
+          staff.pin_salt.length > 0 &&
+          staff.pin_hash.length === 64
+        ));
+
+        if (payload.lease && payload.lease.lease_id) {
+          await window.PosDB.saveLease(payload.lease);
+          this.offlineLease = payload.lease;
+        }
+        if (payload.catalog_version && Number(payload.catalog_version.id) > 0) {
+          this.catalog.version = {
+            ...(this.catalog.version || {}),
+            ...payload.catalog_version
+          };
+          await window.PosDB.saveCatalog(
+            this.catalog.products || [],
+            this.catalog.categories || [],
+            this.catalog.version
+          );
+        }
+
+        console.info('[POS Offline Auth] Cached ' + payload.staff.length + ' authorized staff credential(s).');
+        return true;
+      } catch (error) {
+        console.warn('[POS Offline Auth] Unable to refresh offline authorization cache:', error);
+        return false;
+      }
+    },
+
+    async persistDraftTicket() {
+      try {
+        const items = Array.isArray(this.ticket) ? this.ticket : [];
+        if (items.length === 0) {
+          await window.PosDB.saveDraftTicket(null);
+          return;
+        }
+
+        const draft = {
+          ticket: items.map(item => ({
+            product_id: Number(item.product_id),
+            name: String(item.name || 'Menu item'),
+            variant_id: item.variant_id ? Number(item.variant_id) : null,
+            variant_name: item.variant_name ? String(item.variant_name) : null,
+            unit_price: Number(item.unit_price),
+            quantity: Number(item.quantity),
+            addons: Array.isArray(item.addons) ? item.addons.map(addon => ({
+              id: Number(addon.id) || null,
+              name: String(addon.name || ''),
+              price: Number(addon.price) || 0
+            })) : []
+          })),
+          order_type: this.orderType,
+          table_id: this.currentTableId,
+          discount_percent: this.discountPercent,
+          saved_at: new Date().toISOString()
+        };
+        await window.PosDB.saveDraftTicket(draft);
+      } catch (error) {
+        console.warn('[POS Draft] Unable to save the in-progress ticket:', error);
+      }
+    },
+
+    async restoreDraftTicket() {
+      try {
+        const draft = await window.PosDB.getDraftTicket();
+        if (!draft || !Array.isArray(draft.ticket) || draft.ticket.length === 0) return false;
+
+        const restoredItems = draft.ticket.slice(0, 100).filter(item => {
+          return item &&
+            Number.isInteger(Number(item.product_id)) &&
+            Number(item.product_id) > 0 &&
+            typeof item.name === 'string' &&
+            Number.isFinite(Number(item.unit_price)) &&
+            Number(item.unit_price) >= 0 &&
+            Number.isInteger(Number(item.quantity)) &&
+            Number(item.quantity) > 0;
+        }).map(item => ({
+          product_id: Number(item.product_id),
+          name: item.name,
+          variant_id: item.variant_id ? Number(item.variant_id) : null,
+          variant_name: item.variant_name ? String(item.variant_name) : null,
+          unit_price: Number(item.unit_price),
+          quantity: Number(item.quantity),
+          addons: Array.isArray(item.addons) ? item.addons.map(addon => ({
+            id: Number(addon.id) || null,
+            name: String(addon.name || ''),
+            price: Number(addon.price) || 0
+          })) : []
+        }));
+
+        if (restoredItems.length === 0) {
+          await window.PosDB.saveDraftTicket(null);
+          return false;
+        }
+
+        this.ticket = restoredItems;
+        this.orderType = ['dine_in', 'takeout', 'delivery'].includes(draft.order_type)
+          ? draft.order_type
+          : 'dine_in';
+
+        const discount = Number(draft.discount_percent);
+        this.discountPercent = [0, 5, 10, 20].includes(discount) ? discount : 0;
+
+        const tableSelect = document.getElementById('posTableSelect');
+        const requestedTable = draft.table_id ? String(draft.table_id) : '';
+        const validTable = requestedTable && Array.from(tableSelect.options).some(option => option.value === requestedTable);
+        this.currentTableId = validTable ? Number(requestedTable) : null;
+        tableSelect.value = validTable ? requestedTable : '';
+
+        const discountSelect = document.getElementById('discountSelect');
+        if (discountSelect) discountSelect.value = String(this.discountPercent);
+
+        this.setOrderType(this.orderType);
+        this.restoredDraftTicket = true;
+        this.renderTicket();
+        console.info('[POS Draft] Restored unfinished ticket after page reload.');
+        return true;
+      } catch (error) {
+        console.warn('[POS Draft] Unable to restore the in-progress ticket:', error);
+        return false;
+      }
     },
 
     async refreshQueueCount() {
       const pending = await window.PosDB.getPendingOrders();
       document.getElementById('unsyncedCount').textContent = pending.length;
+    },
+
+    showSyncNotice(message, variant = 'warning') {
+      const notice = document.getElementById('posSyncNotice');
+      if (!notice) return;
+      notice.className = `alert alert-${variant} py-2 px-3 mx-3 mt-2 mb-0`;
+      notice.textContent = message;
+    },
+
+    clearSyncNotice() {
+      const notice = document.getElementById('posSyncNotice');
+      if (!notice) return;
+      notice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none';
+      notice.textContent = '';
     },
 
     setOrderType(type) {
@@ -545,10 +833,12 @@
           btn.className = 'btn btn-sm btn-outline-secondary text-white flex-fill fw-semibold';
         }
       });
+      void this.persistDraftTicket();
     },
 
     setTable(tableId) {
       this.currentTableId = tableId ? parseInt(tableId, 10) : null;
+      void this.persistDraftTicket();
     },
 
     filterCategory(catId, btn) {
@@ -664,7 +954,9 @@
         aSec.style.display = 'block';
         let addonHtml = '';
         product.addon_groups.forEach(g => {
-          (g.addons || []).forEach(a => {
+          // MenuService exposes each group's selectable entries as "options".
+          // Keep "addons" as a fallback for older cached catalog data.
+          (g.options || g.addons || []).forEach(a => {
             addonHtml += `
               <label class="list-group-item list-group-item-dark d-flex justify-content-between align-items-center">
                 <div>
@@ -757,9 +1049,15 @@
     },
 
     updateQty(index, delta) {
-      if (!this.ticket[index]) return;
-      this.ticket[index].quantity += delta;
-      if (this.ticket[index].quantity <= 0) {
+      const item = this.ticket[index];
+      if (!item) return;
+
+      const currentQuantity = Number(item.quantity);
+      const increment = Number(delta);
+      if (!Number.isFinite(currentQuantity) || !Number.isFinite(increment)) return;
+
+      item.quantity = currentQuantity + increment;
+      if (item.quantity <= 0) {
         this.ticket.splice(index, 1);
       }
       this.renderTicket();
@@ -800,12 +1098,22 @@
 
     renderTicket() {
       const container = document.getElementById('ticketItemsList');
-      const emptyNotice = document.getElementById('emptyCartNotice');
+      if (!container) return;
+
+      // Save every cart edit, including removals, before a possible page reload.
+      void this.persistDraftTicket();
 
       if (this.ticket.length === 0) {
-        container.innerHTML = '';
-        container.appendChild(emptyNotice);
-        emptyNotice.style.display = 'block';
+        this.restoredDraftTicket = false;
+        // Recreate the placeholder each time. The prior placeholder is removed
+        // when the cart is rendered, so an old DOM reference must not be reused.
+        container.innerHTML = `
+          <div class="text-center text-muted py-5" id="emptyCartNotice">
+            <i class="bi bi-receipt fs-1 d-block mb-2 text-white-50"></i>
+            <h5>No Items in Order</h5>
+            <p class="small text-white-50">Tap any menu product on the left to add it to the ticket.</p>
+          </div>
+        `;
         document.getElementById('ticketSubtotal').textContent = '₱0.00';
         document.getElementById('ticketDiscount').textContent = '-₱0.00';
         document.getElementById('ticketVat').textContent = '₱0.00';
@@ -814,7 +1122,6 @@
         return;
       }
 
-      emptyNotice.style.display = 'none';
       const calcs = this.getCalculations();
 
       container.innerHTML = this.ticket.map((item, index) => {
@@ -833,13 +1140,13 @@
               <span class="font-monospace fw-bold text-white fs-6">₱${itemTotal.toFixed(2)}</span>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top border-secondary">
-              <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="window.posApp.removeItem(${index})">
+              <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" data-ticket-action="remove" data-index="${index}">
                 <i class="bi bi-x-circle"></i> Remove
               </button>
               <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-sm btn-outline-secondary text-white px-2 py-0" onclick="window.posApp.updateQty(${index}, -1)">-</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-2 py-0" data-ticket-action="decrease" data-index="${index}" aria-label="Decrease quantity">-</button>
                 <span class="fw-bold font-monospace px-1 text-white">${item.quantity}</span>
-                <button class="btn btn-sm btn-outline-secondary text-white px-2 py-0" onclick="window.posApp.updateQty(${index}, 1)">+</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-2 py-0" data-ticket-action="increase" data-index="${index}" aria-label="Increase quantity">+</button>
               </div>
             </div>
           </div>
@@ -853,8 +1160,25 @@
       document.getElementById('checkoutBtn').disabled = false;
     },
 
-    openCheckoutModal() {
-      if (this.ticket.length === 0) return;
+    async openCheckoutModal() {
+      if (this.ticket.length === 0 || this.isProcessingSale) return;
+
+      // If the browser is online but has unresolved orders, don't open a new
+      // checkout. Try syncing the existing order(s), then require the cashier
+      // to verify them before starting another sale.
+      if (navigator.onLine) {
+        const pendingBefore = await window.PosDB.getPendingOrders();
+        if (pendingBefore.length > 0) {
+          await this.syncQueue();
+          const pendingAfter = await window.PosDB.getPendingOrders();
+          alert(
+            `The terminal had ${pendingBefore.length} pending order(s), so checkout was paused to prevent duplicate sales. ` +
+            `Sync was attempted; ${pendingAfter.length} order(s) remain pending. Check the Orders page and Sync badge before starting another sale.`
+          );
+          return;
+        }
+      }
+
       const calcs = this.getCalculations();
       document.getElementById('checkoutTotalDisplay').textContent = `₱${calcs.total.toFixed(2)}`;
       document.getElementById('tenderInput').value = calcs.total.toFixed(2);
@@ -898,74 +1222,148 @@
     },
 
     async processSale() {
-      const calcs = this.getCalculations();
-      const tendered = parseFloat(document.getElementById('tenderInput').value) || 0;
-      if (tendered < calcs.total) {
-        alert('Tendered cash is less than the total due.');
-        return;
-      }
+      // Prevent a rapid double-click from generating multiple UUIDs/orders.
+      if (this.isProcessingSale) return;
+      if (!Array.isArray(this.ticket) || this.ticket.length === 0) return;
 
-      const clientUuid = crypto.randomUUID();
-      const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+      this.isProcessingSale = true;
+      const confirmButton = document.getElementById('confirmSaleBtn');
+      const originalButtonHtml = confirmButton.innerHTML;
+      confirmButton.disabled = true;
+      confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Saving Sale...';
 
-      const orderPayload = {
-        client_uuid: clientUuid,
-        device_id: deviceId,
-        shift_id: shiftId,
-        order_number: orderNumber,
-        order_type: this.orderType,
-        table_id: this.currentTableId,
-        cashier_id: cashierId,
-        catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
-        subtotal: calcs.subtotal,
-        discount_amount: calcs.discount,
-        tax_amount: calcs.vat,
-        total_amount: calcs.total,
-        paid_amount: tendered,
-        change_amount: round(tendered - calcs.total),
-        created_at: new Date().toISOString(),
-        items: this.ticket.map(item => ({
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          name: item.name,
-          variant_name: item.variant_name,
-          unit_price: item.unit_price,
-          quantity: item.quantity,
-          addons: item.addons
-        })),
-        payment: {
-          client_payment_uuid: crypto.randomUUID(),
-          payment_method: 'cash',
-          amount: calcs.total,
-          tendered_amount: tendered,
-          change_amount: round(tendered - calcs.total)
+      let orderPayload = null;
+      let queued = false;
+
+      try {
+        const calcs = this.getCalculations();
+        const tendered = parseFloat(document.getElementById('tenderInput').value) || 0;
+        if (tendered < calcs.total) {
+          alert('Tendered cash is less than the total due.');
+          return;
         }
-      };
 
-      // 1. Enqueue into IndexedDB
-      await window.PosDB.queueOrder(orderPayload);
-      await this.refreshQueueCount();
+        // Re-check at the final payment action too: a pending order may have
+        // appeared after the checkout modal was opened (for example, another tab).
+        if (navigator.onLine) {
+          const pendingBeforeSale = await window.PosDB.getPendingOrders();
+          if (pendingBeforeSale.length > 0) {
+            await this.syncQueue();
+            const pendingAfterSaleCheck = await window.PosDB.getPendingOrders();
+            alert(
+              `No new sale was created because ${pendingBeforeSale.length} earlier order(s) were pending. ` +
+              `Sync was attempted; ${pendingAfterSaleCheck.length} order(s) remain pending. ` +
+              'Check the Orders page and confirm the earlier sales before submitting this ticket.'
+            );
+            return;
+          }
+        }
 
-      // 2. Hide checkout modal
-      bootstrap.Modal.getInstance(document.getElementById('checkoutModal')).hide();
+        const clientUuid = crypto.randomUUID();
+        const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
-      // 3. Prepare & Show Thermal Receipt
-      this.displayReceipt(orderPayload);
+        orderPayload = {
+          client_uuid: clientUuid,
+          device_id: deviceId,
+          shift_id: shiftId,
+          order_number: orderNumber,
+          order_type: this.orderType,
+          table_id: this.currentTableId,
+          cashier_id: cashierId,
+          catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
+          offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
+          subtotal: calcs.subtotal,
+          discount_amount: calcs.discount,
+          tax_amount: calcs.vat,
+          total_amount: calcs.total,
+          paid_amount: tendered,
+          change_amount: round(tendered - calcs.total),
+          created_at: new Date().toISOString(),
+          items: this.ticket.map(item => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            name: item.name,
+            variant_name: item.variant_name,
+            unit_price: item.unit_price,
+            quantity: item.quantity,
+            addons: item.addons
+          })),
+          payment: {
+            client_payment_uuid: crypto.randomUUID(),
+            payment_method: 'cash',
+            amount: calcs.total,
+            tendered_amount: tendered,
+            change_amount: round(tendered - calcs.total)
+          }
+        };
 
-      // 4. Clear current ticket
-      this.ticket = [];
-      this.renderTicket();
+        // A successful local queue write is the commit point for this browser checkout.
+        // Never generate a second UUID for the same in-flight click.
+        await window.PosDB.queueOrder(orderPayload);
+        queued = true;
 
-      // 5. Trigger background sync if online
-      if (navigator.onLine) {
-        this.syncQueue();
+        try {
+          await this.refreshQueueCount();
+        } catch (queueCountError) {
+          console.warn('[POS Queue] Order saved, but queue badge refresh failed:', queueCountError);
+        }
+
+        const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
+        if (checkoutModal) checkoutModal.hide();
+
+        // Clear the live ticket before receipt display so preview errors cannot
+        // cause the cashier to submit the same ticket again.
+        this.ticket = [];
+        this.renderTicket();
+
+        if (navigator.onLine) {
+          void this.syncQueue();
+        }
+
+        try {
+          this.displayReceipt(orderPayload);
+        } catch (receiptError) {
+          console.error('[POS Receipt] Order was queued, but receipt rendering failed:', receiptError);
+          alert('The order was saved to this terminal, but the receipt preview could not be displayed. Do not submit it again; check the Sync badge and Orders page.');
+        }
+      } catch (error) {
+        console.error('[POS Sale] Checkout handling failed:', error);
+
+        if (queued && orderPayload) {
+          // If the local write succeeded, treat it as a sale already recorded locally.
+          this.ticket = [];
+          this.renderTicket();
+          const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
+          if (checkoutModal) checkoutModal.hide();
+
+          try {
+            this.displayReceipt(orderPayload);
+          } catch (receiptError) {
+            console.error('[POS Receipt] Receipt fallback failed:', receiptError);
+          }
+          alert('This sale was already saved to the terminal. Do not submit it again. Check the Sync badge and Orders page.');
+        } else {
+          alert('The sale could not be saved to this terminal, so it was not submitted. Check the browser Console before retrying.');
+        }
+      } finally {
+        this.isProcessingSale = false;
+        confirmButton.innerHTML = originalButtonHtml;
+        if (this.ticket.length > 0) {
+          this.computeChange();
+        } else {
+          confirmButton.disabled = true;
+        }
       }
     },
 
     displayReceipt(order) {
-      document.getElementById('recRestaurantName').textContent = this.catalog.restaurant.name || 'RESTAURANT POS';
-      document.getElementById('recRestaurantAddress').textContent = this.catalog.restaurant.address || 'Dining Terminal';
-      document.getElementById('recRestaurantTin').textContent = this.catalog.restaurant.tin || '000-000-000-000';
+      // Keep receipts robust for old cached catalogs or catalog payloads without metadata.
+      const restaurant = this.catalog && this.catalog.restaurant && typeof this.catalog.restaurant === 'object'
+        ? this.catalog.restaurant
+        : {};
+      document.getElementById('recRestaurantName').textContent = restaurant.name || 'RESTAURANT POS';
+      document.getElementById('recRestaurantAddress').textContent = restaurant.address || 'Dining Terminal';
+      document.getElementById('recRestaurantTin').textContent = restaurant.tin || '000-000-000-000';
       document.getElementById('recOrderNumber').textContent = order.order_number;
       document.getElementById('recOrderDate').textContent = new Date().toLocaleString();
       document.getElementById('recCashierName').textContent = document.getElementById('activeCashierName').textContent;
@@ -1004,43 +1402,112 @@
     },
 
     async syncQueue() {
-      if (!navigator.onLine) return;
-      const pending = await window.PosDB.getPendingOrders();
-      if (pending.length === 0) return;
+      if (!navigator.onLine || this.isSyncingQueue) return;
 
+      // Acquire the sync lock before the first await so simultaneous calls
+      // cannot both submit the same pending batch.
+      this.isSyncingQueue = true;
       const syncBtn = document.getElementById('posSyncBtn');
-      syncBtn.classList.add('disabled');
-      syncBtn.querySelector('i').classList.add('spin-icon');
+      let pendingOrderCount = 0;
 
       try {
-        const response = await fetch('/api/pos/sync', {
+        const pending = await window.PosDB.getPendingOrders();
+        pendingOrderCount = pending.length;
+        if (pending.length === 0) {
+          this.clearSyncNotice();
+          return;
+        }
+
+        if (syncBtn) {
+          syncBtn.classList.add('disabled');
+          const spinner = syncBtn.querySelector('i');
+          if (spinner) spinner.classList.add('spin-icon');
+        }
+
+        const response = await fetch('<?= BASE_URL ?>/api/pos/sync', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orders: pending })
         });
 
-        if (response.ok) {
-          const res = await response.json();
-          if (res.results) {
-            for (const r of res.results) {
-              await window.PosDB.markOrderSynced(r.client_uuid, r.server_order_id);
-            }
+        const res = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const detail = res && res.error ? String(res.error) : `HTTP ${response.status}`;
+          console.error('[POS Sync] Server rejected queued order batch:', response.status, detail);
+          this.showSyncNotice(
+            `Sync failed for ${pending.length} queued order(s): ${detail}. The orders remain saved locally; do not submit them again.`,
+            'danger'
+          );
+          return;
+        }
+
+        if (res.status !== 'success' || !Array.isArray(res.results)) {
+          console.error('[POS Sync] Unexpected server response for queued orders:', res);
+          this.showSyncNotice(
+            `The server returned an unexpected sync response. ${pending.length} order(s) remain queued locally; do not submit them again.`,
+            'danger'
+          );
+          return;
+        }
+
+        for (const result of res.results) {
+          if (
+            result &&
+            ['synced', 'already_synced'].includes(result.status) &&
+            result.client_uuid &&
+            Number(result.server_order_id) > 0
+          ) {
+            await window.PosDB.markOrderSynced(result.client_uuid, result.server_order_id);
+          } else {
+            console.error('[POS Sync] An order was not acknowledged by the server:', result);
           }
+        }
+
+        const remaining = await window.PosDB.getPendingOrders();
+        if (remaining.length > 0) {
+          const rejected = (res.results || []).find(result =>
+            !result ||
+            !['synced', 'already_synced'].includes(result.status) ||
+            !result.client_uuid ||
+            Number(result.server_order_id) <= 0
+          );
+          const reason = rejected && (rejected.error || rejected.message || rejected.reason);
+          this.showSyncNotice(
+            `Sync did not complete. ${remaining.length} order(s) remain queued locally${reason ? `: ${String(reason)}` : ''}. Do not submit them again.`,
+            'warning'
+          );
+        } else {
+          this.clearSyncNotice();
         }
       } catch (err) {
         console.warn('[POS Sync] Background sync delayed:', err);
+        const detail = err && err.message ? String(err.message) : 'Unknown sync error';
+        this.showSyncNotice(
+          `Could not sync ${pendingOrderCount || 'the queued'} order(s): ${detail}. Queued orders remain saved locally; do not submit them again.`,
+          'danger'
+        );
       } finally {
-        syncBtn.classList.remove('disabled');
-        syncBtn.querySelector('i').classList.remove('spin-icon');
-        await this.refreshQueueCount();
+        if (syncBtn) {
+          syncBtn.classList.remove('disabled');
+          const spinner = syncBtn.querySelector('i');
+          if (spinner) spinner.classList.remove('spin-icon');
+        }
+        this.isSyncingQueue = false;
+        try {
+          await this.refreshQueueCount();
+        } catch (queueCountError) {
+          console.warn('[POS Queue] Unable to refresh pending order count:', queueCountError);
+        }
       }
     },
 
     // PIN Pad Lockout & Brute-Force Protection
     showLockModal() {
-      document.getElementById('pinDisplay').value = '';
+      const pinInput = document.getElementById('pinDisplay');
+      pinInput.value = '';
       document.getElementById('pinError').style.display = 'none';
       new bootstrap.Modal(document.getElementById('lockModal')).show();
+      window.setTimeout(() => pinInput.focus(), 150);
     },
 
     pinKey(num) {
@@ -1072,17 +1539,40 @@
         return;
       }
 
-      // Default demo pin 1234 or verify against cached staff
-      if (pin === '1234' || pin === '0000') {
-        this.failedPinAttempts = 0;
-        bootstrap.Modal.getInstance(document.getElementById('lockModal')).hide();
+      if (!/^[0-9]{4,6}$/.test(pin)) {
+        errEl.textContent = 'PIN must contain 4 to 6 digits.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const staff = await window.PosDB.getStaff(cashierId);
+        if (!staff || !staff.pin_salt || !staff.pin_hash) {
+          errEl.textContent = navigator.onLine
+            ? 'No offline PIN is configured for this cashier on this device. Open Terminals → Staff Authorizations and set one first.'
+            : 'This cashier has no authorized offline PIN cached on this device. Reconnect and configure the PIN before locking the terminal.';
+          errEl.style.display = 'block';
+          return;
+        }
+
+        const valid = await window.PosDB.verifyStaffPin(pin, staff.pin_salt, staff.pin_hash);
+        if (valid) {
+          this.failedPinAttempts = 0;
+          const modal = bootstrap.Modal.getInstance(document.getElementById('lockModal'));
+          if (modal) modal.hide();
+          return;
+        }
+      } catch (error) {
+        console.error('[POS Offline Auth] PIN verification failed:', error);
+        errEl.textContent = 'PIN verification could not be completed. Reconnect and check the device authorization setup.';
+        errEl.style.display = 'block';
         return;
       }
 
       this.failedPinAttempts += 1;
       if (this.failedPinAttempts >= 5) {
         this.lockoutUntil = Date.now() + 60000;
-        errEl.textContent = '5 failed attempts! Terminal locked for 60 seconds.';
+        errEl.textContent = '5 failed attempts! Locked for 60 seconds.';
       } else {
         errEl.textContent = `Invalid PIN (${5 - this.failedPinAttempts} attempts left).`;
       }
@@ -1096,7 +1586,26 @@
   }
 
   window.posApp = app;
-  document.addEventListener('DOMContentLoaded', () => app.init());
+
+  // Support both hardware keyboards and the on-screen POS keypad. Keep
+  // keyboard input numeric-only and capped at six digits; Enter submits PIN.
+  document.addEventListener('DOMContentLoaded', () => {
+    const pinInput = document.getElementById('pinDisplay');
+    if (pinInput) {
+      pinInput.addEventListener('input', () => {
+        const digitsOnly = pinInput.value.replace(/[^0-9]/g, '').slice(0, 6);
+        if (pinInput.value !== digitsOnly) pinInput.value = digitsOnly;
+      });
+      pinInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          void app.pinSubmit();
+        }
+      });
+      document.getElementById('lockModal')?.addEventListener('shown.bs.modal', () => pinInput.focus());
+    }
+    app.init();
+  });
 })();
 </script>
 

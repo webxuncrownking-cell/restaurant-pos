@@ -78,7 +78,7 @@ class ReportService
                     COALESCE(SUM(amount), 0) as total_amount
                 FROM payments
                 WHERE restaurant_id = :restaurant_id
-                  AND status = 'completed'
+                  AND is_verified = 1
                   AND DATE(paid_at) BETWEEN :start_date AND :end_date
                 GROUP BY payment_method
                 ORDER BY total_amount DESC";
@@ -97,17 +97,17 @@ class ReportService
     {
         $sql = "SELECT 
                     oi.product_id,
-                    oi.item_name,
+                    oi.product_name AS item_name,
                     c.name as category_name,
                     SUM(oi.quantity) as total_quantity_sold,
-                    SUM(oi.total_amount) as total_revenue
+                    SUM(oi.subtotal) as total_revenue
                 FROM order_items oi
                 JOIN orders o ON o.restaurant_id = oi.restaurant_id AND o.id = oi.order_id
                 JOIN products p ON p.restaurant_id = oi.restaurant_id AND p.id = oi.product_id
                 JOIN categories c ON c.restaurant_id = p.restaurant_id AND c.id = p.category_id
-                WHERE oi.restaurant_id = :restaurant_id 
+                WHERE oi.restaurant_id = :restaurant_id
                   AND o.order_status != 'cancelled'
-                GROUP BY oi.product_id, oi.item_name, c.name
+                GROUP BY oi.product_id, oi.product_name, c.name
                 ORDER BY total_revenue DESC
                 LIMIT " . (int)$limit;
 

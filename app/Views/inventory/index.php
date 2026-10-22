@@ -8,9 +8,12 @@
       <h2 class="fw-bold mb-1"><i class="bi bi-boxes text-warning me-2"></i>Inventory & Stock Control</h2>
       <p class="text-muted small mb-0">Raw ingredients catalog, base unit normalization, low-stock threshold monitoring, and packaging factors.</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
       <a href="<?= BASE_URL ?>/inventory/ledger" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
         <i class="bi bi-clock-history"></i> Movements Ledger
+      </a>
+      <a href="<?= BASE_URL ?>/inventory/adjustment" class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1">
+        <i class="bi bi-sliders"></i> Adjust Stock
       </a>
       <a href="<?= BASE_URL ?>/inventory/stock-in" class="btn btn-pos-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
         <i class="bi bi-box-arrow-in-down"></i> Receive Goods (Stock In)

@@ -1,6 +1,25 @@
 <?php include APP_ROOT . '/app/Views/layouts/header.php'; ?>
 <?php include APP_ROOT . '/app/Views/layouts/navbar.php'; ?>
 
+<?php if (!empty($_SESSION['flash_success'])): ?>
+  <div class="container pt-3">
+    <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+      <?= htmlspecialchars((string)$_SESSION['flash_success'], ENT_QUOTES, 'UTF-8') ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  </div>
+  <?php unset($_SESSION['flash_success']); ?>
+<?php endif; ?>
+<?php if (!empty($_SESSION['flash_error'])): ?>
+  <div class="container pt-3">
+    <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+      <?= htmlspecialchars((string)$_SESSION['flash_error'], ENT_QUOTES, 'UTF-8') ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  </div>
+  <?php unset($_SESSION['flash_error']); ?>
+<?php endif; ?>
+
 <div class="container py-4">
   <!-- Page Header -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -164,26 +183,54 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
                           <div class="modal-body">
-                            <p class="small text-muted mb-3">
-                              Select staff members authorized to log in and conduct sales on this terminal device while offline:
+                            <p class="small text-muted mb-2">
+                              Select staff members authorized to use this terminal while offline.
                             </p>
-                            <?php 
+                            <div class="alert alert-info small py-2">
+                              Set or reset an offline PIN for each selected staff member. PINs must contain 4–6 digits.
+                              Leave the PIN field blank to keep the current PIN. No shared demo PIN is used.
+                            </div>
+                            <?php
                               $deviceAuths = \App\Services\DeviceService::getDeviceStaff((int)$dev['restaurant_id'], (int)$dev['id']);
-                              $authMap = array_column($deviceAuths, 'user_id');
+                              $authMap = array_map('intval', array_column($deviceAuths, 'user_id'));
                             ?>
                             <div class="list-group">
-                              <?php foreach ($staffMembers as $sm): 
-                                $isAuth = in_array($sm['id'], $authMap);
+                              <?php foreach ($staffMembers as $sm):
+                                $staffId = (int)$sm['id'];
+                                $isAuth = in_array($staffId, $authMap, true);
                               ?>
-                                <label class="list-group-item d-flex gap-3 align-items-center">
-                                  <input class="form-check-input flex-shrink-0" type="checkbox" name="user_ids[]" value="<?= $sm['id'] ?>" <?= $isAuth ? 'checked' : '' ?>>
-                                  <span class="pt-1 form-checked-content">
-                                    <strong><?= htmlspecialchars($sm['full_name']) ?></strong>
-                                    <small class="d-block text-muted">@<?= htmlspecialchars($sm['username']) ?> &bull; <?= htmlspecialchars($sm['role_name']) ?></small>
-                                  </span>
-                                </label>
+                                <div class="list-group-item">
+                                  <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="device_<?= (int)$dev['id'] ?>_staff_<?= $staffId ?>" name="user_ids[]" value="<?= $staffId ?>" <?= $isAuth ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="device_<?= (int)$dev['id'] ?>_staff_<?= $staffId ?>">
+                                      <strong><?= htmlspecialchars($sm['full_name']) ?></strong>
+                                      <small class="d-block text-muted">@<?= htmlspecialchars($sm['username']) ?> &bull; <?= htmlspecialchars($sm['role_name']) ?></small>
+                                    </label>
+                                  </div>
+                                  <label class="form-label small mb-1" for="device_<?= (int)$dev['id'] ?>_pin_<?= $staffId ?>">
+                                    Offline PIN
+                                    <?php if (!empty($sm['offline_pin_configured'])): ?>
+                                      <span class="badge bg-success-subtle text-success">Configured</span>
+                                    <?php else: ?>
+                                      <span class="badge bg-warning-subtle text-dark">Not configured</span>
+                                    <?php endif; ?>
+                                  </label>
+                                  <input
+                                    class="form-control form-control-sm"
+                                    type="password"
+                                    id="device_<?= (int)$dev['id'] ?>_pin_<?= $staffId ?>"
+                                    name="offline_pins[<?= $staffId ?>]"
+                                    inputmode="numeric"
+                                    pattern="[0-9]{4,6}"
+                                    minlength="4"
+                                    maxlength="6"
+                                    autocomplete="new-password"
+                                    placeholder="Enter 4–6 digits to set/reset"
+                                  >
+                                </div>
                               <?php endforeach; ?>
                             </div>
+                            <div class="mt-3" data-staff-save-feedback role="status" aria-live="polite"></div>
                           </div>
                           <div class="modal-footer">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
@@ -233,5 +280,113 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Entering an offline PIN also selects that staff member for offline access.
+  // The server repeats this behavior as a safeguard against unchecked boxes.
+  document.addEventListener('input', (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.name.startsWith('offline_pins[')) return;
+    if (input.value.trim() === '') return;
+
+    const staffRow = input.closest('.list-group-item');
+    const checkbox = staffRow ? staffRow.querySelector('input[name="user_ids[]"]') : null;
+    if (checkbox) checkbox.checked = true;
+  });
+
+  // Save authorizations via AJAX so the outcome and server validation errors
+  // remain visible inside the modal instead of being hidden behind a redirect.
+  document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !form.action.endsWith('/devices/authorizations')) return;
+
+    event.preventDefault();
+    if (form.dataset.saving === '1') return;
+
+    const feedback = form.querySelector('[data-staff-save-feedback]');
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton ? submitButton.textContent : 'Save Authorizations';
+    const showFeedback = (message, kind) => {
+      if (!feedback) return;
+      feedback.innerHTML = '';
+      const alert = document.createElement('div');
+      alert.className = 'alert alert-' + kind + ' py-2 mb-0 small';
+      alert.setAttribute('role', 'alert');
+      alert.textContent = message;
+      feedback.appendChild(alert);
+    };
+
+    form.dataset.saving = '1';
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Saving…';
+    }
+
+    try {
+      const response = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        credentials: 'same-origin',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        await response.text();
+        if (response.status === 419) {
+          throw new Error('Security token expired. Reload the Terminals page and reopen Staff Access.');
+        }
+        throw new Error('The server returned a non-JSON response (HTTP ' + response.status + '). Check the PHP error log.');
+      }
+
+      const result = await response.json();
+      if (!response.ok || result.status !== 'success') {
+        throw new Error(result.message || 'The server rejected the staff authorization save.');
+      }
+
+      const configuredIds = new Set((result.configured_user_ids || []).map(Number));
+      const authorizedIds = new Set((result.authorized_user_ids || []).map(Number));
+
+      form.querySelectorAll('input[name^="offline_pins["]').forEach((input) => {
+        const match = input.name.match(/^offline_pins\[(\d+)\]$/);
+        if (!match) return;
+        const userId = Number(match[1]);
+        const row = input.closest('.list-group-item');
+        const label = row ? row.querySelector('label.form-label') : null;
+        const checkbox = row ? row.querySelector('input[name="user_ids[]"]') : null;
+
+        if (checkbox) checkbox.checked = authorizedIds.has(userId);
+
+        if (label) {
+          const oldBadge = label.querySelector('.badge');
+          if (oldBadge) oldBadge.remove();
+          const badge = document.createElement('span');
+          badge.className = configuredIds.has(userId)
+            ? 'badge bg-success-subtle text-success ms-1'
+            : 'badge bg-warning-subtle text-dark ms-1';
+          badge.textContent = configuredIds.has(userId) ? 'Configured' : 'Not configured';
+          label.appendChild(document.createTextNode(' '));
+          label.appendChild(badge);
+        }
+
+        // Never keep the newly submitted PIN visible in the form.
+        input.value = '';
+      });
+
+      showFeedback(result.message || 'Staff authorizations saved and verified.', 'success');
+    } catch (error) {
+      showFeedback(error && error.message ? error.message : 'Unable to save staff authorizations.', 'danger');
+    } finally {
+      form.dataset.saving = '0';
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = originalButtonText;
+      }
+    }
+  });
+</script>
 
 <?php include APP_ROOT . '/app/Views/layouts/footer.php'; ?>

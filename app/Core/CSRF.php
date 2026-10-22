@@ -25,6 +25,14 @@ class CSRF
     }
 
     /**
+     * Backwards-compatible alias used by the application controllers.
+     */
+    public static function generate(): string
+    {
+        return self::getToken();
+    }
+
+    /**
      * Regenerate the CSRF token on privilege escalation.
      */
     public static function regenerate(): string
@@ -46,6 +54,20 @@ class CSRF
 
         $expected = self::getToken();
         return hash_equals($expected, $token);
+    }
+
+    /**
+     * Backwards-compatible validator for legacy POST controllers.
+     * Invalid or missing tokens terminate the request before any mutation.
+     */
+    public static function validateToken(?string $token): void
+    {
+        if (!self::validate($token)) {
+            Response::html(
+                'Invalid or expired security token. Refresh the page and try again.',
+                419
+            );
+        }
     }
 
     /**

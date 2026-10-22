@@ -95,7 +95,8 @@ class DeviceService
 
         // By default, authorize all active cashiers and managers in this restaurant
         $staffMembers = Database::fetchAll(
-            "SELECT id FROM users WHERE restaurant_id = :restaurant_id AND is_active = 1",
+            "SELECT id FROM users
+             WHERE restaurant_id = :restaurant_id AND status = 'active' AND deleted_at IS NULL",
             [':restaurant_id' => $restaurantId]
         );
         foreach ($staffMembers as $staff) {

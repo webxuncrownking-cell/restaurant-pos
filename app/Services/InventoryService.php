@@ -25,7 +25,8 @@ class InventoryService
         ?float $newCostPerUnit = null,
         ?int $referenceId = null,
         ?string $notes = null,
-        ?int $createdBy = null
+        ?int $createdBy = null,
+        ?string $adjustmentDirection = null
     ): int {
         $allowedTypes = [
             'purchase_receipt',
@@ -40,8 +41,22 @@ class InventoryService
             throw new InvalidArgumentException("Invalid reference type '{$referenceType}'.");
         }
 
-        if ($quantity <= 0) {
-            throw new InvalidArgumentException("Movement quantity must be greater than zero.");
+        if ($referenceType === 'manual_adjustment') {
+            if (!in_array($adjustmentDirection, ['increase', 'decrease'], true)) {
+                throw new InvalidArgumentException('Manual stock adjustments must specify increase or decrease.');
+            }
+        } elseif ($adjustmentDirection !== null) {
+            throw new InvalidArgumentException('Adjustment direction is only valid for manual adjustments.');
+        }
+
+        if (!is_finite($quantity) || $quantity <= 0) {
+            throw new InvalidArgumentException("Movement quantity must be a finite number greater than zero.");
+        }
+        if (trim($unit) === '') {
+            throw new InvalidArgumentException('A stock unit is required.');
+        }
+        if ($newCostPerUnit !== null && (!is_finite($newCostPerUnit) || $newCostPerUnit < 0)) {
+            throw new InvalidArgumentException('Unit cost must be a finite, non-negative amount.');
         }
 
         $pdo = Database::getConnection();
@@ -69,10 +84,15 @@ class InventoryService
             // 2. Resolve created_by user
             if ($createdBy === null || $createdBy <= 0) {
                 $user = Database::fetchOne(
-                    "SELECT id FROM users WHERE restaurant_id = ? AND is_active = 1 ORDER BY id ASC LIMIT 1",
+                    "SELECT id FROM users
+                     WHERE restaurant_id = ? AND status = 'active' AND deleted_at IS NULL
+                     ORDER BY id ASC LIMIT 1",
                     [$restaurantId]
                 );
-                $createdBy = $user ? (int)$user['id'] : 1;
+                if (!$user) {
+                    throw new InvalidArgumentException('No active staff account is available to record this inventory movement.');
+                }
+                $createdBy = (int)$user['id'];
             }
 
             // 3. Convert movement unit to ingredient's base unit
@@ -80,9 +100,14 @@ class InventoryService
 
             // 4. Calculate stock before & after
             $stockBefore = (float)$ingredient['current_stock'];
-            $isAddition = in_array($referenceType, ['purchase_receipt', 'order_cancellation', 'order_refund'], true);
+            $isAddition = in_array($referenceType, ['purchase_receipt', 'order_cancellation', 'order_refund'], true)
+                || ($referenceType === 'manual_adjustment' && $adjustmentDirection === 'increase');
             $quantityChange = $isAddition ? $baseQty : -$baseQty;
             $stockAfter = $stockBefore + $quantityChange;
+
+            if ($referenceType === 'manual_adjustment' && $stockAfter < 0) {
+                throw new InvalidArgumentException('A manual decrease cannot make stock negative. Check the available stock or enter a smaller quantity.');
+            }
 
             // 5. Update ingredient current stock
             $updateSql = "UPDATE ingredients SET current_stock = ?";
@@ -167,7 +192,7 @@ class InventoryService
             $conv['total_base_quantity'],
             $conv['base_unit'],
             $costPerBase,
-            $conversionId,
+            null,
             $fullNotes,
             $createdBy
         );
@@ -200,18 +225,34 @@ class InventoryService
         int $limit = 50,
         int $offset = 0
     ): array {
-        $sql = "SELECT m.*, i.name as ingredient_name, i.base_unit, u.username as logged_by
+        $allowedTypes = [
+            'order_sale',
+            'order_cancellation',
+            'order_refund',
+            'manual_adjustment',
+            'purchase_receipt',
+            'spoilage_waste'
+        ];
+        if ($referenceType !== null && $referenceType !== '' && !in_array($referenceType, $allowedTypes, true)) {
+            throw new InvalidArgumentException('Invalid inventory movement type.');
+        }
+
+        $limit = max(1, min($limit, 200));
+        $offset = max(0, $offset);
+
+        $sql = "SELECT m.*, i.name AS ingredient_name, i.base_unit,
+                       i.cost_per_base_unit AS current_cost_per_base_unit,
+                       u.username AS logged_by
                 FROM inventory_movements m
                 JOIN ingredients i ON m.ingredient_id = i.id AND m.restaurant_id = i.restaurant_id
                 LEFT JOIN users u ON m.created_by = u.id AND m.restaurant_id = u.restaurant_id
                 WHERE m.restaurant_id = ?";
         $params = [$restaurantId];
 
-        if ($ingredientId !== null) {
+        if ($ingredientId !== null && $ingredientId > 0) {
             $sql .= " AND m.ingredient_id = ?";
             $params[] = $ingredientId;
         }
-
         if ($referenceType !== null && $referenceType !== '') {
             $sql .= " AND m.reference_type = ?";
             $params[] = $referenceType;
