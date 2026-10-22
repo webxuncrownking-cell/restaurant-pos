@@ -253,7 +253,11 @@ class DeviceController
                 );
             }
 
+            // Clear any flash from a previous failed attempt so stale errors
+            // cannot appear beside the current successful save result.
+            unset($_SESSION['flash_error']);
             if ($isAjax) {
+                unset($_SESSION['flash_success']);
                 Response::json([
                     'status' => 'success',
                     'message' => $message,
@@ -264,7 +268,9 @@ class DeviceController
 
             $_SESSION['flash_success'] = $message;
         } catch (\Throwable $e) {
+            unset($_SESSION['flash_success']);
             if ($isAjax) {
+                unset($_SESSION['flash_error']);
                 Response::json([
                     'status' => 'error',
                     'message' => $e->getMessage()
