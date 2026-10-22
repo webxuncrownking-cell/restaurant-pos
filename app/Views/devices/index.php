@@ -172,7 +172,7 @@
                               Leave the PIN field blank to keep the current PIN. No shared demo PIN is used.
                             </div>
                             <?php
-                              $deviceAuths = \\App\\Services\\DeviceService::getDeviceStaff((int)$dev['restaurant_id'], (int)$dev['id']);
+                              $deviceAuths = \App\Services\DeviceService::getDeviceStaff((int)$dev['restaurant_id'], (int)$dev['id']);
                               $authMap = array_map('intval', array_column($deviceAuths, 'user_id'));
                             ?>
                             <div class="list-group">
