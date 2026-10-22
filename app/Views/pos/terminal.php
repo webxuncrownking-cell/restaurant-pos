@@ -94,7 +94,7 @@
 <!-- Top POS Header Bar -->
 <header class="pos-header py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
   <div class="d-flex align-items-center gap-3">
-    <a href="<?= BASE_URL ?>/dashboard" class="btn btn-sm btn-outline-secondary text-white-50">
+    <a id="posBackToSaaS" href="<?= BASE_URL ?>/dashboard" class="btn btn-sm btn-outline-secondary text-white-50 d-none" aria-hidden="true" tabindex="-1">
       <i class="bi bi-arrow-left me-1"></i> Back to SaaS
     </a>
     <div class="fw-bold fs-5 d-flex align-items-center gap-2">
@@ -140,6 +140,9 @@
     </div>
   </div>
 </header>
+
+<!-- Offline navigation/reload guard notices are separate from sync errors. -->
+<div id="posOfflineGuardNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="status" aria-live="polite"></div>
 
 <!-- Visible sync diagnostics: keep queued orders safe and explain retry failures to the cashier. -->
 <div id="posSyncNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="alert" aria-live="polite"></div>
@@ -558,6 +561,45 @@
         void this.refreshOfflineAuthorizationCache().finally(() => this.syncQueue());
       });
       window.addEventListener('offline', () => this.updateNetworkStatus(false));
+
+      // Don't allow common keyboard reload shortcuts while offline. A browser's
+      // toolbar/menu reload cannot be disabled by a web page, so use the native
+      // beforeunload confirmation for that path as an additional safeguard.
+      window.addEventListener('keydown', (event) => {
+        if (navigator.onLine) return;
+        const key = String(event.key || '').toLowerCase();
+        const isReloadShortcut = key === 'f5' ||
+          ((event.ctrlKey || event.metaKey) && key === 'r');
+        if (!isReloadShortcut) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        const notice = document.getElementById('posOfflineGuardNotice');
+        if (notice) {
+          notice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0';
+          notice.textContent = 'Reload shortcuts are disabled while offline. Keep using the POS; reconnect before refreshing the page.';
+        }
+      }, true);
+
+      window.addEventListener('beforeunload', (event) => {
+        if (navigator.onLine) return;
+        event.preventDefault();
+        event.returnValue = '';
+      });
+
+      const backToSaaS = document.getElementById('posBackToSaaS');
+      if (backToSaaS) {
+        backToSaaS.addEventListener('click', (event) => {
+          if (navigator.onLine) return;
+          event.preventDefault();
+          const notice = document.getElementById('posOfflineGuardNotice');
+          if (notice) {
+            notice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0';
+            notice.textContent = 'Back to SaaS is unavailable while offline. Reconnect before leaving the POS terminal.';
+          }
+        });
+      }
+
       this.updateNetworkStatus(navigator.onLine);
 
       // 5. Update Unsynced Badge
@@ -581,6 +623,26 @@
       } else {
         el.className = 'badge bg-warning bg-opacity-25 text-warning border border-warning d-flex align-items-center gap-1 px-2 py-1';
         text.textContent = 'Offline (PWA)';
+      }
+
+      // Hide Back to SaaS unless the server can be reached.
+      const backToSaaS = document.getElementById('posBackToSaaS');
+      if (backToSaaS) {
+        backToSaaS.classList.toggle('d-none', !isOnline);
+        backToSaaS.setAttribute('aria-hidden', isOnline ? 'false' : 'true');
+        if (isOnline) {
+          backToSaaS.removeAttribute('tabindex');
+        } else {
+          backToSaaS.setAttribute('tabindex', '-1');
+        }
+      }
+
+      if (isOnline) {
+        const guardNotice = document.getElementById('posOfflineGuardNotice');
+        if (guardNotice) {
+          guardNotice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none';
+          guardNotice.textContent = '';
+        }
       }
     },
 
