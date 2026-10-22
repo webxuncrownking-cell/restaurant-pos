@@ -504,6 +504,7 @@
     isProcessingSale: false,
     isSyncingQueue: false,
     offlineLease: null,
+    restoredDraftTicket: false,
 
     async init() {
       // 1. Init IndexedDB
@@ -539,6 +540,9 @@
       if (this.tables) {
         await window.PosDB.saveTables(this.tables);
       }
+
+      // Restore an unfinished cart after an accidental refresh/reopen.
+      await this.restoreDraftTicket();
 
       // Restore the last cached offline authorization lease, then refresh staff
       // credentials from the authenticated bootstrap API whenever we're online.
@@ -637,9 +641,17 @@
         }
       }
 
-      if (isOnline) {
-        const guardNotice = document.getElementById('posOfflineGuardNotice');
-        if (guardNotice) {
+      // Browsers can reload a page without delivering a cancellable keyboard
+      // event, so the reliable protection is saving/restoring the current cart.
+      const guardNotice = document.getElementById('posOfflineGuardNotice');
+      if (guardNotice) {
+        if (this.restoredDraftTicket) {
+          guardNotice.className = 'alert alert-info py-2 px-3 mx-3 mt-2 mb-0';
+          guardNotice.textContent = 'An unfinished ticket was restored from this device. Review the items and total before continuing.';
+        } else if (!isOnline) {
+          guardNotice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0';
+          guardNotice.textContent = 'Offline mode: your unfinished ticket is saved on this device. Chrome may still reload the page; if it does, the POS will restore the saved ticket when it opens again.';
+        } else {
           guardNotice.className = 'alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none';
           guardNotice.textContent = '';
         }
@@ -698,6 +710,100 @@
       }
     },
 
+    async persistDraftTicket() {
+      try {
+        const items = Array.isArray(this.ticket) ? this.ticket : [];
+        if (items.length === 0) {
+          await window.PosDB.saveDraftTicket(null);
+          return;
+        }
+
+        const draft = {
+          ticket: items.map(item => ({
+            product_id: Number(item.product_id),
+            name: String(item.name || 'Menu item'),
+            variant_id: item.variant_id ? Number(item.variant_id) : null,
+            variant_name: item.variant_name ? String(item.variant_name) : null,
+            unit_price: Number(item.unit_price),
+            quantity: Number(item.quantity),
+            addons: Array.isArray(item.addons) ? item.addons.map(addon => ({
+              id: Number(addon.id) || null,
+              name: String(addon.name || ''),
+              price: Number(addon.price) || 0
+            })) : []
+          })),
+          order_type: this.orderType,
+          table_id: this.currentTableId,
+          discount_percent: this.discountPercent,
+          saved_at: new Date().toISOString()
+        };
+        await window.PosDB.saveDraftTicket(draft);
+      } catch (error) {
+        console.warn('[POS Draft] Unable to save the in-progress ticket:', error);
+      }
+    },
+
+    async restoreDraftTicket() {
+      try {
+        const draft = await window.PosDB.getDraftTicket();
+        if (!draft || !Array.isArray(draft.ticket) || draft.ticket.length === 0) return false;
+
+        const restoredItems = draft.ticket.slice(0, 100).filter(item => {
+          return item &&
+            Number.isInteger(Number(item.product_id)) &&
+            Number(item.product_id) > 0 &&
+            typeof item.name === 'string' &&
+            Number.isFinite(Number(item.unit_price)) &&
+            Number(item.unit_price) >= 0 &&
+            Number.isInteger(Number(item.quantity)) &&
+            Number(item.quantity) > 0;
+        }).map(item => ({
+          product_id: Number(item.product_id),
+          name: item.name,
+          variant_id: item.variant_id ? Number(item.variant_id) : null,
+          variant_name: item.variant_name ? String(item.variant_name) : null,
+          unit_price: Number(item.unit_price),
+          quantity: Number(item.quantity),
+          addons: Array.isArray(item.addons) ? item.addons.map(addon => ({
+            id: Number(addon.id) || null,
+            name: String(addon.name || ''),
+            price: Number(addon.price) || 0
+          })) : []
+        }));
+
+        if (restoredItems.length === 0) {
+          await window.PosDB.saveDraftTicket(null);
+          return false;
+        }
+
+        this.ticket = restoredItems;
+        this.orderType = ['dine_in', 'takeout', 'delivery'].includes(draft.order_type)
+          ? draft.order_type
+          : 'dine_in';
+
+        const discount = Number(draft.discount_percent);
+        this.discountPercent = [0, 5, 10, 20].includes(discount) ? discount : 0;
+
+        const tableSelect = document.getElementById('posTableSelect');
+        const requestedTable = draft.table_id ? String(draft.table_id) : '';
+        const validTable = requestedTable && Array.from(tableSelect.options).some(option => option.value === requestedTable);
+        this.currentTableId = validTable ? Number(requestedTable) : null;
+        tableSelect.value = validTable ? requestedTable : '';
+
+        const discountSelect = document.getElementById('discountSelect');
+        if (discountSelect) discountSelect.value = String(this.discountPercent);
+
+        this.setOrderType(this.orderType);
+        this.restoredDraftTicket = true;
+        this.renderTicket();
+        console.info('[POS Draft] Restored unfinished ticket after page reload.');
+        return true;
+      } catch (error) {
+        console.warn('[POS Draft] Unable to restore the in-progress ticket:', error);
+        return false;
+      }
+    },
+
     async refreshQueueCount() {
       const pending = await window.PosDB.getPendingOrders();
       document.getElementById('unsyncedCount').textContent = pending.length;
@@ -727,10 +833,12 @@
           btn.className = 'btn btn-sm btn-outline-secondary text-white flex-fill fw-semibold';
         }
       });
+      void this.persistDraftTicket();
     },
 
     setTable(tableId) {
       this.currentTableId = tableId ? parseInt(tableId, 10) : null;
+      void this.persistDraftTicket();
     },
 
     filterCategory(catId, btn) {
@@ -992,7 +1100,11 @@
       const container = document.getElementById('ticketItemsList');
       if (!container) return;
 
+      // Save every cart edit, including removals, before a possible page reload.
+      void this.persistDraftTicket();
+
       if (this.ticket.length === 0) {
+        this.restoredDraftTicket = false;
         // Recreate the placeholder each time. The prior placeholder is removed
         // when the cart is rendered, so an old DOM reference must not be reused.
         container.innerHTML = `
