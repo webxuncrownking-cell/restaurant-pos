@@ -145,15 +145,22 @@ class PosSyncService
         $lease = self::getOrCreateOfflineLease($restaurantId, $deviceId, (int)$catalogVersion['id']);
         $tables = TableService::getTables($restaurantId);
 
-        // Fetch authorized staff with offline PIN credentials
+        // Only provision staff who are explicitly authorized for offline use
+        // and have a real PIN configured. Never substitute a shared demo PIN/hash.
         $staffMembers = Database::fetchAll(
             "SELECT u.id, u.username, u.full_name, r.name as role_name,
-                    COALESCE(u.offline_pin_salt, '5f4dcc3b5aa765d61d8327deb882cf99') as pin_salt,
-                    COALESCE(u.offline_pin_hash, 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f') as pin_hash
+                    u.offline_pin_salt AS pin_salt,
+                    u.offline_pin_hash AS pin_hash
              FROM pos_device_staff_authorizations sa
              JOIN users u ON u.restaurant_id = sa.restaurant_id AND u.id = sa.user_id
              JOIN roles r ON r.restaurant_id = u.restaurant_id AND r.id = u.role_id
-             WHERE sa.restaurant_id = :restaurant_id AND sa.device_id = :device_id AND sa.is_allowed_offline = 1 AND u.status = 'active' AND u.deleted_at IS NULL",
+             WHERE sa.restaurant_id = :restaurant_id
+               AND sa.device_id = :device_id
+               AND sa.is_allowed_offline = 1
+               AND u.status = 'active'
+               AND u.deleted_at IS NULL
+               AND u.offline_pin_salt IS NOT NULL
+               AND u.offline_pin_hash IS NOT NULL",
             [':restaurant_id' => $restaurantId, ':device_id' => $deviceId]
         );
 
