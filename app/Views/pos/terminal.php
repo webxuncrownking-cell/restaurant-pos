@@ -526,7 +526,9 @@
 
       // 3. Register Service Worker
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('<?= BASE_URL ?>/public/sw.js').catch(console.warn);
+        navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js', { scope: '<?= BASE_URL ?>/' }).catch((error) => {
+          console.error('[ServiceWorker] Registration failed:', error);
+        });
       }
 
       // 4. Online/Offline Listeners
