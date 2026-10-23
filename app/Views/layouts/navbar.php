@@ -28,8 +28,7 @@ $navGroups = [
 ];
 
 if ($canManageBranding) {
-  $navGroups['Account'][] = ['label' => 'Branding & Logo', 'route' => '/settings/branding', 'icon' => 'bi-palette2'];
-  $navGroups['Account'][] = ['label' => 'Favicon Settings', 'route' => '/settings/favicon', 'icon' => 'bi-app-indicator'];
+  $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
 }
 
 $pageTitle = 'Restaurant workspace';
@@ -44,6 +43,7 @@ foreach ($navGroups as $items) {
 $logoPath = (string)($restaurant['logo_path'] ?? '');
 $logoUrl = $logoPath !== '' ? BASE_URL . '/' . ltrim($logoPath, '/') : '';
 $restaurantName = $restaurant['name'] ?? ($isPlatform ? 'SaaS Platform' : 'Restaurant POS');
+$restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
 $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Admin' : 'Staff');
 ?>
 <div class="app-shell">
@@ -58,7 +58,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
       </span>
       <span class="app-brand-copy">
         <strong><?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?></strong>
-        <small><?= $isPlatform && !$restaurant ? 'PLATFORM CONTROL CENTER' : 'RESTAURANT WORKSPACE' ?></small>
+        <small title="<?= htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') ?>"><?= $restaurantTagline !== '' ? htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') : ($isPlatform && !$restaurant ? 'PLATFORM CONTROL CENTER' : 'RESTAURANT WORKSPACE') ?></small>
       </span>
     </a>
 
@@ -146,7 +146,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
               <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2 text-secondary"></i>Change Password</a></li>
               <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li>
               <?php if ($canManageBranding): ?>
-                <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings/branding"><i class="bi bi-palette2 me-2 text-secondary"></i>Branding & Logo</a></li>
+                <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
               <?php endif; ?>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item rounded-2 py-2 text-danger" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
