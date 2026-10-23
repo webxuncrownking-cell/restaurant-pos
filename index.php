@@ -82,6 +82,7 @@ $router->get('/menu', [MenuController::class, 'index']);
 $router->post('/menu/categories', [MenuController::class, 'createCategory']);
 $router->get('/menu/products/create', [MenuController::class, 'showCreateProduct']);
 $router->post('/menu/products', [MenuController::class, 'createProduct']);
+$router->post('/menu/products/image', [MenuController::class, 'saveProductImage']);
 $router->post('/menu/products/status', [MenuController::class, 'setProductVisibility']);
 $router->get('/menu/products/{id}/recipe', [MenuController::class, 'showRecipeBOM']);
 $router->post('/menu/products/{id}/recipe', [MenuController::class, 'saveRecipeBOM']);
@@ -130,6 +131,8 @@ $router->post('/billing/upgrade', [BillingController::class, 'upgrade']);
 // Restaurant branding and logo settings
 $router->get('/settings/branding', [RestaurantSettingsController::class, 'branding']);
 $router->post('/settings/branding', [RestaurantSettingsController::class, 'saveBranding']);
+$router->get('/settings/favicon', [RestaurantSettingsController::class, 'favicon']);
+$router->post('/settings/favicon', [RestaurantSettingsController::class, 'saveFavicon']);
 
 // Diagnostics & Setup Routes
 $router->get('/install', [InstallController::class, 'index']);
