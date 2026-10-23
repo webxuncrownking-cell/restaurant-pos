@@ -1,7 +1,7 @@
 <?php
 try {
-  $posRestaurant = \\App\\Core\\TenantContext::getRestaurant();
-} catch (\\Throwable $ignored) {
+  $posRestaurant = \App\Core\TenantContext::getRestaurant();
+} catch (\Throwable $ignored) {
   $posRestaurant = null;
 }
 if (!is_array($posRestaurant)) {
@@ -274,22 +274,22 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 <div id="posSyncNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="alert" aria-live="polite"></div>
 
 <!-- Main POS Workspace -->
-<div class="container-fluid p-0">
-  <div class="row g-0">
+<div class="container-fluid p-0 pos-workspace">
+  <div class="row g-0 pos-workspace-row">
     <!-- Left Panel: Search, Categories & Product Grid -->
-    <div class="col-12 col-lg-7 col-xl-8 pos-catalog-panel p-3">
+    <div class="col-12 col-lg-7 col-xl-8 pos-catalog-panel">
       <!-- Search and Floor Zone Selector -->
-      <div class="row g-2 mb-3">
+      <div class="row g-2 mb-4">
         <div class="col-12 col-md-7">
-          <div class="input-group">
-            <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-search"></i></span>
-            <input type="text" id="productSearchInput" class="form-control bg-dark border-secondary text-white" placeholder="Search menu items, SKU, or keywords (e.g. Sisig, Pork, Egg)..." oninput="window.posApp.filterProducts()">
+          <div class="input-group pos-search-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="search" id="productSearchInput" class="form-control" placeholder="Search dishes, drinks, or SKU…" aria-label="Search menu items" oninput="window.posApp.filterProducts()">
           </div>
         </div>
         <div class="col-12 col-md-5">
-          <div class="input-group">
-            <span class="input-group-text bg-dark border-secondary text-muted"><i class="bi bi-grid-3x3-gap"></i></span>
-            <select id="posTableSelect" class="form-select bg-dark border-secondary text-white" onchange="window.posApp.setTable(this.value)">
+          <div class="input-group pos-search-group">
+            <span class="input-group-text"><i class="bi bi-grid-3x3-gap"></i></span>
+            <select id="posTableSelect" class="form-select" aria-label="Select table or order location" onchange="window.posApp.setTable(this.value)">
               <option value="">Takeaway / Walk-in (No Table)</option>
               <?php foreach ($tables as $t): ?>
                 <option value="<?= $t['id'] ?>" data-name="<?= htmlspecialchars($t['name']) ?>" data-zone="<?= htmlspecialchars($t['floor_zone']) ?>">
@@ -320,30 +320,30 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     <!-- Right Panel: Cart / Order Ticket -->
     <div class="col-12 col-lg-5 col-xl-4 pos-ticket-panel">
       <!-- Dining Option Switcher -->
-      <div class="p-3 border-bottom border-secondary d-flex gap-2">
-        <button id="typeDineIn" class="btn btn-sm btn-primary flex-fill fw-semibold" onclick="window.posApp.setOrderType('dine_in')">
+      <div class="pos-order-type-switcher">
+        <button id="typeDineIn" class="btn pos-order-type active" onclick="window.posApp.setOrderType('dine_in')">
           <i class="bi bi-shop me-1"></i> Dine In
         </button>
-        <button id="typeTakeout" class="btn btn-sm btn-outline-secondary text-white flex-fill fw-semibold" onclick="window.posApp.setOrderType('takeout')">
+        <button id="typeTakeout" class="btn pos-order-type" onclick="window.posApp.setOrderType('takeout')">
           <i class="bi bi-bag me-1"></i> Takeout
         </button>
-        <button id="typeDelivery" class="btn btn-sm btn-outline-secondary text-white flex-fill fw-semibold" onclick="window.posApp.setOrderType('delivery')">
+        <button id="typeDelivery" class="btn pos-order-type" onclick="window.posApp.setOrderType('delivery')">
           <i class="bi bi-bicycle me-1"></i> Delivery
         </button>
       </div>
 
       <!-- Ticket Items List -->
       <div class="ticket-items p-3" id="ticketItemsList">
-        <div class="text-center text-muted py-5" id="emptyCartNotice">
-          <i class="bi bi-receipt fs-1 d-block mb-2 text-white-50"></i>
-          <h5>No Items in Order</h5>
-          <p class="small text-white-50">Tap any menu product on the left to add it to the ticket.</p>
+        <div class="pos-empty-cart" id="emptyCartNotice">
+          <span class="pos-empty-icon"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span>
+          <h5>Your ticket is empty</h5>
+          <p>Choose a product from the menu to start a new order.</p>
         </div>
       </div>
 
       <!-- Ticket Summary & Calculations -->
-      <div class="p-3 border-top border-secondary bg-dark bg-opacity-50">
-        <div class="d-flex justify-content-between text-muted small mb-1">
+      <div class="pos-ticket-summary">
+        <div class="d-flex justify-content-between text-muted small mb-2">
           <span>Subtotal</span>
           <span class="font-monospace fw-semibold text-white" id="ticketSubtotal">₱0.00</span>
         </div>
@@ -366,18 +366,18 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           <span class="font-monospace text-white" id="ticketVat">₱0.00</span>
         </div>
 
-        <div class="d-flex justify-content-between align-items-baseline pt-2 border-top border-secondary">
-          <span class="h5 fw-bold text-uppercase mb-0">Total Due</span>
-          <span class="h3 fw-bold text-success font-monospace mb-0" id="ticketTotal">₱0.00</span>
+        <div class="d-flex justify-content-between align-items-baseline pt-3 mt-3 border-top">
+          <span class="fw-bold mb-0">Total due</span>
+          <span class="h3 fw-bold font-monospace mb-0" id="ticketTotal">₱0.00</span>
         </div>
 
         <!-- Order Action Buttons -->
         <div class="d-flex gap-2 mt-3">
-          <button class="btn btn-outline-danger btn-sm px-3" onclick="window.posApp.clearTicket()">
-            <i class="bi bi-trash"></i>
+          <button class="btn pos-clear-ticket" aria-label="Clear current ticket" title="Clear current ticket" onclick="window.posApp.clearTicket()">
+            <i class="bi bi-trash3"></i>
           </button>
-          <button id="checkoutBtn" class="btn btn-success btn-lg flex-grow-1 fw-bold fs-5 shadow" onclick="window.posApp.openCheckoutModal()">
-            <i class="bi bi-cash-coin me-1"></i> Charge / Pay
+          <button id="checkoutBtn" class="btn pos-checkout-btn flex-grow-1" onclick="window.posApp.openCheckoutModal()">
+            <i class="bi bi-credit-card-2-front me-1"></i> Charge / Pay
           </button>
         </div>
       </div>
@@ -748,10 +748,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       const el = document.getElementById('posNetworkStatus');
       const text = document.getElementById('posNetworkText');
       if (isOnline) {
-        el.className = 'badge bg-success bg-opacity-25 text-success border border-success d-flex align-items-center gap-1 px-2 py-1';
+        el.className = 'pos-network-status online';
         text.textContent = 'Online';
       } else {
-        el.className = 'badge bg-warning bg-opacity-25 text-warning border border-warning d-flex align-items-center gap-1 px-2 py-1';
+        el.className = 'pos-network-status offline';
         text.textContent = 'Offline (PWA)';
       }
 
@@ -932,7 +932,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
     async refreshQueueCount() {
       const pending = await window.PosDB.getPendingOrders();
-      document.getElementById('unsyncedCount').textContent = pending.length;
+      const count = document.getElementById('unsyncedCount');
+      if (count) count.textContent = pending.length;
+      const syncButton = document.getElementById('posSyncBtn');
+      if (syncButton) syncButton.classList.toggle('has-pending', pending.length > 0);
     },
 
     showSyncNotice(message, variant = 'warning') {
@@ -954,9 +957,9 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       ['dine_in', 'takeout', 'delivery'].forEach(t => {
         const btn = document.getElementById(t === 'dine_in' ? 'typeDineIn' : (t === 'takeout' ? 'typeTakeout' : 'typeDelivery'));
         if (t === type) {
-          btn.className = 'btn btn-sm btn-primary flex-fill fw-semibold';
+          btn.className = 'btn pos-order-type active';
         } else {
-          btn.className = 'btn btn-sm btn-outline-secondary text-white flex-fill fw-semibold';
+          btn.className = 'btn pos-order-type';
         }
       });
       void this.persistDraftTicket();
@@ -1008,17 +1011,17 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
         return `
           <div class="col-6 col-sm-4 col-md-4 col-xl-3">
-            <div class="product-card p-3 h-100 d-flex flex-column justify-content-between" onclick="window.posApp.onProductClick(${p.id})">
+            <div class="product-card h-100 d-flex flex-column justify-content-between" onclick="window.posApp.onProductClick(${p.id})">
               <div>
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <span class="badge bg-dark text-white-50 small border border-secondary">${p.category_name || 'Item'}</span>
-                  ${hasVariants || hasAddons ? '<span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.65rem;">Custom</span>' : ''}
+                <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+                  <span class="product-category-tag">${p.category_name || 'Menu item'}</span>
+                  ${hasVariants || hasAddons ? '<span class="product-custom-tag badge">Custom</span>' : ''}
                 </div>
-                <h6 class="fw-bold text-white mb-1">${p.name}</h6>
+                <h6 class="product-title fw-bold mb-0">${p.name}</h6>
               </div>
-              <div class="d-flex justify-content-between align-items-baseline mt-2 pt-2 border-top border-secondary">
-                <span class="fw-bold font-monospace text-success fs-5">₱${price.toFixed(2)}</span>
-                <span class="btn btn-sm btn-primary rounded-circle px-2 py-1"><i class="bi bi-plus-lg"></i></span>
+              <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                <span class="product-price">₱${price.toFixed(2)}</span>
+                <span class="product-add-icon"><i class="bi bi-plus-lg"></i></span>
               </div>
             </div>
           </div>
@@ -1234,10 +1237,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         // Recreate the placeholder each time. The prior placeholder is removed
         // when the cart is rendered, so an old DOM reference must not be reused.
         container.innerHTML = `
-          <div class="text-center text-muted py-5" id="emptyCartNotice">
-            <i class="bi bi-receipt fs-1 d-block mb-2 text-white-50"></i>
-            <h5>No Items in Order</h5>
-            <p class="small text-white-50">Tap any menu product on the left to add it to the ticket.</p>
+          <div class="pos-empty-cart" id="emptyCartNotice">
+            <span class="pos-empty-icon"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></span>
+            <h5>Your ticket is empty</h5>
+            <p>Choose a product from the menu to start a new order.</p>
           </div>
         `;
         document.getElementById('ticketSubtotal').textContent = '₱0.00';
@@ -1255,24 +1258,24 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         const addonsText = item.addons.map(a => `+ ${a.name}`).join(', ');
 
         return `
-          <div class="p-2 mb-2 bg-dark rounded border border-secondary">
-            <div class="d-flex justify-content-between align-items-start">
-              <div>
-                <strong class="text-white">${item.name}</strong>
-                ${item.variant_name ? `<span class="badge bg-secondary ms-1">${item.variant_name}</span>` : ''}
-                ${addonsText ? `<div class="small text-warning">${addonsText}</div>` : ''}
-                <div class="small text-muted font-monospace">₱${item.unit_price.toFixed(2)} each</div>
+          <div class="ticket-item-card">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div class="min-w-0">
+                <strong class="ticket-item-name d-block">${item.name}</strong>
+                ${item.variant_name ? `<span class="badge bg-light text-secondary border mt-1">${item.variant_name}</span>` : ''}
+                ${addonsText ? `<div class="ticket-addon-text mt-1">${addonsText}</div>` : ''}
+                <div class="ticket-item-meta font-monospace mt-2">₱${item.unit_price.toFixed(2)} each</div>
               </div>
-              <span class="font-monospace fw-bold text-white fs-6">₱${itemTotal.toFixed(2)}</span>
+              <span class="ticket-item-price font-monospace">₱${itemTotal.toFixed(2)}</span>
             </div>
-            <div class="d-flex justify-content-between align-items-center mt-2 pt-1 border-top border-secondary">
-              <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" data-ticket-action="remove" data-index="${index}">
-                <i class="bi bi-x-circle"></i> Remove
+            <div class="d-flex justify-content-between align-items-center ticket-item-controls">
+              <button type="button" class="btn btn-link ticket-remove-btn p-0 text-decoration-none" data-ticket-action="remove" data-index="${index}">
+                <i class="bi bi-trash3 me-1"></i>Remove
               </button>
               <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-2 py-0" data-ticket-action="decrease" data-index="${index}" aria-label="Decrease quantity">-</button>
-                <span class="fw-bold font-monospace px-1 text-white">${item.quantity}</span>
-                <button type="button" class="btn btn-sm btn-outline-secondary text-white px-2 py-0" data-ticket-action="increase" data-index="${index}" aria-label="Increase quantity">+</button>
+                <button type="button" class="btn ticket-qty-btn" data-ticket-action="decrease" data-index="${index}" aria-label="Decrease quantity">−</button>
+                <span class="ticket-qty fw-bold font-monospace">${item.quantity}</span>
+                <button type="button" class="btn ticket-qty-btn" data-ticket-action="increase" data-index="${index}" aria-label="Increase quantity">+</button>
               </div>
             </div>
           </div>
