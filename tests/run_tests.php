@@ -758,6 +758,35 @@ foreach ($kitchenTickets as $candidateTicket) {
 assertTest("Kitchen Display Lists Newly Synced Order", $kitchenTicket !== null);
 assertTest("Kitchen Ticket Includes Order Items", $kitchenTicket !== null && count($kitchenTicket['items']) === 2);
 
+// 19b. Table transfer: move one active ticket without duplicating payments or inventory.
+echo PHP_EOL . "19b. Testing Active Table Transfer:" . PHP_EOL;
+$transferTestTableId = \App\Services\TableService::createTable(1, [
+    'table_number' => 'MOVE-99',
+    'name' => 'Transfer Test Table',
+    'capacity' => 6,
+    'floor_zone' => 'Patio',
+    'status' => 'available'
+]);
+$transferResult = \App\Services\TableService::transferActiveDineInOrder(1, (int)$syncRes['server_order_id'], $transferTestTableId, 1);
+$movedOrder = Database::fetchOne(
+    "SELECT table_id, order_status, payment_status FROM orders WHERE restaurant_id = ? AND id = ?",
+    [1, (int)$syncRes['server_order_id']]
+);
+$transferHistory = Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM order_status_history
+     WHERE restaurant_id = ? AND order_id = ? AND notes LIKE 'Table transfer from %'",
+    [1, (int)$syncRes['server_order_id']]
+);
+$transferTable = \App\Services\TableService::getTableById(1, $transferTestTableId);
+assertTest(
+    "Active Dine-in Order Transfer Updates Table and Audit History",
+    (int)$movedOrder['table_id'] === $transferTestTableId
+        && $movedOrder['order_status'] === 'pending'
+        && $movedOrder['payment_status'] === 'paid'
+        && (int)$transferHistory['total'] === 1
+        && $transferTable && $transferTable['status'] === 'occupied'
+);
+
 $kitchenPreparing = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'preparing', 1);
 $kitchenReady = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'ready', 1);
 $kitchenServed = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'served', 1);
@@ -818,6 +847,9 @@ Database::query("DELETE FROM order_status_history WHERE order_id = ?", [$syncRes
 Database::query("DELETE FROM order_items WHERE order_id = ?", [$syncRes['server_order_id']]);
 Database::query("DELETE FROM orders WHERE id = ?", [$syncRes['server_order_id']]);
 Database::query("DELETE FROM inventory_movements WHERE reference_id = ?", [$syncRes['server_order_id']]);
+if (!empty($transferTestTableId)) {
+    Database::query("DELETE FROM restaurant_tables WHERE id = ? AND restaurant_id = 1", [$transferTestTableId]);
+}
 Database::query("DELETE FROM pos_device_sequences WHERE client_uuid = ?", [$testClientUuid]);
 
 // 20. Phase 7: Analytics Reports & SaaS Subscription Billing
