@@ -13,6 +13,7 @@ $navGroups = [
     ['label' => 'Menu Management', 'route' => '/menu', 'icon' => 'bi-journal-richtext'],
     ['label' => 'Inventory', 'route' => '/inventory', 'icon' => 'bi-box-seam'],
     ['label' => 'Tables & Floor Plan', 'route' => '/tables', 'icon' => 'bi-grid-3x3-gap'],
+    ['label' => 'Reservations & Waitlist', 'route' => '/reservations', 'icon' => 'bi-calendar2-check'],
   ],
   'Operations' => [
     ['label' => 'POS Terminals', 'route' => '/devices', 'icon' => 'bi-tablet-landscape'],
