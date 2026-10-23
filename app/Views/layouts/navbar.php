@@ -1,11 +1,11 @@
 <?php
-$user = \\App\\Core\\Auth::user();
-$isPlatform = \\App\\Core\\Auth::isPlatformAdmin();
-$restaurant = \\App\\Core\\TenantContext::getRestaurant();
-$graceDays = \\App\\Core\\TenantContext::getGraceDaysRemaining();
-$isSubValid = \\App\\Core\\TenantContext::isSubscriptionValid();
-$currentPath = (new \\App\\Core\\Request())->getPath();
-$canManageBranding = $restaurant !== null && ($isPlatform || \\App\\Core\\Auth::roleSlug() === 'owner');
+$user = \App\Core\Auth::user();
+$isPlatform = \App\Core\Auth::isPlatformAdmin();
+$restaurant = \App\Core\TenantContext::getRestaurant();
+$graceDays = \App\Core\TenantContext::getGraceDaysRemaining();
+$isSubValid = \App\Core\TenantContext::isSubscriptionValid();
+$currentPath = (new \App\Core\Request())->getPath();
+$canManageBranding = $restaurant !== null && ($isPlatform || \App\Core\Auth::roleSlug() === 'owner');
 
 $navGroups = [
   'Workspace' => [
