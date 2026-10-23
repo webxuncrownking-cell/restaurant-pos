@@ -46,6 +46,7 @@ use App\Controllers\ReportController;
 use App\Controllers\BillingController;
 use App\Controllers\RestaurantSettingsController;
 use App\Controllers\KitchenController;
+use App\Controllers\ReservationsController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -102,6 +103,14 @@ $router->get('/tables', [TableController::class, 'index']);
 $router->post('/tables/create', [TableController::class, 'create']);
 $router->post('/tables/status', [TableController::class, 'updateStatus']);
 $router->post('/tables/delete', [TableController::class, 'delete']);
+
+// Front-of-house reservations and waiting-list routes
+$router->get('/reservations', [ReservationsController::class, 'index']);
+$router->post('/reservations/migrate', [ReservationsController::class, 'migrate']);
+$router->post('/reservations/create', [ReservationsController::class, 'createReservation']);
+$router->post('/reservations/action', [ReservationsController::class, 'reservationAction']);
+$router->post('/reservations/waitlist/create', [ReservationsController::class, 'createWaitlist']);
+$router->post('/reservations/waitlist/action', [ReservationsController::class, 'waitlistAction']);
 
 // Phase 3: POS Terminals & Devices Routes
 $router->get('/devices', [DeviceController::class, 'index']);
