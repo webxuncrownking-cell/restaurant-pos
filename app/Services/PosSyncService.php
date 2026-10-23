@@ -580,6 +580,13 @@ class PosSyncService
             );
             $orderId = (int)Database::lastInsertId();
 
+            if ($saveAsOpen && $orderType === 'dine_in' && $tableId !== null) {
+                Database::query(
+                    "UPDATE restaurant_tables SET status = 'occupied' WHERE restaurant_id = ? AND id = ? AND deleted_at IS NULL",
+                    [$restaurantId, $tableId]
+                );
+            }
+
             foreach ($normalizedItems as $item) {
                 Database::query(
                     "INSERT INTO order_items (
