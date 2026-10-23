@@ -138,6 +138,114 @@ class RestaurantSettingsController
         Response::redirect('/settings/branding');
     }
 
+    public function favicon(Request $request): void
+    {
+        $restaurantId = $this->authorizeBranding();
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant || (int)($restaurant['id'] ?? 0) !== $restaurantId) {
+            Response::forbidden('The selected restaurant could not be loaded.');
+        }
+
+        $faviconColumnReady = $this->hasFaviconColumn();
+        $faviconPath = $faviconColumnReady ? (string)($restaurant['favicon_path'] ?? '') : '';
+        $fallbackPath = trim((string)($restaurant['logo_path'] ?? ''));
+        $previewPath = $faviconPath !== '' ? $faviconPath : $fallbackPath;
+        $faviconUrl = $previewPath !== ''
+            ? BASE_URL . '/' . ltrim($previewPath, '/')
+            : BASE_URL . '/public/favicon.svg';
+
+        Response::render('settings/favicon', [
+            'restaurant' => $restaurant,
+            'flashes' => Session::getFlashes(),
+            'favicon_column_ready' => $faviconColumnReady,
+            'favicon_path' => $faviconPath,
+            'favicon_url' => $faviconUrl,
+            'using_logo_fallback' => $faviconPath === '' && $fallbackPath !== '',
+            'title' => 'Favicon Settings - Restaurant POS'
+        ], 'app');
+    }
+
+    public function saveFavicon(Request $request): void
+    {
+        $restaurantId = $this->authorizeBranding();
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant || (int)($restaurant['id'] ?? 0) !== $restaurantId) {
+            Response::forbidden('The selected restaurant could not be loaded.');
+        }
+
+        $csrfToken = $request->post('csrf_token');
+        if (!is_string($csrfToken)) $csrfToken = $request->post('_csrf_token');
+        if (!is_string($csrfToken) || !CSRF::validate($csrfToken)) {
+            Session::setFlash('danger', 'Your security token expired. Refresh the page and try again.');
+            Response::redirect('/settings/favicon');
+        }
+
+        $faviconColumnReady = $this->hasFaviconColumn();
+        $upload = $_FILES['restaurant_favicon'] ?? null;
+        $hasUpload = is_array($upload) && (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $removeFavicon = (string)$request->post('remove_favicon', '') === '1';
+
+        if (!$faviconColumnReady && ($hasUpload || $removeFavicon)) {
+            Session::setFlash('warning', 'Separate favicon settings need the one-time database update shown on this page. Your current logo and brand colors were not changed.');
+            Response::redirect('/settings/favicon');
+        }
+
+        $oldPath = trim((string)($restaurant['favicon_path'] ?? ''));
+        $newPath = $oldPath !== '' ? $oldPath : null;
+        $uploadedPath = null;
+        $databaseCommitted = false;
+
+        try {
+            if ($hasUpload) {
+                $uploadedPath = $this->storeUploadedFavicon($upload, $restaurantId);
+                $newPath = $uploadedPath;
+            } elseif ($removeFavicon) {
+                $newPath = null;
+            }
+
+            $pdo = Database::getInstance();
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare('UPDATE restaurants SET favicon_path = ? WHERE id = ? AND deleted_at IS NULL');
+            $stmt->execute([$newPath, $restaurantId]);
+
+            if ($stmt->rowCount() === 0) {
+                $exists = Database::fetchOne('SELECT id FROM restaurants WHERE id = ? AND deleted_at IS NULL', [$restaurantId]);
+                if (!$exists) {
+                    throw new \RuntimeException('The restaurant record no longer exists.');
+                }
+            }
+
+            $pdo->commit();
+            $databaseCommitted = true;
+
+            if ($oldPath !== '' && $oldPath !== $newPath) {
+                $this->deleteStoredFavicon($oldPath);
+            }
+
+            Session::setFlash('success', $newPath !== null && $newPath !== $oldPath
+                ? 'Favicon saved. Refresh the browser tab to see the new icon.'
+                : ($removeFavicon ? 'Custom favicon removed. The restaurant logo will be used instead.' : 'Favicon settings saved.'));
+        } catch (Throwable $e) {
+            try {
+                $pdo = Database::getInstance();
+                if ($pdo->inTransaction()) $pdo->rollBack();
+            } catch (Throwable $ignored) {
+                // Preserve the original error below.
+            }
+
+            if (!$databaseCommitted && $uploadedPath !== null && $uploadedPath !== $oldPath) {
+                $this->deleteStoredFavicon($uploadedPath);
+            }
+
+            error_log('[Restaurant Favicon] ' . $e->getMessage());
+            Session::setFlash('danger', $e instanceof \RuntimeException
+                ? $e->getMessage()
+                : 'Unable to save the favicon. Check the PHP error log and try again.');
+        }
+
+        Response::redirect('/settings/favicon');
+    }
+
     private function authorizeBranding(): int
     {
         Auth::requireLogin();
@@ -169,6 +277,89 @@ class RestaurantSettingsController
             error_log('[Restaurant Branding] Unable to inspect restaurant logo schema: ' . $e->getMessage());
             return false;
         }
+    }
+
+    private function hasFaviconColumn(): bool
+    {
+        try {
+            $pdo = Database::getInstance();
+            $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'sqlite') {
+                $columns = Database::fetchAll('PRAGMA table_info(restaurants)');
+                return in_array('favicon_path', array_column($columns, 'name'), true);
+            }
+
+            return Database::fetchOne("SHOW COLUMNS FROM restaurants LIKE 'favicon_path'") !== null;
+        } catch (Throwable $e) {
+            error_log('[Restaurant Favicon] Unable to inspect favicon schema: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function storeUploadedFavicon(array $upload, int $restaurantId): string
+    {
+        $error = (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($error !== UPLOAD_ERR_OK) {
+            if (in_array($error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                throw new \RuntimeException('The favicon file is too large. Choose an image under 512 KB.');
+            }
+            throw new \RuntimeException('The favicon upload did not complete. Please choose the image again.');
+        }
+
+        $tmpPath = (string)($upload['tmp_name'] ?? '');
+        $size = (int)($upload['size'] ?? 0);
+        if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+            throw new \RuntimeException('The uploaded favicon could not be verified. Please choose the file again.');
+        }
+        if ($size < 1 || $size > 524288) {
+            throw new \RuntimeException('The favicon file must be 512 KB or smaller.');
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpPath);
+        $extensions = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'];
+        if (!is_string($mime) || !isset($extensions[$mime])) {
+            throw new \RuntimeException('Use a PNG, JPG, or WebP favicon image. SVG files are not accepted.');
+        }
+
+        $imageInfo = @getimagesize($tmpPath);
+        if (!$imageInfo || ($imageInfo['mime'] ?? '') !== $mime) {
+            throw new \RuntimeException('The uploaded favicon is not a valid image.');
+        }
+        $width = (int)($imageInfo[0] ?? 0);
+        $height = (int)($imageInfo[1] ?? 0);
+        if ($width < 16 || $height < 16 || $width > 512 || $height > 512) {
+            throw new \RuntimeException('Favicon dimensions must be between 16 × 16 and 512 × 512 pixels.');
+        }
+
+        $relativeDirectory = 'public/uploads/restaurant-favicons';
+        $absoluteDirectory = APP_ROOT . '/' . $relativeDirectory;
+        if (!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory, 0755, true) && !is_dir($absoluteDirectory)) {
+            throw new \RuntimeException('The favicon upload directory could not be created. Check folder permissions.');
+        }
+        if (!is_writable($absoluteDirectory)) {
+            throw new \RuntimeException('The favicon upload folder is not writable by the XAMPP Apache/PHP process.');
+        }
+
+        $filename = 'favicon-' . $restaurantId . '-' . bin2hex(random_bytes(12)) . '.' . $extensions[$mime];
+        $relativePath = $relativeDirectory . '/' . $filename;
+        if (!move_uploaded_file($tmpPath, APP_ROOT . '/' . $relativePath)) {
+            throw new \RuntimeException('The favicon could not be saved. Check write permission for public/uploads.');
+        }
+
+        return $relativePath;
+    }
+
+    private function deleteStoredFavicon(string $relativePath): void
+    {
+        $prefix = 'public/uploads/restaurant-favicons/';
+        if (!str_starts_with($relativePath, $prefix)) return;
+
+        $filename = substr($relativePath, strlen($prefix));
+        if (!preg_match('/^favicon-[0-9]+-[a-f0-9]{24}\.(?:jpg|png|webp)$/i', $filename)) return;
+
+        $absolutePath = APP_ROOT . '/' . $prefix . $filename;
+        if (is_file($absolutePath)) @unlink($absolutePath);
     }
 
     private function storeUploadedLogo(array $upload, int $restaurantId): string
