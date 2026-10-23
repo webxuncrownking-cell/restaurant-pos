@@ -31,6 +31,11 @@ if ($canManageBranding) {
   $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
 }
 
+$canViewKitchen = $restaurant !== null && ($isPlatform || in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \App\Core\Auth::can('kitchen.view_kds'));
+if ($canViewKitchen) {
+  $navGroups['Operations'][] = ['label' => 'Kitchen Display', 'route' => '/kitchen', 'icon' => 'bi-fire'];
+}
+
 $pageTitle = 'Restaurant workspace';
 foreach ($navGroups as $items) {
   foreach ($items as $item) {
