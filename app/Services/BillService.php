@@ -21,9 +21,9 @@ class BillService
             $pdo = Database::getInstance();
             $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
             if ($driver === 'sqlite') {
-                $tables = Database::fetchAll("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('order_bill_splits','bill_split_payment_allocations')");
+                $tables = Database::fetchAll("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('order_bill_splits','bill_split_payment_allocations','bill_split_items')");
                 $column = Database::fetchOne("PRAGMA table_info(payments)");
-                return count($tables) === 2 && $column !== null;
+                return count($tables) === 3 && $column !== null;
             }
             $tables = Database::fetchAll(
                 "SELECT table_name FROM information_schema.tables
@@ -34,7 +34,7 @@ class BillService
                 "SELECT column_name FROM information_schema.columns
                  WHERE table_schema = DATABASE() AND table_name = 'payments' AND column_name = 'client_payment_uuid'"
             );
-            return count($tables) === 2 && $column !== null;
+            return count($tables) === 3 && $column !== null;
         } catch (Throwable $e) {
             return false;
         }
@@ -61,7 +61,34 @@ class BillService
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (restaurant_id, order_id, split_number)
             )");
-            $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_payment_allocations (
+            $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                restaurant_id INTEGER NOT NULL,
+                order_id INTEGER NOT NULL,
+                split_id INTEGER NOT NULL,
+                order_item_id INTEGER NOT NULL,
+                allocated_quantity NUMERIC NOT NULL,
+                allocated_amount NUMERIC NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (restaurant_id, order_id, order_item_id)
+            )");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_items (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            restaurant_id INT UNSIGNED NOT NULL,
+            order_id INT UNSIGNED NOT NULL,
+            split_id INT UNSIGNED NOT NULL,
+            order_item_id INT UNSIGNED NOT NULL,
+            allocated_quantity DECIMAL(8,2) NOT NULL,
+            allocated_amount DECIMAL(10,2) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uk_bill_split_item_once (restaurant_id, order_id, order_item_id),
+            KEY idx_bill_split_items_share (restaurant_id, order_id, split_id),
+            CONSTRAINT fk_bill_split_item_share FOREIGN KEY (restaurant_id, order_id, split_id) REFERENCES order_bill_splits (restaurant_id, order_id, id) ON DELETE RESTRICT,
+            CONSTRAINT fk_bill_split_item_order_item FOREIGN KEY (restaurant_id, order_id, order_item_id) REFERENCES order_items (restaurant_id, order_id, id) ON DELETE RESTRICT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_payment_allocations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 restaurant_id INTEGER NOT NULL,
                 order_id INTEGER NOT NULL,
@@ -173,6 +200,14 @@ class BillService
             $split['amount_due'] = round((float)$split['amount_due'], 2);
             $split['amount_paid'] = round((float)$split['amount_paid'], 2);
             $split['balance_due'] = max(0, round($split['amount_due'] - $split['amount_paid'], 2));
+            $split['items'] = Database::fetchAll(
+                "SELECT oi.product_name, oi.variant_name, bsi.allocated_quantity, bsi.allocated_amount
+                 FROM bill_split_items bsi
+                 JOIN order_items oi ON oi.restaurant_id = bsi.restaurant_id AND oi.order_id = bsi.order_id AND oi.id = bsi.order_item_id
+                 WHERE bsi.restaurant_id = ? AND bsi.order_id = ? AND bsi.split_id = ?
+                 ORDER BY oi.id ASC",
+                [$restaurantId, $orderId, (int)$split['id']]
+            );
         }
         unset($split);
         return $splits;
@@ -234,6 +269,150 @@ class BillService
                     "INSERT INTO order_status_history (restaurant_id, order_id, from_status, to_status, changed_by_user_id, notes)
                      VALUES (?, ?, ?, ?, ?, ?)",
                     [$restaurantId, $orderId, (string)$order['order_status'], (string)$order['order_status'], $userId, 'Bill split into ' . $count . ' equal shares']
+                );
+            }
+            $pdo->commit();
+            return self::getSplits($restaurantId, $orderId);
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Assign each order line to one named guest share. Each line's discounted
+     * amount is allocated proportionally in integer cents so shares sum exactly.
+     */
+    public static function createItemSplits(
+        int $restaurantId,
+        int $orderId,
+        int $userId,
+        int $count,
+        array $labels,
+        array $itemAssignments
+    ): array {
+        if ($count < 2 || $count > 12) {
+            throw new InvalidArgumentException('Split the bill into 2 to 12 guest shares.');
+        }
+
+        $pdo = Database::getInstance();
+        try {
+            $pdo->beginTransaction();
+            $suffix = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite' ? '' : ' FOR UPDATE';
+            $stmt = $pdo->prepare(
+                "SELECT id, order_type, order_status, payment_status, total_amount, table_id
+                 FROM orders WHERE restaurant_id = ? AND id = ?" . $suffix
+            );
+            $stmt->execute([$restaurantId, $orderId]);
+            $order = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$order || $order['order_status'] === 'cancelled') {
+                throw new InvalidArgumentException('Open bill not found for this restaurant.');
+            }
+            if ($order['order_type'] !== 'dine_in' || empty($order['table_id'])) {
+                throw new InvalidArgumentException('Only dine-in bills assigned to a table can be split by items.');
+            }
+            if ($order['payment_status'] !== 'unpaid') {
+                throw new InvalidArgumentException('Items can only be split before any payment is collected.');
+            }
+
+            $paymentsStmt = $pdo->prepare("SELECT COUNT(*) FROM payments WHERE restaurant_id = ? AND order_id = ?");
+            $paymentsStmt->execute([$restaurantId, $orderId]);
+            if ((int)$paymentsStmt->fetchColumn() > 0) {
+                throw new InvalidArgumentException('This bill already has payment history and cannot be split retroactively.');
+            }
+            $existsStmt = $pdo->prepare("SELECT COUNT(*) FROM order_bill_splits WHERE restaurant_id = ? AND order_id = ?");
+            $existsStmt->execute([$restaurantId, $orderId]);
+            if ((int)$existsStmt->fetchColumn() > 0) {
+                throw new InvalidArgumentException('This bill has already been split.');
+            }
+
+            $items = Database::fetchAll(
+                "SELECT id, quantity, subtotal, product_name
+                 FROM order_items WHERE restaurant_id = ? AND order_id = ? ORDER BY id ASC",
+                [$restaurantId, $orderId]
+            );
+            if (count($items) < $count) {
+                throw new InvalidArgumentException('There must be at least one order line for every guest share. Split the bill into fewer shares or separate item quantities on the ticket before sending it to the kitchen.');
+            }
+            $grossCents = 0;
+            foreach ($items as &$item) {
+                $item['line_cents'] = max(0, (int)round((float)$item['subtotal'] * 100));
+                $grossCents += $item['line_cents'];
+                $assignment = filter_var($itemAssignments[(string)$item['id']] ?? null, FILTER_VALIDATE_INT);
+                if (!$assignment || $assignment < 1 || $assignment > $count) {
+                    throw new InvalidArgumentException('Assign every order line to a guest share before creating the item split.');
+                }
+                $item['assigned_share'] = (int)$assignment;
+            }
+            unset($item);
+
+            $totalCents = (int)round((float)$order['total_amount'] * 100);
+            if ($grossCents <= 0 || $totalCents <= 0) {
+                throw new InvalidArgumentException('A zero-value bill does not need splitting.');
+            }
+
+            $allocatedCents = 0;
+            foreach ($items as &$item) {
+                $numerator = $totalCents * (int)$item['line_cents'];
+                $item['allocated_cents'] = intdiv($numerator, $grossCents);
+                $item['remainder'] = $numerator % $grossCents;
+                $allocatedCents += $item['allocated_cents'];
+            }
+            unset($item);
+
+            $remainingCents = $totalCents - $allocatedCents;
+            $remainderOrder = array_keys($items);
+            usort($remainderOrder, static fn(int $a, int $b): int =>
+                $items[$b]['remainder'] <=> $items[$a]['remainder']
+                    ?: $items[$a]['id'] <=> $items[$b]['id']
+            );
+            for ($i = 0; $i < $remainingCents; $i++) {
+                $items[$remainderOrder[$i]]['allocated_cents']++;
+            }
+
+            $shareCents = array_fill(1, $count, 0);
+            $shareItemCounts = array_fill(1, $count, 0);
+            foreach ($items as $item) {
+                $shareNumber = (int)$item['assigned_share'];
+                $shareCents[$shareNumber] += (int)$item['allocated_cents'];
+                $shareItemCounts[$shareNumber]++;
+            }
+            for ($share = 1; $share <= $count; $share++) {
+                if ($shareItemCounts[$share] === 0 || $shareCents[$share] <= 0) {
+                    throw new InvalidArgumentException('Every guest share must have at least one order line with a positive balance.');
+                }
+            }
+
+            $splitIds = [];
+            for ($share = 1; $share <= $count; $share++) {
+                $label = trim((string)($labels[$share - 1] ?? ''));
+                if ($label === '') $label = 'Guest ' . $share;
+                if (mb_strlen($label) > 100) throw new InvalidArgumentException('Share names must be 100 characters or fewer.');
+                Database::query(
+                    "INSERT INTO order_bill_splits (restaurant_id, order_id, split_number, split_label, amount_due, created_by_user_id)
+                     VALUES (?, ?, ?, ?, ?, ?)",
+                    [$restaurantId, $orderId, $share, $label, $shareCents[$share] / 100, $userId]
+                );
+                $splitIds[$share] = (int)Database::lastInsertId();
+            }
+
+            foreach ($items as $item) {
+                Database::query(
+                    "INSERT INTO bill_split_items
+                        (restaurant_id, order_id, split_id, order_item_id, allocated_quantity, allocated_amount)
+                     VALUES (?, ?, ?, ?, ?, ?)",
+                    [
+                        $restaurantId, $orderId, $splitIds[(int)$item['assigned_share']],
+                        (int)$item['id'], (float)$item['quantity'], (int)$item['allocated_cents'] / 100
+                    ]
+                );
+            }
+
+            if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite') {
+                Database::query(
+                    "INSERT INTO order_status_history (restaurant_id, order_id, from_status, to_status, changed_by_user_id, notes)
+                     VALUES (?, ?, ?, ?, ?, ?)",
+                    [$restaurantId, $orderId, (string)$order['order_status'], (string)$order['order_status'], $userId, 'Bill split by item lines into ' . $count . ' guest shares']
                 );
             }
             $pdo->commit();
