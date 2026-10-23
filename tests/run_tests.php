@@ -681,6 +681,42 @@ assertTest("Offline Order Synced Successfully", $syncRes['status'] === 'synced' 
 $retryRes = \App\Services\PosSyncService::processOrderSync(1, $orderPayload);
 assertTest("Idempotency: Duplicate Sync Acknowledged Without Duplication", $retryRes['status'] === 'already_synced' && $retryRes['server_order_id'] === $syncRes['server_order_id']);
 
+// 19a. Kitchen Display System: ticket queue, workflow transitions, and audit history.
+echo PHP_EOL . "19a. Testing Kitchen Display System:" . PHP_EOL;
+$kitchenTickets = \App\Services\KitchenService::getActiveTickets(1);
+$kitchenTicket = null;
+foreach ($kitchenTickets as $candidateTicket) {
+    if ((int)$candidateTicket['id'] === (int)$syncRes['server_order_id']) {
+        $kitchenTicket = $candidateTicket;
+        break;
+    }
+}
+assertTest("Kitchen Display Lists Newly Synced Order", $kitchenTicket !== null);
+assertTest("Kitchen Ticket Includes Order Items", $kitchenTicket !== null && count($kitchenTicket['items']) === 2);
+
+$kitchenPreparing = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'preparing', 1);
+$kitchenReady = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'ready', 1);
+$kitchenServed = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'served', 1);
+$kitchenCompleted = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'completed', 1);
+assertTest("Kitchen Status Advances Through Preparing, Ready, Served, Completed",
+    $kitchenPreparing['to_status'] === 'preparing'
+    && $kitchenReady['to_status'] === 'ready'
+    && $kitchenServed['to_status'] === 'served'
+    && $kitchenCompleted['to_status'] === 'completed'
+);
+$kitchenHistory = Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM order_status_history WHERE restaurant_id = ? AND order_id = ?",
+    [1, (int)$syncRes['server_order_id']]
+);
+assertTest("Kitchen Status Changes Are Audited", (int)($kitchenHistory['total'] ?? 0) === 4);
+$invalidKitchenTransitionRejected = false;
+try {
+    \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'preparing', 1);
+} catch (\InvalidArgumentException $e) {
+    $invalidKitchenTransitionRejected = true;
+}
+assertTest("Kitchen Blocks Reversing Completed Orders", $invalidKitchenTransitionRejected);
+
 // The sync service must rebuild prices from the server catalog instead of trusting
 // the deliberately stale client-side line prices and total in $orderPayload.
 $expectedCatalogTotal = 0.0;
@@ -714,6 +750,7 @@ assertTest(
 
 // Cleanup test sync order and related rows
 Database::query("DELETE FROM payments WHERE order_id = ?", [$syncRes['server_order_id']]);
+Database::query("DELETE FROM order_status_history WHERE order_id = ?", [$syncRes['server_order_id']]);
 Database::query("DELETE FROM order_items WHERE order_id = ?", [$syncRes['server_order_id']]);
 Database::query("DELETE FROM orders WHERE id = ?", [$syncRes['server_order_id']]);
 Database::query("DELETE FROM inventory_movements WHERE reference_id = ?", [$syncRes['server_order_id']]);
