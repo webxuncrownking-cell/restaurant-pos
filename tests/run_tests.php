@@ -566,7 +566,7 @@ assertTest("Table Created Successfully", $tableId > 0);
 // Reservations & walk-in queue: table capacity, overlap checks, and seating lifecycle.
 echo PHP_EOL . "15a. Testing Reservations & Waiting List:" . PHP_EOL;
 $reservationTime = date('Y-m-d\\TH:i', time() + 86400);
-$reservationId = \\App\\Services\\ReservationsService::createReservation(1, 1, [
+$reservationId = \App\Services\ReservationsService::createReservation(1, 1, [
     'customer_name' => 'Test Reservation Guest',
     'phone' => '555-TEST',
     'party_size' => 4,
@@ -579,53 +579,53 @@ assertTest("Reservation Created with Tenant and Table", $reservationId > 0);
 
 $reservationConflictRejected = false;
 try {
-    \\App\\Services\\ReservationsService::createReservation(1, 1, [
+    \App\Services\ReservationsService::createReservation(1, 1, [
         'customer_name' => 'Overlapping Test Guest',
         'party_size' => 2,
         'reservation_at' => $reservationTime,
         'duration_minutes' => 60,
         'table_id' => $tableId
     ]);
-} catch (\\InvalidArgumentException $e) {
+} catch (\InvalidArgumentException $e) {
     $reservationConflictRejected = str_contains($e->getMessage(), 'already has a reservation');
 }
 assertTest("Reservation Table Conflict Rejected", $reservationConflictRejected);
 
 $largePartyRejected = false;
 try {
-    \\App\\Services\\ReservationsService::createReservation(1, 1, [
+    \App\Services\ReservationsService::createReservation(1, 1, [
         'customer_name' => 'Too Many Guests',
         'party_size' => 7,
         'reservation_at' => $reservationTime,
         'duration_minutes' => 90,
         'table_id' => $tableId
     ]);
-} catch (\\InvalidArgumentException $e) {
+} catch (\InvalidArgumentException $e) {
     $largePartyRejected = str_contains($e->getMessage(), 'unavailable or too small');
 }
 assertTest("Reservation Exceeding Table Capacity Rejected", $largePartyRejected);
 
-\\App\\Services\\ReservationsService::updateReservationStatus(1, $reservationId, 1, 'cancelled');
-$waitlistId = \\App\\Services\\ReservationsService::addWaitlist(1, 1, [
+\App\Services\ReservationsService::updateReservationStatus(1, $reservationId, 1, 'cancelled');
+$waitlistId = \App\Services\ReservationsService::addWaitlist(1, 1, [
     'customer_name' => 'Test Walk-in Guest',
     'phone' => '555-WAIT',
     'party_size' => 4,
     'estimated_wait_minutes' => 15,
     'notes' => 'Integration test'
 ]);
-$activeWaitlist = \\App\\Services\\ReservationsService::getWaitlist(1);
+$activeWaitlist = \App\Services\ReservationsService::getWaitlist(1);
 $waitlistVisible = count(array_filter($activeWaitlist, static fn(array $entry): bool => (int)$entry['id'] === $waitlistId)) === 1;
 assertTest("Walk-in Added to Active Waitlist", $waitlistId > 0 && $waitlistVisible);
 
-\\App\\Services\\ReservationsService::updateWaitlistStatus(1, $waitlistId, 'seated', $tableId);
-$waitlistAfterSeat = \\App\\Services\\ReservationsService::getWaitlist(1);
+\App\Services\ReservationsService::updateWaitlistStatus(1, $waitlistId, 'seated', $tableId);
+$waitlistAfterSeat = \App\Services\ReservationsService::getWaitlist(1);
 $waitlistRemovedAfterSeat = count(array_filter($waitlistAfterSeat, static fn(array $entry): bool => (int)$entry['id'] === $waitlistId)) === 0;
-$tableAfterSeat = \\App\\Services\\TableService::getTableById(1, $tableId);
+$tableAfterSeat = \App\Services\TableService::getTableById(1, $tableId);
 assertTest("Seating Walk-in Marks Table Occupied and Leaves Active Queue", $waitlistRemovedAfterSeat && $tableAfterSeat && $tableAfterSeat['status'] === 'occupied');
 
 Database::query("DELETE FROM reservations WHERE restaurant_id = ? AND id = ?", [1, $reservationId]);
 Database::query("DELETE FROM waitlist_entries WHERE restaurant_id = ? AND id = ?", [1, $waitlistId]);
-\\App\\Services\\TableService::updateStatus(1, $tableId, 'available');
+\App\Services\TableService::updateStatus(1, $tableId, 'available');
 
 \App\Services\TableService::updateStatus(1, $tableId, 'occupied');
 $tbl = \App\Services\TableService::getTableById(1, $tableId);
