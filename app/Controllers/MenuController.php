@@ -38,6 +38,7 @@ class MenuController
             'categories'   => $categories,
             'products'     => $products,
             'selectedCat'  => $selectedCat,
+            'product_image_column_ready' => $this->hasProductImageColumn(),
             'csrf_token'   => CSRF::generate()
         ]);
     }
@@ -70,6 +71,7 @@ class MenuController
             'addonGroups'  => $addonGroups,
             'directStockIngredients' => $directStockIngredients,
             'product'      => null,
+            'product_image_column_ready' => $this->hasProductImageColumn(),
             'csrf_token'   => CSRF::generate()
         ]);
     }
@@ -88,6 +90,13 @@ class MenuController
             return;
         }
         $restaurantId = (int)$restaurant['id'];
+        $imageColumnReady = $this->hasProductImageColumn();
+        $imageUpload = $_FILES['product_image'] ?? null;
+        $hasImageUpload = is_array($imageUpload) && (int)($imageUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        if ($hasImageUpload && !$imageColumnReady) {
+            Response::redirect('/menu/products/create?error=Run+the+product+image+database+migration+before+uploading+images');
+            return;
+        }
 
         $name = trim((string)$request->post('name', ''));
         $categoryId = (int)$request->post('category_id', 0);
@@ -208,20 +217,39 @@ class MenuController
             }
         }
 
+        $productImagePath = null;
         $pdo = Database::getConnection();
         $pdo->beginTransaction();
         try {
-            $stmt = $pdo->prepare(
-                "INSERT INTO products
-                    (restaurant_id, category_id, name, sku, base_price, cost_price, tax_rate,
-                     product_type, direct_stock_ingredient_id, has_variants, is_active)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
-            );
-            $stmt->execute([
-                $restaurantId, $categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
-                $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                $variants ? 1 : 0
-            ]);
+            if ($hasImageUpload) {
+                $productImagePath = $this->storeUploadedProductImage($imageUpload, $restaurantId);
+            }
+
+            if ($imageColumnReady) {
+                $stmt = $pdo->prepare(
+                    "INSERT INTO products
+                        (restaurant_id, category_id, name, sku, base_price, cost_price, tax_rate,
+                         product_type, direct_stock_ingredient_id, has_variants, is_active, image_path)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)"
+                );
+                $stmt->execute([
+                    $restaurantId, $categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
+                    $productType, $productType === 'direct' ? $directStockIngredientId : null,
+                    $variants ? 1 : 0, $productImagePath
+                ]);
+            } else {
+                $stmt = $pdo->prepare(
+                    "INSERT INTO products
+                        (restaurant_id, category_id, name, sku, base_price, cost_price, tax_rate,
+                         product_type, direct_stock_ingredient_id, has_variants, is_active)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+                );
+                $stmt->execute([
+                    $restaurantId, $categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
+                    $productType, $productType === 'direct' ? $directStockIngredientId : null,
+                    $variants ? 1 : 0
+                ]);
+            }
             $productId = (int)$pdo->lastInsertId();
 
             $variantStmt = $pdo->prepare(
@@ -253,8 +281,77 @@ class MenuController
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
+            if ($productImagePath !== null) {
+                $this->deleteStoredProductImage($productImagePath);
+            }
             error_log('Menu product creation failed: ' . $e);
             Response::redirect('/menu/products/create?error=Unable+to+save+this+product.+Check+SKU+uniqueness+and+the+submitted+values');
+        }
+    }
+
+    public function saveProductImage(Request $request): void
+    {
+        Auth::requirePermission('menu.manage_catalog');
+        if (!CSRF::validate($request->csrfToken())) {
+            Response::redirect('/menu?error=Invalid+security+token');
+            return;
+        }
+
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant) {
+            Response::redirect('/dashboard');
+            return;
+        }
+        $restaurantId = (int)$restaurant['id'];
+        if (!$this->hasProductImageColumn()) {
+            Response::redirect('/menu?error=Run+the+product+image+database+migration+before+uploading+images');
+            return;
+        }
+
+        $productId = (int)$request->post('product_id', 0);
+        $product = Database::fetchOne(
+            'SELECT id, image_path FROM products WHERE id = ? AND restaurant_id = ?',
+            [$productId, $restaurantId]
+        );
+        if (!$product) {
+            Response::redirect('/menu?error=Product+not+found+for+this+restaurant');
+            return;
+        }
+
+        $upload = $_FILES['product_image'] ?? null;
+        $hasUpload = is_array($upload) && (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $removeImage = (string)$request->post('remove_image', '') === '1';
+        if (!$hasUpload && !$removeImage) {
+            Response::redirect('/menu?error=Choose+a+product+image+or+select+Remove+image');
+            return;
+        }
+
+        $oldPath = trim((string)($product['image_path'] ?? ''));
+        $newPath = $oldPath !== '' ? $oldPath : null;
+        $uploadedPath = null;
+        try {
+            if ($hasUpload) {
+                $uploadedPath = $this->storeUploadedProductImage($upload, $restaurantId);
+                $newPath = $uploadedPath;
+            } elseif ($removeImage) {
+                $newPath = null;
+            }
+
+            Database::query(
+                'UPDATE products SET image_path = ? WHERE id = ? AND restaurant_id = ?',
+                [$newPath, $productId, $restaurantId]
+            );
+
+            if ($oldPath !== '' && $oldPath !== $newPath) {
+                $this->deleteStoredProductImage($oldPath);
+            }
+            Response::redirect('/menu?image_updated=1');
+        } catch (\Throwable $e) {
+            if ($uploadedPath !== null && $uploadedPath !== $oldPath) {
+                $this->deleteStoredProductImage($uploadedPath);
+            }
+            error_log('Menu product image update failed: ' . $e->getMessage());
+            Response::redirect('/menu?error=Unable+to+save+product+image.+Check+upload+folder+permissions');
         }
     }
 
@@ -425,4 +522,87 @@ class MenuController
         $catalog = MenuService::getPosCatalog((int)$restaurant['id']);
         Response::json($catalog);
     }
+    private function hasProductImageColumn(): bool
+    {
+        try {
+            $pdo = Database::getConnection();
+            $driver = (string)$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'sqlite') {
+                $columns = Database::fetchAll('PRAGMA table_info(products)');
+                return in_array('image_path', array_column($columns, 'name'), true);
+            }
+
+            return Database::fetchOne("SHOW COLUMNS FROM products LIKE 'image_path'") !== null;
+        } catch (\Throwable $e) {
+            error_log('Menu image schema inspection failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function storeUploadedProductImage(array $upload, int $restaurantId): string
+    {
+        $error = (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($error !== UPLOAD_ERR_OK) {
+            if (in_array($error, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                throw new \RuntimeException('The product image is too large. Choose an image under 3 MB.');
+            }
+            throw new \RuntimeException('The product image upload did not complete. Please choose the file again.');
+        }
+
+        $tmpPath = (string)($upload['tmp_name'] ?? '');
+        $size = (int)($upload['size'] ?? 0);
+        if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+            throw new \RuntimeException('The uploaded product image could not be verified.');
+        }
+        if ($size < 1 || $size > 3145728) {
+            throw new \RuntimeException('The product image must be 3 MB or smaller.');
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpPath);
+        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!is_string($mime) || !isset($extensions[$mime])) {
+            throw new \RuntimeException('Use a JPG, PNG, or WebP product image. SVG files are not accepted.');
+        }
+
+        $imageInfo = @getimagesize($tmpPath);
+        if (!$imageInfo || ($imageInfo['mime'] ?? '') !== $mime) {
+            throw new \RuntimeException('The uploaded product image is not a valid image.');
+        }
+        $width = (int)($imageInfo[0] ?? 0);
+        $height = (int)($imageInfo[1] ?? 0);
+        if ($width < 1 || $height < 1 || $width > 3000 || $height > 3000) {
+            throw new \RuntimeException('Product image dimensions must not exceed 3000 × 3000 pixels.');
+        }
+
+        $relativeDirectory = 'public/uploads/menu-products';
+        $absoluteDirectory = APP_ROOT . '/' . $relativeDirectory;
+        if (!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory, 0755, true) && !is_dir($absoluteDirectory)) {
+            throw new \RuntimeException('The product image upload directory could not be created. Check folder permissions.');
+        }
+        if (!is_writable($absoluteDirectory)) {
+            throw new \RuntimeException('The product image folder is not writable by the XAMPP Apache/PHP process.');
+        }
+
+        $filename = 'product-' . $restaurantId . '-' . bin2hex(random_bytes(12)) . '.' . $extensions[$mime];
+        $relativePath = $relativeDirectory . '/' . $filename;
+        if (!move_uploaded_file($tmpPath, APP_ROOT . '/' . $relativePath)) {
+            throw new \RuntimeException('The product image could not be saved. Check write permission for public/uploads.');
+        }
+
+        return $relativePath;
+    }
+
+    private function deleteStoredProductImage(string $relativePath): void
+    {
+        $prefix = 'public/uploads/menu-products/';
+        if (!str_starts_with($relativePath, $prefix)) return;
+
+        $filename = substr($relativePath, strlen($prefix));
+        if (!preg_match('/^product-[0-9]+-[a-f0-9]{24}\.(?:jpg|png|webp)$/i', $filename)) return;
+
+        $absolutePath = APP_ROOT . '/' . $prefix . $filename;
+        if (is_file($absolutePath)) @unlink($absolutePath);
+    }
+
 }
