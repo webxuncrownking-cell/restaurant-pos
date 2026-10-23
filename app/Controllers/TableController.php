@@ -121,7 +121,7 @@ class TableController
 
         try {
             if (!$orderId || !$destinationTableId || $restaurantId <= 0) {
-                throw new \\InvalidArgumentException('Choose an order and destination table.');
+                throw new \InvalidArgumentException('Choose an order and destination table.');
             }
             $result = TableService::transferActiveDineInOrder($restaurantId, (int)$orderId, (int)$destinationTableId, (int)Auth::id());
             $_SESSION['flash_success'] = 'Order transferred to Table #' . $result['destination_table_number'] . '.';
