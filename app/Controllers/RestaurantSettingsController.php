@@ -214,7 +214,10 @@ class RestaurantSettingsController
         $relativeDirectory = 'public/uploads/restaurant-logos';
         $absoluteDirectory = APP_ROOT . '/' . $relativeDirectory;
         if (!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory, 0755, true) && !is_dir($absoluteDirectory)) {
-            throw new \RuntimeException('The logo upload directory could not be created. Check folder permissions.');
+            throw new \RuntimeException('The logo upload directory could not be created. Check that the parent public/uploads directory exists and is writable by PHP.');
+        }
+        if (!is_writable($absoluteDirectory)) {
+            throw new \RuntimeException('The logo upload folder exists but is not writable by the XAMPP Apache/PHP process. Grant write permission to this folder, then try again.');
         }
 
         $filename = 'restaurant-' . $restaurantId . '-' . bin2hex(random_bytes(12)) . '.' . $extensions[$mime];
