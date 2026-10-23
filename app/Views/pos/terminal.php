@@ -824,6 +824,21 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           await window.PosDB.saveLease(payload.lease);
           this.offlineLease = payload.lease;
         }
+
+        // Bootstrap publishes a tenant-scoped catalog snapshot. Replace cached
+        // product metadata here too so newly uploaded product photos become
+        // available in the live terminal and in IndexedDB for offline use.
+        if (payload.catalog && Array.isArray(payload.catalog.products)) {
+          this.catalog.products = payload.catalog.products;
+          if (Array.isArray(payload.catalog.categories)) {
+            this.catalog.categories = payload.catalog.categories;
+          }
+          if (payload.catalog.restaurant && typeof payload.catalog.restaurant === 'object') {
+            this.catalog.restaurant = payload.catalog.restaurant;
+          }
+          this.renderProducts();
+        }
+
         if (payload.catalog_version && Number(payload.catalog_version.id) > 0) {
           this.catalog.version = {
             ...(this.catalog.version || {}),
