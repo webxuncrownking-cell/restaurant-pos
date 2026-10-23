@@ -10,8 +10,8 @@
     }
     if ($faviconRestaurant === null) {
       try {
-        $faviconRestaurant = \\App\\Core\\TenantContext::getRestaurant();
-      } catch (\\Throwable $ignored) {
+        $faviconRestaurant = \App\Core\TenantContext::getRestaurant();
+      } catch (\Throwable $ignored) {
         $faviconRestaurant = null;
       }
     }
