@@ -144,6 +144,14 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
                         <div>
                           <div class="bill-share-label"><?= htmlspecialchars((string)$split['split_label'], ENT_QUOTES, 'UTF-8') ?></div>
                           <div class="bill-item-meta">Share <?= (int)$split['split_number'] ?> · <?= $money((float)$split['amount_due']) ?> total · <?= $money((float)$split['amount_paid']) ?> paid</div>
+                          <?php if (!empty($split['items'])): ?>
+                            <div class="bill-item-meta mt-2 fw-semibold">Items assigned to this share</div>
+                            <ul class="small text-secondary ps-3 mb-2">
+                              <?php foreach ($split['items'] as $splitItem): ?>
+                                <li><?= (float)$splitItem['allocated_quantity'] ?>× <?= htmlspecialchars((string)$splitItem['product_name'], ENT_QUOTES, 'UTF-8') ?><?php if (!empty($splitItem['variant_name'])): ?> · <?= htmlspecialchars((string)$splitItem['variant_name'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?> <span class="fw-semibold"><?= $money((float)$splitItem['allocated_amount']) ?></span></li>
+                              <?php endforeach; ?>
+                            </ul>
+                          <?php endif; ?>
                         </div>
                         <div class="bill-share-balance"><?= (float)$split['balance_due'] <= 0.009 ? 'Paid' : $money((float)$split['balance_due']) ?></div>
                       </div>
@@ -191,6 +199,53 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
                       <div class="bill-label-help">Splitting is available only before the first payment. Amounts are balanced to the cent.</div>
                       <button type="submit" class="btn btn-outline-primary w-100 mt-3"><i class="bi bi-intersect me-1"></i> Create equal shares</button>
                     </form>
+
+                    <?php if (count($bill['items']) >= 2): ?>
+                      <form method="POST" action="<?= BASE_URL ?>/bills/split-items" class="bill-payment-panel mt-3" data-item-split-form>
+                        <?= \App\Core\CSRF::formField() ?>
+                        <input type="hidden" name="order_id" value="<?= (int)$bill['id'] ?>">
+                        <h3 class="bill-section-title mb-2">Split by menu items</h3>
+                        <p class="bill-label-help mb-3">Assign each order line to a guest. Discounts are allocated proportionally and all shares reconcile to the cent. A line's full quantity stays together in this version.</p>
+                        <div class="row g-2 mb-3">
+                          <div class="col-4">
+                            <label class="form-label small fw-semibold">Guest shares</label>
+                            <select class="form-select form-select-sm" name="split_count" data-split-count>
+                              <?php for ($n=2; $n<=min(12,count($bill['items'])); $n++): ?>
+                                <option value="<?= $n ?>" <?= $n===2?'selected':'' ?>><?= $n ?></option>
+                              <?php endfor; ?>
+                            </select>
+                          </div>
+                          <div class="col-8">
+                            <label class="form-label small fw-semibold">Guest names (optional)</label>
+                            <textarea class="form-control form-control-sm" name="split_labels" rows="1" placeholder="Juan&#10;Maria"></textarea>
+                          </div>
+                        </div>
+                        <div class="table-responsive">
+                          <table class="table table-sm align-middle mb-0">
+                            <thead><tr><th>Order line</th><th style="width:180px">Guest share</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($bill['items'] as $item): ?>
+                              <tr>
+                                <td>
+                                  <div class="fw-semibold small"><?= (float)$item['quantity'] ?>× <?= htmlspecialchars((string)$item['product_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                                  <div class="bill-label-help"><?= $money((float)$item['subtotal']) ?></div>
+                                </td>
+                                <td>
+                                  <select class="form-select form-select-sm" name="item_assignments[<?= (int)$item['id'] ?>]" data-item-assignment required>
+                                    <option value="">Choose guest...</option>
+                                    <?php for ($share=1; $share<=min(12,count($bill['items'])); $share++): ?>
+                                      <option value="<?= $share ?>">Guest <?= $share ?></option>
+                                    <?php endfor; ?>
+                                  </select>
+                                </td>
+                              </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                          </table>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-3"><i class="bi bi-list-check me-1"></i> Create item shares</button>
+                      </form>
+                    <?php endif; ?>
                   <?php endif; ?>
                 <?php endif; ?>
               <?php endif; ?>
@@ -201,4 +256,26 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
     <?php endforeach; ?>
   <?php endif; ?>
 </div>
+<script>
+(() => {
+  document.querySelectorAll('[data-item-split-form]').forEach(form => {
+    const countSelect = form.querySelector('[data-split-count]');
+    const assignments = Array.from(form.querySelectorAll('[data-item-assignment]'));
+    const updateAssignments = () => {
+      const count = Number(countSelect.value || 2);
+      assignments.forEach(select => {
+        Array.from(select.options).forEach(option => {
+          if (!option.value) return;
+          const disabled = Number(option.value) > count;
+          option.disabled = disabled;
+          option.hidden = disabled;
+          if (disabled && select.value === option.value) select.value = '';
+        });
+      });
+    };
+    countSelect.addEventListener('change', updateAssignments);
+    updateAssignments();
+  });
+})();
+</script>
 <?php include APP_ROOT . '/app/Views/layouts/footer.php'; ?>
