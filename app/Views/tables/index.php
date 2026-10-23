@@ -71,7 +71,7 @@
           </div>
         </div>
         <form method="POST" action="<?= BASE_URL ?>/tables/transfer" class="row g-2 align-items-end">
-          <input type="hidden" name="_csrf_token" value="<?= \\App\\Core\\CSRF::getToken() ?>">
+          <input type="hidden" name="_csrf_token" value="<?= \App\Core\CSRF::getToken() ?>">
           <div class="col-12 col-lg-5">
             <label class="form-label small fw-semibold" for="transferOrder">Active order</label>
             <select class="form-select" id="transferOrder" name="order_id" required>
