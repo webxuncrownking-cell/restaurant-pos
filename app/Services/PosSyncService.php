@@ -269,6 +269,13 @@ class PosSyncService
         }
 
         $tableId = !empty($orderPayload['table_id']) ? (int)$orderPayload['table_id'] : null;
+        $saveAsOpen = ($orderPayload['save_as_open'] ?? false) === true;
+        if ($saveAsOpen && ($orderType !== 'dine_in' || $tableId === null)) {
+            throw new InvalidArgumentException('Open unpaid tickets require a selected dine-in table.');
+        }
+        if ($saveAsOpen && is_array($orderPayload['payment'] ?? null)) {
+            throw new InvalidArgumentException('Open tickets cannot include a payment payload.');
+        }
         if ($tableId !== null) {
             $table = Database::fetchOne(
                 "SELECT id FROM restaurant_tables WHERE restaurant_id = ? AND id = ? AND is_active = 1 AND deleted_at IS NULL",
@@ -482,19 +489,24 @@ class PosSyncService
         // The POS displays VAT as included in the post-discount amount.
         $taxAmount = round($totalAmount - ($totalAmount / 1.12), 2);
         $paymentInput = is_array($orderPayload['payment'] ?? null) ? $orderPayload['payment'] : [];
-        $paidAmountRaw = $paymentInput['tendered_amount'] ?? ($orderPayload['paid_amount'] ?? $totalAmount);
-        if (!is_numeric($paidAmountRaw) || !is_finite((float)$paidAmountRaw)) {
-            throw new InvalidArgumentException('The cash tendered amount is invalid.');
-        }
-        $paidAmount = round((float)$paidAmountRaw, 2);
-        if ($paidAmount < $totalAmount) {
-            throw new InvalidArgumentException('The cashier tendered less than the total due.');
-        }
-        $changeAmount = round($paidAmount - $totalAmount, 2);
-
-        $paymentMethod = (string)($paymentInput['payment_method'] ?? 'cash');
-        if (!in_array($paymentMethod, ['cash', 'card', 'qr_online', 'other'], true)) {
-            throw new InvalidArgumentException('The payment method is invalid.');
+        if ($saveAsOpen) {
+            $paidAmount = 0.0;
+            $changeAmount = 0.0;
+            $paymentMethod = 'cash';
+        } else {
+            $paidAmountRaw = $paymentInput['tendered_amount'] ?? ($orderPayload['paid_amount'] ?? $totalAmount);
+            if (!is_numeric($paidAmountRaw) || !is_finite((float)$paidAmountRaw)) {
+                throw new InvalidArgumentException('The cash tendered amount is invalid.');
+            }
+            $paidAmount = round((float)$paidAmountRaw, 2);
+            if ($paidAmount < $totalAmount) {
+                throw new InvalidArgumentException('The cashier tendered less than the total due.');
+            }
+            $changeAmount = round($paidAmount - $totalAmount, 2);
+            $paymentMethod = (string)($paymentInput['payment_method'] ?? 'cash');
+            if (!in_array($paymentMethod, ['cash', 'card', 'qr_online', 'other'], true)) {
+                throw new InvalidArgumentException('The payment method is invalid.');
+            }
         }
 
         $payloadJson = json_encode($orderPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -539,7 +551,7 @@ class PosSyncService
                     canonical_payload_hash, offline_reconciliation_status, client_reported_at, server_received_at,
                     synced_at, created_at
                  ) VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'paid', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW()
+                    ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW()
                  )",
                 [
                     $restaurantId,
@@ -550,6 +562,7 @@ class PosSyncService
                     $orderType,
                     $tableId,
                     $cashierId,
+                    $saveAsOpen ? 'unpaid' : 'paid',
                     $subtotal,
                     $discountAmount,
                     $taxAmount,
@@ -690,21 +703,23 @@ class PosSyncService
                 }
             }
 
-            Database::query(
-                "INSERT INTO payments (
-                    restaurant_id, order_id, cashier_id, payment_method, amount, tendered_amount, change_amount, paid_at
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    $restaurantId,
-                    $orderId,
-                    $cashierId,
-                    $paymentMethod,
-                    $totalAmount,
-                    $paidAmount,
-                    $changeAmount,
-                    $clientReportedAt
-                ]
-            );
+            if (!$saveAsOpen) {
+                Database::query(
+                    "INSERT INTO payments (
+                        restaurant_id, order_id, cashier_id, payment_method, amount, tendered_amount, change_amount, paid_at
+                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    [
+                        $restaurantId,
+                        $orderId,
+                        $cashierId,
+                        $paymentMethod,
+                        $totalAmount,
+                        $paidAmount,
+                        $changeAmount,
+                        $clientReportedAt
+                    ]
+                );
+            }
 
             Database::query(
                 "UPDATE pos_devices SET last_sync_at = NOW() WHERE restaurant_id = ? AND id = ?",
