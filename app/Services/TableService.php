@@ -315,4 +315,136 @@ class TableService
         }
     }
 
+    /**
+     * Merge two still-new dine-in tickets into one kitchen ticket.
+     * Restrictions protect paid accounting records: same table, cashier, shift,
+     * and device; pending status only; no void/refund/conflict records.
+     */
+    public static function mergeActiveDineInTickets(int $restaurantId, int $targetOrderId, int $sourceOrderId, int $changedByUserId): array
+    {
+        if ($restaurantId <= 0 || $targetOrderId <= 0 || $sourceOrderId <= 0 || $changedByUserId <= 0) {
+            throw new InvalidArgumentException('Choose two valid tickets to merge.');
+        }
+        if ($targetOrderId === $sourceOrderId) {
+            throw new InvalidArgumentException('Choose two different tickets.');
+        }
+
+        $pdo = Database::getInstance();
+        $driver = (string)$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        $lockSuffix = $driver === 'sqlite' ? '' : ' FOR UPDATE';
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare(
+                "SELECT id, table_id, order_type, order_status, payment_status, cashier_id, device_id, shift_id,
+                        subtotal, discount_amount, tax_amount, total_amount, paid_amount, change_amount, notes
+                 FROM orders
+                 WHERE restaurant_id = ? AND id IN (?, ?)
+                 ORDER BY id" . $lockSuffix
+            );
+            $stmt->execute([$restaurantId, $targetOrderId, $sourceOrderId]);
+            $orders = [];
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $order) {
+                $orders[(int)$order['id']] = $order;
+            }
+
+            if (count($orders) !== 2) {
+                throw new InvalidArgumentException('Both tickets must belong to this restaurant.');
+            }
+            $target = $orders[$targetOrderId];
+            $source = $orders[$sourceOrderId];
+
+            foreach ([$target, $source] as $order) {
+                if ($order['order_type'] !== 'dine_in' || $order['order_status'] !== 'pending' || $order['payment_status'] !== 'paid') {
+                    throw new InvalidArgumentException('Only paid, not-yet-preparing dine-in tickets can be merged.');
+                }
+                if (empty($order['table_id'])) {
+                    throw new InvalidArgumentException('Both tickets must belong to the same dining table.');
+                }
+            }
+
+            if ((int)$target['table_id'] !== (int)$source['table_id']) {
+                throw new InvalidArgumentException('Both tickets must be assigned to the same table.');
+            }
+            foreach (['cashier_id', 'device_id'] as $field) {
+                if ((int)$target[$field] !== (int)$source[$field]) {
+                    throw new InvalidArgumentException('Tickets must belong to the same cashier and POS device.');
+                }
+            }
+            if ((int)($target['shift_id'] ?? 0) !== (int)($source['shift_id'] ?? 0)) {
+                throw new InvalidArgumentException('Tickets must belong to the same cashier shift.');
+            }
+
+            foreach (['void_records', 'refund_records', 'inventory_conflicts'] as $tableName) {
+                // Table names come from this fixed internal allowlist.
+                $audit = $pdo->prepare("SELECT COUNT(*) FROM {$tableName} WHERE restaurant_id = ? AND order_id IN (?, ?)");
+                $audit->execute([$restaurantId, $targetOrderId, $sourceOrderId]);
+                if ((int)$audit->fetchColumn() > 0) {
+                    throw new InvalidArgumentException('Tickets with voids, refunds, or inventory conflicts cannot be merged.');
+                }
+            }
+
+            // Preserve every line and addon snapshot; inventory is not deducted again.
+            $pdo->prepare("UPDATE order_items SET order_id = ? WHERE restaurant_id = ? AND order_id = ?")
+                ->execute([$targetOrderId, $restaurantId, $sourceOrderId]);
+            $pdo->prepare("UPDATE payments SET order_id = ? WHERE restaurant_id = ? AND order_id = ?")
+                ->execute([$targetOrderId, $restaurantId, $sourceOrderId]);
+            $pdo->prepare(
+                "UPDATE inventory_movements SET reference_id = ?
+                 WHERE restaurant_id = ? AND reference_type = 'order_sale' AND reference_id = ?"
+            )->execute([$targetOrderId, $restaurantId, $sourceOrderId]);
+
+            $combinedNotes = trim((string)($target['notes'] ?? ''));
+            $sourceNotes = trim((string)($source['notes'] ?? ''));
+            $mergeNote = 'Merged order #' . $sourceOrderId;
+            if ($sourceNotes !== '') $mergeNote .= ': ' . $sourceNotes;
+            $combinedNotes = trim($combinedNotes . ($combinedNotes !== '' ? "\n" : '') . $mergeNote);
+
+            $pdo->prepare(
+                "UPDATE orders
+                 SET subtotal = ?, discount_amount = ?, tax_amount = ?, total_amount = ?,
+                     paid_amount = ?, change_amount = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+                 WHERE restaurant_id = ? AND id = ? AND order_status = 'pending'"
+            )->execute([
+                round((float)$target['subtotal'] + (float)$source['subtotal'], 2),
+                round((float)$target['discount_amount'] + (float)$source['discount_amount'], 2),
+                round((float)$target['tax_amount'] + (float)$source['tax_amount'], 2),
+                round((float)$target['total_amount'] + (float)$source['total_amount'], 2),
+                round((float)$target['paid_amount'] + (float)$source['paid_amount'], 2),
+                round((float)$target['change_amount'] + (float)$source['change_amount'], 2),
+                $combinedNotes, $restaurantId, $targetOrderId
+            ]);
+
+            $pdo->prepare(
+                "UPDATE orders SET order_status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+                 WHERE restaurant_id = ? AND id = ? AND order_status = 'pending'"
+            )->execute([$restaurantId, $sourceOrderId]);
+
+            $history = $pdo->prepare(
+                "INSERT INTO order_status_history
+                    (restaurant_id, order_id, from_status, to_status, changed_by_user_id, notes)
+                 VALUES (?, ?, ?, ?, ?, ?)"
+            );
+            $history->execute([
+                $restaurantId, $targetOrderId, 'pending', 'pending', $changedByUserId,
+                'Merged order #' . $sourceOrderId . ' into ticket #' . $targetOrderId
+            ]);
+            $history->execute([
+                $restaurantId, $sourceOrderId, 'pending', 'cancelled', $changedByUserId,
+                'Merged into ticket #' . $targetOrderId
+            ]);
+
+            $pdo->commit();
+            return [
+                'target_order_id' => $targetOrderId,
+                'source_order_id' => $sourceOrderId,
+                'merged_total' => round((float)$target['total_amount'] + (float)$source['total_amount'], 2)
+            ];
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
 }
