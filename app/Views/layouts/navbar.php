@@ -18,6 +18,7 @@ $navGroups = [
   'Operations' => [
     ['label' => 'POS Terminals', 'route' => '/devices', 'icon' => 'bi-tablet-landscape'],
     ['label' => 'Cashier Shifts', 'route' => '/shifts', 'icon' => 'bi-safe2'],
+    ['label' => 'Open Bills & Split Payments', 'route' => '/bills', 'icon' => 'bi-receipt-cutoff'],
     ['label' => 'Reports & Analytics', 'route' => '/reports', 'icon' => 'bi-graph-up-arrow'],
   ],
   'Account' => [
