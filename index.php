@@ -128,11 +128,14 @@ $router->get('/reports/data.json', [ReportController::class, 'dataJson']);
 $router->get('/billing', [BillingController::class, 'index']);
 $router->post('/billing/upgrade', [BillingController::class, 'upgrade']);
 
-// Restaurant branding and logo settings
+// Unified restaurant settings
+$router->get('/settings', [RestaurantSettingsController::class, 'settings']);
+$router->post('/settings', [RestaurantSettingsController::class, 'saveSettings']);
+// Legacy paths remain compatible and redirect to the unified settings page.
 $router->get('/settings/branding', [RestaurantSettingsController::class, 'branding']);
-$router->post('/settings/branding', [RestaurantSettingsController::class, 'saveBranding']);
+$router->post('/settings/branding', [RestaurantSettingsController::class, 'saveSettings']);
 $router->get('/settings/favicon', [RestaurantSettingsController::class, 'favicon']);
-$router->post('/settings/favicon', [RestaurantSettingsController::class, 'saveFavicon']);
+$router->post('/settings/favicon', [RestaurantSettingsController::class, 'saveSettings']);
 
 // Diagnostics & Setup Routes
 $router->get('/install', [InstallController::class, 'index']);
