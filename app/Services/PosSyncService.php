@@ -20,19 +20,40 @@ class PosSyncService
      */
     public static function getOrCreateCatalogVersion(int $restaurantId): array
     {
-        // Check for latest catalog version
         $latest = Database::fetchOne(
             "SELECT * FROM restaurant_catalog_versions WHERE restaurant_id = :restaurant_id ORDER BY id DESC LIMIT 1",
             [':restaurant_id' => $restaurantId]
         );
 
+        // Recompute the snapshot hash on every bootstrap so changes such as
+        // product photos are published to active POS devices. Normalize the
+        // display-only timestamp, otherwise it would force a new version on
+        // every request even when the catalog itself has not changed.
+        $posCatalog = MenuService::getPosCatalog($restaurantId);
+        $hashPayload = $posCatalog;
+        $hashPayload['version'] = 'catalog-snapshot';
+        $hashJson = json_encode($hashPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($hashJson)) {
+            throw new RuntimeException('Unable to serialize the POS catalog snapshot.');
+        }
+        $normalizedCatalogHash = hash('sha256', $hashJson);
+
         if ($latest) {
-            return $latest;
+            $latestPayload = json_decode((string)($latest['snapshot_json'] ?? ''), true);
+            if (is_array($latestPayload)) {
+                $latestPayload['version'] = 'catalog-snapshot';
+                $latestNormalizedJson = json_encode($latestPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if (is_string($latestNormalizedJson) && hash_equals(hash('sha256', $latestNormalizedJson), $normalizedCatalogHash)) {
+                    return $latest;
+                }
+            }
         }
 
-        // Build new version snapshot
-        $posCatalog = MenuService::getPosCatalog($restaurantId);
         $jsonStr = json_encode($posCatalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($jsonStr)) {
+            throw new RuntimeException('Unable to serialize the POS catalog snapshot.');
+        }
+        // Keep snapshot_hash equal to the hash of the exact stored JSON.
         $snapshotHash = hash('sha256', $jsonStr);
         $versionUuid = DeviceService::generateUuidV4();
 

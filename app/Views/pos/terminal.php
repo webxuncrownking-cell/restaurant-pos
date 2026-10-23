@@ -96,10 +96,18 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   .category-pill.active { color:#fff; background:var(--terminal-primary); border-color:var(--terminal-primary); box-shadow:0 4px 10px color-mix(in srgb,var(--terminal-primary) 20%,transparent); }
   #productsGrid { --bs-gutter-x:1rem; --bs-gutter-y:1rem; }
   .product-card {
-    min-height:132px; padding:16px!important; background:#fff!important; color:var(--terminal-ink);
+    min-height:230px; padding:13px!important; background:#fff!important; color:var(--terminal-ink);
     border:1px solid #e3e8f0!important; border-radius:16px!important; box-shadow:0 3px 10px rgba(16,24,40,.025);
     transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; cursor:pointer; user-select:none;
   }
+  .product-image-wrap {
+    position:relative; display:grid; place-items:center; width:100%; aspect-ratio:4 / 3; margin-bottom:13px;
+    overflow:hidden; border-radius:11px; background:linear-gradient(145deg,#f8fafc,#eef2f7); color:#b2bdcd;
+  }
+  .product-image-wrap i { font-size:1.9rem; color:#bdc7d5; }
+  .product-image-wrap img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  .product-image-wrap.is-fallback { background:linear-gradient(145deg,#f8fafc,#eef2f7); }
+
   .product-card:hover { border-color:color-mix(in srgb,var(--terminal-primary) 52%,#e3e8f0)!important; transform:translateY(-2px); box-shadow:0 12px 25px rgba(16,24,40,.07); }
   .product-card:active { transform:scale(.985); }
   .product-card .product-category-tag { background:#f4f6fa; border:1px solid #e6eaf1; border-radius:6px; padding:4px 7px; color:#748096; font-size:.62rem; font-weight:800; line-height:1; }
@@ -816,6 +824,21 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           await window.PosDB.saveLease(payload.lease);
           this.offlineLease = payload.lease;
         }
+
+        // Bootstrap publishes a tenant-scoped catalog snapshot. Replace cached
+        // product metadata here too so newly uploaded product photos become
+        // available in the live terminal and in IndexedDB for offline use.
+        if (payload.catalog && Array.isArray(payload.catalog.products)) {
+          this.catalog.products = payload.catalog.products;
+          if (Array.isArray(payload.catalog.categories)) {
+            this.catalog.categories = payload.catalog.categories;
+          }
+          if (payload.catalog.restaurant && typeof payload.catalog.restaurant === 'object') {
+            this.catalog.restaurant = payload.catalog.restaurant;
+          }
+          this.renderProducts();
+        }
+
         if (payload.catalog_version && Number(payload.catalog_version.id) > 0) {
           this.catalog.version = {
             ...(this.catalog.version || {}),
@@ -1008,11 +1031,15 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         const hasVariants = p.variants && p.variants.length > 0;
         const hasAddons = p.addon_groups && p.addon_groups.length > 0;
         const price = parseFloat(p.base_price || 0);
+        const imageUrl = typeof p.image_url === 'string' ? p.image_url : '';
 
         return `
           <div class="col-6 col-sm-4 col-md-4 col-xl-3">
             <div class="product-card h-100 d-flex flex-column justify-content-between" onclick="window.posApp.onProductClick(${p.id})">
               <div>
+                ${imageUrl
+                  ? `<div class="product-image-wrap"><i class="bi bi-image" aria-hidden="true"></i><img src="${imageUrl}" alt="" loading="eager" decoding="async" onerror="this.remove(); this.parentElement.classList.add('is-fallback')"></div>`
+                  : `<div class="product-image-wrap is-fallback"><i class="bi bi-image" aria-hidden="true"></i></div>`}
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                   <span class="product-category-tag">${p.category_name || 'Menu item'}</span>
                   ${hasVariants || hasAddons ? '<span class="product-custom-tag badge">Custom</span>' : ''}

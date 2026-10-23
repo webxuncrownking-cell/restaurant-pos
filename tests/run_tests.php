@@ -74,6 +74,11 @@ $requiredTables = [
 $missingTables = array_diff($requiredTables, $tableNames);
 assertTest("All Critical Tables Created in InnoDB", empty($missingTables), "Missing: " . implode(', ', $missingTables));
 
+$restaurantColumnNames = array_column(Database::fetchAll("SHOW COLUMNS FROM restaurants"), 'Field');
+$productColumnNames = array_column(Database::fetchAll("SHOW COLUMNS FROM products"), 'Field');
+assertTest("Restaurants support a separate favicon path", in_array('favicon_path', $restaurantColumnNames, true));
+assertTest("Products support menu image paths", in_array('image_path', $productColumnNames, true));
+
 // 3. Multi-Tenant Foreign Key Isolation
 echo PHP_EOL . "3. Testing Strict Multi-Tenant Composite Foreign Key Isolation:" . PHP_EOL;
 try {

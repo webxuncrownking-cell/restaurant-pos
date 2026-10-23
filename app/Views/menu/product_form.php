@@ -25,13 +25,20 @@
         </div>
       <?php endif; ?>
 
+      <?php if (empty($product_image_column_ready)): ?>
+        <div class="alert alert-warning border-0 shadow-sm">
+          <strong>Product image uploads need a one-time database update.</strong>
+          Run <code>ALTER TABLE products ADD COLUMN image_path VARCHAR(255) NULL AFTER barcode;</code> once in phpMyAdmin → SQL. Menu items can still be created without an image until then.
+        </div>
+      <?php endif; ?>
+
       <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white border-bottom py-3 px-4">
           <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-plus-circle text-warning me-2"></i>Create Menu Item</h5>
           <p class="small text-muted mb-0 mt-1">Create a schema-compatible catalog item for this restaurant.</p>
         </div>
         <div class="card-body p-4">
-          <form method="POST" action="<?= BASE_URL ?>/menu/products" id="productForm">
+          <form method="POST" action="<?= BASE_URL ?>/menu/products" id="productForm" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="row g-3 mb-3">
@@ -83,6 +90,19 @@
               <div class="col-12 col-md-4">
                 <label for="tax_rate" class="form-label fw-semibold small">Tax Rate (%)</label>
                 <input type="number" step="0.01" min="0" max="100" class="form-control" id="tax_rate" name="tax_rate" value="12.00" required>
+              </div>
+            </div>
+
+            <div class="border rounded-3 p-3 mb-4 bg-light">
+              <div class="d-flex align-items-start gap-3">
+                <div class="flex-grow-1">
+                  <label for="productImageInput" class="form-label fw-semibold small">Menu Item Photo <span class="text-muted">(Optional)</span></label>
+                  <input type="file" class="form-control" id="productImageInput" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" <?= empty($product_image_column_ready) ? 'disabled' : '' ?>>
+                  <div class="form-text">JPG, PNG, or WebP · up to 3 MB · square or landscape images work best. The photo will appear on the POS menu.</div>
+                </div>
+                <div class="menu-image-preview-frame d-none" id="productImagePreviewFrame" style="width:105px;height:92px;flex:0 0 105px;border-radius:12px;overflow:hidden;border:1px solid #dce3ec;background:#fff">
+                  <img id="productImagePreview" src="" alt="Product image preview" style="width:100%;height:100%;object-fit:cover">
+                </div>
               </div>
             </div>
 
@@ -146,6 +166,24 @@
   const directSection = document.getElementById('directStockSection');
   const directIngredient = document.getElementById('direct_stock_ingredient_id');
   const variantsContainer = document.getElementById('variantsContainer');
+  const productImageInput = document.getElementById('productImageInput');
+  const productImagePreviewFrame = document.getElementById('productImagePreviewFrame');
+  const productImagePreview = document.getElementById('productImagePreview');
+  let productImagePreviewUrl = null;
+  productImageInput?.addEventListener('change', () => {
+    const file = productImageInput.files && productImageInput.files[0];
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 3 * 1024 * 1024) {
+      alert('Choose a JPG, PNG, or WebP image up to 3 MB.');
+      productImageInput.value = '';
+      productImagePreviewFrame?.classList.add('d-none');
+      return;
+    }
+    if (productImagePreviewUrl) URL.revokeObjectURL(productImagePreviewUrl);
+    productImagePreviewUrl = URL.createObjectURL(file);
+    if (productImagePreview) productImagePreview.src = productImagePreviewUrl;
+    productImagePreviewFrame?.classList.remove('d-none');
+  });
   let variantCount = 0;
 
   function toggleProductType() {

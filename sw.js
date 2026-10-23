@@ -5,7 +5,7 @@
  * This file lives at the application root (next to index.php) so its default
  * scope includes /pos when the app is installed under an XAMPP subdirectory.
  */
-const CACHE_NAME = 'restaurant-pos-shell-v5';
+const CACHE_NAME = 'restaurant-pos-shell-v6';
 const APP_BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '');
 const appUrl = (path) => `${APP_BASE_PATH}${path.startsWith('/') ? path : '/' + path}`;
 

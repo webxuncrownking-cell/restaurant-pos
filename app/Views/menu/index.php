@@ -1,6 +1,14 @@
 <?php include APP_ROOT . '/app/Views/layouts/header.php'; ?>
 <?php include APP_ROOT . '/app/Views/layouts/navbar.php'; ?>
 
+<style>
+  .menu-product-photo { height:148px; width:100%; overflow:hidden; border-radius:13px; background:linear-gradient(145deg,#f7f9fc,#edf2f8); border:1px solid #e8edf4; display:grid; place-items:center; }
+  .menu-product-photo img { height:100%; width:100%; object-fit:cover; display:block; }
+  .menu-product-photo .menu-photo-empty { font-size:2rem; color:#b2bdcd; }
+  .menu-photo-form { background:#f8fafc; border:1px solid #e7ecf3; border-radius:12px; padding:10px; }
+  .menu-photo-form .form-control { min-width:0; }
+</style>
+
 <div class="container py-4">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
@@ -17,6 +25,12 @@
     </div>
   </div>
 
+  <?php if (isset($_GET['image_updated'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">Menu item image saved successfully.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endif; ?>
+
   <?php if (isset($_GET['error'])): ?>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
       <?= htmlspecialchars((string)$_GET['error'], ENT_QUOTES, 'UTF-8') ?>
@@ -29,6 +43,13 @@
   <?php elseif (isset($_GET['visibility_updated'])): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">Product visibility updated.
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endif; ?>
+
+  <?php if (empty($product_image_column_ready)): ?>
+    <div class="alert alert-warning border-0 shadow-sm" role="alert">
+      <strong>Menu photos are not enabled in this database yet.</strong>
+      Run <code>ALTER TABLE products ADD COLUMN image_path VARCHAR(255) NULL AFTER barcode;</code> once in phpMyAdmin → SQL. Existing menu and sales data will be preserved.
     </div>
   <?php endif; ?>
 
@@ -72,6 +93,13 @@
         <div class="col-12 col-md-6 col-lg-4">
           <div class="card card-metric h-100 border-0 shadow-sm rounded-3 <?= empty($prod['is_active']) ? 'opacity-75' : '' ?>">
             <div class="card-body p-3 d-flex flex-column">
+              <div class="menu-product-photo mb-3">
+                <?php if (!empty($prod['image_path'])): ?>
+                  <img src="<?= htmlspecialchars(BASE_URL . '/' . ltrim((string)$prod['image_path'], '/'), ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                <?php else: ?>
+                  <i class="bi bi-image menu-photo-empty" aria-hidden="true"></i>
+                <?php endif; ?>
+              </div>
               <div class="d-flex justify-content-between align-items-start mb-2">
                 <span class="badge bg-light text-muted border small"><?= htmlspecialchars($prod['category_name'], ENT_QUOTES, 'UTF-8') ?></span>
                 <span class="fw-bold fs-5 text-success">₱<?= number_format((float)$prod['base_price'], 2) ?></span>
@@ -86,6 +114,27 @@
                 SKU: <?= htmlspecialchars((string)$prod['sku'], ENT_QUOTES, 'UTF-8') ?>
                 · <?= ($prod['product_type'] ?? 'recipe') === 'direct' ? 'Direct stock' : 'Recipe based' ?>
               </div>
+
+              <?php if (!empty($product_image_column_ready)): ?>
+                <form method="POST" action="<?= BASE_URL ?>/menu/products/image" enctype="multipart/form-data" class="menu-photo-form mb-3">
+                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
+                  <input type="hidden" name="product_id" value="<?= (int)$prod['id'] ?>">
+                  <label class="form-label small fw-semibold mb-1" for="productImage<?= (int)$prod['id'] ?>">
+                    <?= !empty($prod['image_path']) ? 'Change photo' : 'Add menu photo' ?>
+                  </label>
+                  <div class="d-flex gap-2 align-items-center">
+                    <input type="file" class="form-control form-control-sm" id="productImage<?= (int)$prod['id'] ?>" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" aria-label="Choose photo for <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                    <button type="submit" class="btn btn-sm btn-outline-primary flex-shrink-0">Save</button>
+                  </div>
+                  <?php if (!empty($prod['image_path'])): ?>
+                    <div class="form-check mt-2">
+                      <input class="form-check-input" type="checkbox" name="remove_image" value="1" id="removeProductImage<?= (int)$prod['id'] ?>">
+                      <label class="form-check-label small text-danger" for="removeProductImage<?= (int)$prod['id'] ?>">Remove photo</label>
+                    </div>
+                  <?php endif; ?>
+                  <div class="form-text">JPG, PNG, WebP · max 3 MB</div>
+                </form>
+              <?php endif; ?>
 
               <div class="mb-3 mt-auto">
                 <?php if (!empty($prod['variants'])): ?>
