@@ -28,6 +28,7 @@ class TableController
         $zone = $request->get('zone');
 
         $tables = TableService::getTables($restaurantId, $zone);
+        $allTables = TableService::getTables($restaurantId);
         $floorZones = TableService::getFloorZones($restaurantId);
         $activeOrders = TableService::getActiveDineInOrders($restaurantId);
 
@@ -47,6 +48,7 @@ class TableController
 
         Response::render('tables/index', [
             'tables' => $tables,
+            'allTables' => $allTables,
             'activeOrders' => $activeOrders,
             'floorZones' => $floorZones,
             'currentZone' => $zone ?: 'all',
