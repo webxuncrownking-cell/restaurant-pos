@@ -16,6 +16,8 @@ DROP TABLE IF EXISTS `inventory_conflicts`;
 DROP TABLE IF EXISTS `inventory_movements`;
 DROP TABLE IF EXISTS `refund_records`;
 DROP TABLE IF EXISTS `void_records`;
+DROP TABLE IF EXISTS `bill_split_payment_allocations`;
+DROP TABLE IF EXISTS `order_bill_splits`;
 DROP TABLE IF EXISTS `payments`;
 DROP TABLE IF EXISTS `order_status_history`;
 DROP TABLE IF EXISTS `order_item_addons`;
@@ -703,13 +705,47 @@ CREATE TABLE `payments` (
   `tendered_amount` DECIMAL(10,2) NOT NULL,
   `change_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `transaction_reference` VARCHAR(100) NULL,
+  `client_payment_uuid` VARCHAR(36) NULL,
   `is_verified` TINYINT(1) NOT NULL DEFAULT 1,
   `paid_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_pay_tenant_id` (`restaurant_id`, `id`),
+  UNIQUE KEY `uk_payment_client_uuid` (`restaurant_id`, `client_payment_uuid`),
   UNIQUE KEY `uk_pay_tenant_order_id` (`restaurant_id`, `order_id`, `id`),
   FOREIGN KEY (`restaurant_id`, `order_id`) REFERENCES `orders` (`restaurant_id`, `id`) ON DELETE RESTRICT,
   FOREIGN KEY (`restaurant_id`, `cashier_id`) REFERENCES `users` (`restaurant_id`, `id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `order_bill_splits` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `restaurant_id` INT UNSIGNED NOT NULL,
+  `order_id` INT UNSIGNED NOT NULL,
+  `split_number` SMALLINT UNSIGNED NOT NULL,
+  `split_label` VARCHAR(100) NOT NULL,
+  `amount_due` DECIMAL(10,2) NOT NULL,
+  `created_by_user_id` INT UNSIGNED NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_bill_split_tenant_id` (`restaurant_id`, `id`),
+  UNIQUE KEY `uk_bill_split_tenant_order_id` (`restaurant_id`, `order_id`, `id`),
+  UNIQUE KEY `uk_bill_split_order_number` (`restaurant_id`, `order_id`, `split_number`),
+  FOREIGN KEY (`restaurant_id`, `order_id`) REFERENCES `orders` (`restaurant_id`, `id`) ON DELETE RESTRICT,
+  FOREIGN KEY (`restaurant_id`, `created_by_user_id`) REFERENCES `users` (`restaurant_id`, `id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `bill_split_payment_allocations` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `restaurant_id` INT UNSIGNED NOT NULL,
+  `order_id` INT UNSIGNED NOT NULL,
+  `split_id` INT UNSIGNED NOT NULL,
+  `payment_id` INT UNSIGNED NOT NULL,
+  `allocated_amount` DECIMAL(10,2) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_bill_allocation_split_payment` (`restaurant_id`, `split_id`, `payment_id`),
+  KEY `idx_bill_allocation_order` (`restaurant_id`, `order_id`),
+  FOREIGN KEY (`restaurant_id`, `order_id`, `split_id`) REFERENCES `order_bill_splits` (`restaurant_id`, `order_id`, `id`) ON DELETE RESTRICT,
+  FOREIGN KEY (`restaurant_id`, `order_id`, `payment_id`) REFERENCES `payments` (`restaurant_id`, `order_id`, `id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------------------------
