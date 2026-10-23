@@ -51,7 +51,9 @@ class RestaurantSettingsController
             Response::forbidden('The selected restaurant could not be loaded.');
         }
 
-        if (!CSRF::validate($request->post('csrf_token') ?? $request->post('_csrf_token'))) {
+        $csrfToken = $request->post('csrf_token');
+        if (!is_string($csrfToken)) $csrfToken = $request->post('_csrf_token');
+        if (!is_string($csrfToken) || !CSRF::validate($csrfToken)) {
             Session::setFlash('danger', 'Your security token expired. Refresh the page and try again.');
             Response::redirect('/settings/branding');
         }
