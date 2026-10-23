@@ -47,6 +47,7 @@ use App\Controllers\BillingController;
 use App\Controllers\RestaurantSettingsController;
 use App\Controllers\KitchenController;
 use App\Controllers\ReservationsController;
+use App\Controllers\BillsController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -113,6 +114,12 @@ $router->post('/reservations/create', [ReservationsController::class, 'createRes
 $router->post('/reservations/action', [ReservationsController::class, 'reservationAction']);
 $router->post('/reservations/waitlist/create', [ReservationsController::class, 'createWaitlist']);
 $router->post('/reservations/waitlist/action', [ReservationsController::class, 'waitlistAction']);
+
+// Open bills, partial payments and guest share allocation
+$router->get('/bills', [BillsController::class, 'index']);
+$router->post('/bills/migrate', [BillsController::class, 'migrate']);
+$router->post('/bills/split', [BillsController::class, 'createEqualSplits']);
+$router->post('/bills/payment', [BillsController::class, 'collectPayment']);
 
 // Phase 3: POS Terminals & Devices Routes
 $router->get('/devices', [DeviceController::class, 'index']);
