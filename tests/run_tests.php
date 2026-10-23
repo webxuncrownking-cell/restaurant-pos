@@ -705,8 +705,8 @@ assertTest("Kitchen Status Advances Through Preparing, Ready, Served, Completed"
     && $kitchenCompleted['to_status'] === 'completed'
 );
 $kitchenHistory = Database::fetchOne(
-    "SELECT COUNT(*) AS total FROM order_status_history WHERE restaurant_id = ? AND order_id = ?",
-    [1, (int)$syncRes['server_order_id']]
+    "SELECT COUNT(*) AS total FROM order_status_history WHERE restaurant_id = ? AND order_id = ? AND notes = ?",
+    [1, (int)$syncRes['server_order_id'], 'Updated via Kitchen Display']
 );
 assertTest("Kitchen Status Changes Are Audited", (int)($kitchenHistory['total'] ?? 0) === 4);
 $invalidKitchenTransitionRejected = false;
