@@ -102,6 +102,7 @@ $router->get('/inventory/ledger', [InventoryController::class, 'ledger']);
 $router->get('/tables', [TableController::class, 'index']);
 $router->post('/tables/create', [TableController::class, 'create']);
 $router->post('/tables/status', [TableController::class, 'updateStatus']);
+$router->post('/tables/transfer', [TableController::class, 'transferOrder']);
 $router->post('/tables/delete', [TableController::class, 'delete']);
 
 // Front-of-house reservations and waiting-list routes
