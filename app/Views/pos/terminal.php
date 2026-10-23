@@ -389,6 +389,9 @@ include APP_ROOT . '/app/Views/layouts/header.php';
             <i class="bi bi-credit-card-2-front me-1"></i> Charge / Pay
           </button>
         </div>
+        <button id="saveOpenOrderBtn" class="btn btn-outline-primary w-100 mt-2" type="button" onclick="window.posApp.saveOpenOrder()" title="Send this dine-in ticket to the kitchen and leave the bill unpaid">
+          <i class="bi bi-fire me-1"></i> Send to Kitchen / Save Open Bill
+        </button>
       </div>
     </div>
   </div>
@@ -1375,6 +1378,93 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         display.className = 'h3 fw-bold font-monospace mb-0 text-success';
         display.textContent = `₱${change.toFixed(2)}`;
         btn.disabled = false;
+      }
+    },
+
+    async saveOpenOrder() {
+      if (this.isProcessingSale || !Array.isArray(this.ticket) || this.ticket.length === 0) return;
+
+      if (this.orderType !== 'dine_in' || !this.currentTableId) {
+        alert('Select a dining table and choose Dine In before saving an open bill.');
+        return;
+      }
+      if (!confirm('Send this order to the kitchen without collecting payment now? It will appear in Open Bills for partial or split payment.')) {
+        return;
+      }
+
+      this.isProcessingSale = true;
+      const button = document.getElementById('saveOpenOrderBtn');
+      const originalHtml = button ? button.innerHTML : '';
+      if (button) {
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Saving Open Bill...';
+      }
+
+      let queued = false;
+      try {
+        const calcs = this.getCalculations();
+        const clientUuid = crypto.randomUUID();
+        const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
+        const orderPayload = {
+          client_uuid: clientUuid,
+          device_id: deviceId,
+          shift_id: shiftId,
+          order_number: orderNumber,
+          order_type: 'dine_in',
+          table_id: this.currentTableId,
+          cashier_id: cashierId,
+          catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
+          offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
+          save_as_open: true,
+          subtotal: calcs.subtotal,
+          discount_amount: calcs.discount,
+          tax_amount: calcs.vat,
+          total_amount: calcs.total,
+          paid_amount: 0,
+          change_amount: 0,
+          created_at: new Date().toISOString(),
+          items: this.ticket.map(item => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id,
+            name: item.name,
+            variant_name: item.variant_name,
+            unit_price: item.unit_price,
+            quantity: item.quantity,
+            addons: item.addons
+          }))
+        };
+
+        await window.PosDB.queueOrder(orderPayload);
+        queued = true;
+        await this.refreshQueueCount();
+
+        this.ticket = [];
+        this.renderTicket();
+        const pending = await window.PosDB.getPendingOrders();
+        if (navigator.onLine) void this.syncQueue();
+
+        alert(
+          'Open bill ' + orderNumber + ' was saved to this terminal. ' +
+          (navigator.onLine
+            ? 'Synchronization has started; check Open Bills after it completes.'
+            : 'The terminal is offline, so it will sync when connectivity returns.') +
+          (pending.length > 0 ? ' Do not submit the same ticket again; check the Sync badge if it remains pending.' : '')
+        );
+      } catch (error) {
+        console.error('[POS Open Bill] Unable to save the open ticket:', error);
+        if (queued) {
+          this.ticket = [];
+          this.renderTicket();
+          alert('The open bill was saved locally. Do not resubmit it; reconnect and check the Sync badge.');
+        } else {
+          alert('The open bill could not be saved to this terminal. No order was submitted; check the browser Console before retrying.');
+        }
+      } finally {
+        this.isProcessingSale = false;
+        if (button) {
+          button.innerHTML = originalHtml;
+          button.disabled = false;
+        }
       }
     },
 
