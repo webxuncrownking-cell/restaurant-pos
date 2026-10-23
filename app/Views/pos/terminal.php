@@ -1,139 +1,265 @@
-<?php include APP_ROOT . '/app/Views/layouts/header.php'; ?>
+<?php
+try {
+  $posRestaurant = \\App\\Core\\TenantContext::getRestaurant();
+} catch (\\Throwable $ignored) {
+  $posRestaurant = null;
+}
+if (!is_array($posRestaurant)) {
+  $posRestaurant = isset($catalog['restaurant']) && is_array($catalog['restaurant']) ? $catalog['restaurant'] : [];
+}
+$restaurant = $posRestaurant;
+$posPrimaryColor = (string)($restaurant['pos_primary_color'] ?? '#2563eb');
+$posSecondaryColor = (string)($restaurant['pos_secondary_color'] ?? '#059669');
+if (!preg_match('/^#[0-9a-fA-F]{6}$/', $posPrimaryColor)) $posPrimaryColor = '#2563eb';
+if (!preg_match('/^#[0-9a-fA-F]{6}$/', $posSecondaryColor)) $posSecondaryColor = '#059669';
+$posRestaurantName = (string)($catalog['restaurant']['name'] ?? $restaurant['name'] ?? 'Restaurant POS');
+$posLogoPath = trim((string)($restaurant['logo_path'] ?? $catalog['restaurant']['logo_path'] ?? ''));
+$posLogoUrl = $posLogoPath !== '' ? BASE_URL . '/' . ltrim($posLogoPath, '/') : '';
+include APP_ROOT . '/app/Views/layouts/header.php';
+?>
 
-<!-- POS Terminal Styles -->
+<!-- Modern POS Terminal Styles -->
 <style>
+  :root {
+    --terminal-primary: <?= htmlspecialchars($posPrimaryColor, ENT_QUOTES, 'UTF-8') ?>;
+    --terminal-secondary: <?= htmlspecialchars($posSecondaryColor, ENT_QUOTES, 'UTF-8') ?>;
+    --terminal-ink: #192335;
+    --terminal-muted: #738096;
+    --terminal-line: #e3e8f0;
+    --terminal-page: #f4f6fa;
+    --terminal-surface: #ffffff;
+  }
+  html, body { min-height: 100%; }
   body {
-    background-color: #0f172a;
-    color: #f8fafc;
-    overflow-x: hidden;
+    margin: 0; background: var(--terminal-page) !important; color: var(--terminal-ink) !important;
+    overflow-x: hidden; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
   .pos-header {
-    background: #1e293b;
-    border-bottom: 1px solid #334155;
+    position: sticky; top: 0; z-index: 1020; min-height: 76px; padding: 12px 24px;
+    background: rgba(255,255,255,.96); border-bottom: 1px solid var(--terminal-line);
+    box-shadow: 0 3px 14px rgba(16,24,40,.035); backdrop-filter: blur(14px);
   }
-  .pos-catalog-panel {
-    height: calc(100vh - 70px);
-    overflow-y: auto;
+  .pos-brand-lockup { display:flex; align-items:center; gap:12px; min-width:0; }
+  .pos-brand-mark {
+    display:grid; place-items:center; flex:0 0 44px; width:44px; height:44px; overflow:hidden;
+    border-radius:14px; color:#fff; font-size:1.15rem;
+    background:linear-gradient(140deg,var(--terminal-primary),color-mix(in srgb,var(--terminal-primary) 72%,#111827));
+    box-shadow:0 5px 13px color-mix(in srgb,var(--terminal-primary) 18%,transparent);
   }
+  .pos-brand-mark img { width:100%; height:100%; object-fit:contain; padding:3px; background:#fff; }
+  .pos-brand-copy { min-width:0; display:flex; flex-direction:column; line-height:1.2; }
+  .pos-brand-copy strong { max-width:min(32vw,390px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1rem; font-weight:800; letter-spacing:-.035em; color:#172033; }
+  .pos-brand-copy small { margin-top:5px; color:#8993a5; text-transform:uppercase; letter-spacing:.1em; font-size:.61rem; font-weight:800; }
+  .pos-device-badge { display:inline-flex; align-items:center; gap:6px; padding:7px 10px; color:#596579; background:#f6f8fb; border:1px solid #e5eaf2; border-radius:999px; font-size:.7rem; font-weight:700; }
+  .pos-header-actions { display:flex; align-items:center; justify-content:flex-end; gap:9px; min-width:0; }
+  .pos-network-status { display:inline-flex; align-items:center; gap:7px; padding:8px 11px; border-radius:999px; font-size:.72rem; line-height:1; font-weight:800; white-space:nowrap; border:1px solid; }
+  .pos-network-status .pos-status-dot { width:7px; height:7px; border-radius:50%; }
+  .pos-network-status.online { color:#12805c; border-color:#c7f0df; background:#ecfbf4; }
+  .pos-network-status.online .pos-status-dot { background:#10b981; box-shadow:0 0 0 3px rgba(16,185,129,.13); }
+  .pos-network-status.offline { color:#9a5a0b; border-color:#fde2a8; background:#fff8e6; }
+  .pos-network-status.offline .pos-status-dot { background:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.14); }
+  .pos-header .btn { border-radius:11px; min-height:39px; display:inline-flex; align-items:center; justify-content:center; gap:7px; font-size:.77rem; font-weight:750; }
+  .pos-sync-btn { padding:8px 12px; color:#334155; border:1px solid #dfe5ee; background:#fff; }
+  .pos-sync-btn:hover { color:var(--terminal-primary); border-color:var(--terminal-primary); background:#f8faff; }
+  .pos-sync-btn .pos-sync-count { display:inline-grid; place-items:center; min-width:21px; height:21px; padding:0 5px; border-radius:999px; color:#344054; background:#eef2f7; font-size:.68rem; }
+  .pos-sync-btn.has-pending .pos-sync-count { color:#9a5a0b; background:#fff0c8; }
+  .pos-icon-btn { width:39px; padding:0; color:#596579; background:#fff; border:1px solid #dfe5ee; }
+  .pos-icon-btn:hover { color:var(--terminal-primary); background:#f8faff; border-color:var(--terminal-primary); }
+  .pos-cashier-btn { padding:4px 10px 4px 5px; background:#fff; border:1px solid #dfe5ee; color:#334155; max-width:235px; }
+  .pos-cashier-avatar { display:grid; place-items:center; width:29px; height:29px; border-radius:9px; color:var(--terminal-primary); background:color-mix(in srgb,var(--terminal-primary) 10%,white); }
+  .pos-cashier-name { max-width:155px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pos-header .dropdown-menu { padding:7px; border:1px solid #e4e9f1; border-radius:13px; box-shadow:0 16px 38px rgba(16,24,40,.13); }
+  .pos-header .dropdown-item { border-radius:8px; padding:9px 10px; font-size:.82rem; }
+  #posBackToSaaS:not(.d-none) { color:#5c6678!important; border:1px solid #e0e5ed!important; background:#fff!important; }
+
+  #posOfflineGuardNotice, #posSyncNotice { margin:10px 18px 0!important; border-radius:11px; border:1px solid #f6d78f; box-shadow:0 2px 8px rgba(16,24,40,.025); }
+  .pos-workspace { background:var(--terminal-page); }
+  .pos-workspace-row { align-items:stretch; }
+  .pos-catalog-panel { height:calc(100vh - 76px); min-height:470px; overflow-y:auto; padding:22px 24px!important; background:var(--terminal-page); }
   .pos-ticket-panel {
-    height: calc(100vh - 70px);
-    background: #1e293b;
-    border-left: 1px solid #334155;
-    display: flex;
-    flex-direction: column;
+    height:calc(100vh - 76px); min-height:470px; overflow:hidden; background:var(--terminal-surface);
+    border-left:1px solid var(--terminal-line); display:flex; flex-direction:column;
   }
-  .ticket-items {
-    flex-grow: 1;
-    overflow-y: auto;
+  .pos-search-group { filter:drop-shadow(0 2px 4px rgba(16,24,40,.025)); }
+  .pos-search-group .input-group-text { min-width:44px; justify-content:center; border-color:#dfe5ee!important; background:#fff!important; color:#8691a3!important; }
+  .pos-search-group .form-control, .pos-search-group .form-select {
+    min-height:45px; border-color:#dfe5ee!important; background:#fff!important; color:#243047!important;
+    border-radius:0 11px 11px 0; font-size:.83rem; box-shadow:none;
   }
+  .pos-search-group .form-control::placeholder { color:#9aa3b2!important; }
+  .pos-search-group .input-group-text { border-radius:11px 0 0 11px; }
+  .pos-search-group .form-control:focus, .pos-search-group .form-select:focus { border-color:color-mix(in srgb,var(--terminal-primary) 60%,#dfe5ee)!important; box-shadow:0 0 0 3px color-mix(in srgb,var(--terminal-primary) 12%,transparent); }
+  #categoryPillsContainer { scrollbar-width:thin; scrollbar-color:#cbd5e1 transparent; gap:8px!important; padding-bottom:12px!important; }
+  .category-pill { background:#fff; border:1px solid #e2e8f0; color:#647085; border-radius:999px; padding:9px 15px; font-size:.75rem; font-weight:750; cursor:pointer; white-space:nowrap; transition:all .16s ease; }
+  .category-pill:hover { border-color:color-mix(in srgb,var(--terminal-primary) 42%,#e2e8f0); color:var(--terminal-primary); background:#fff; }
+  .category-pill.active { color:#fff; background:var(--terminal-primary); border-color:var(--terminal-primary); box-shadow:0 4px 10px color-mix(in srgb,var(--terminal-primary) 20%,transparent); }
+  #productsGrid { --bs-gutter-x:1rem; --bs-gutter-y:1rem; }
   .product-card {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    transition: transform 0.15s ease, border-color 0.15s ease;
-    cursor: pointer;
-    user-select: none;
+    min-height:132px; padding:16px!important; background:#fff!important; color:var(--terminal-ink);
+    border:1px solid #e3e8f0!important; border-radius:16px!important; box-shadow:0 3px 10px rgba(16,24,40,.025);
+    transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; cursor:pointer; user-select:none;
   }
-  .product-card:hover {
-    border-color: #3b82f6;
-    transform: translateY(-2px);
+  .product-card:hover { border-color:color-mix(in srgb,var(--terminal-primary) 52%,#e3e8f0)!important; transform:translateY(-2px); box-shadow:0 12px 25px rgba(16,24,40,.07); }
+  .product-card:active { transform:scale(.985); }
+  .product-card .product-category-tag { background:#f4f6fa; border:1px solid #e6eaf1; border-radius:6px; padding:4px 7px; color:#748096; font-size:.62rem; font-weight:800; line-height:1; }
+  .product-card .product-custom-tag { border-radius:6px; background:color-mix(in srgb,var(--terminal-primary) 10%,white); color:var(--terminal-primary); border:1px solid color-mix(in srgb,var(--terminal-primary) 22%,white); font-size:.61rem; font-weight:800; }
+  .product-card .product-title { color:#202b3d!important; font-size:.88rem; line-height:1.35; letter-spacing:-.015em; overflow-wrap:anywhere; }
+  .product-card .product-price { color:var(--terminal-secondary); font-size:1rem; font-weight:850; letter-spacing:-.035em; }
+  .product-card .product-add-icon { display:grid; place-items:center; width:30px; height:30px; border-radius:10px; color:#fff; background:var(--terminal-primary); box-shadow:0 3px 8px color-mix(in srgb,var(--terminal-primary) 17%,transparent); }
+  .pos-ticket-panel .pos-order-type-switcher { padding:14px!important; display:flex; gap:7px!important; border-bottom:1px solid var(--terminal-line)!important; background:#fff; }
+  .pos-order-type { flex:1 1 0; border:1px solid transparent!important; border-radius:10px!important; color:#69758a!important; background:#f4f6fa!important; padding:11px 9px!important; font-size:.73rem!important; font-weight:800!important; transition:all .15s ease; }
+  .pos-order-type:hover { color:var(--terminal-primary)!important; border-color:color-mix(in srgb,var(--terminal-primary) 20%,#fff)!important; background:color-mix(in srgb,var(--terminal-primary) 5%,white)!important; }
+  .pos-order-type.active { color:var(--terminal-primary)!important; background:color-mix(in srgb,var(--terminal-primary) 10%,white)!important; border-color:color-mix(in srgb,var(--terminal-primary) 26%,white)!important; box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--terminal-primary) 6%,white); }
+  .ticket-items { flex:1 1 auto; min-height:0; overflow-y:auto; padding:18px!important; background:#f8f9fc; }
+  .pos-empty-cart { min-height:220px; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 16px; text-align:center; color:#8b95a7; }
+  .pos-empty-cart .pos-empty-icon { display:grid; place-items:center; width:58px; height:58px; margin-bottom:15px; border:1px solid #e6ebf2; border-radius:18px; color:#98a3b5; background:#fff; font-size:1.55rem; box-shadow:0 4px 12px rgba(16,24,40,.03); }
+  .pos-empty-cart h5 { color:#344054; font-size:.95rem; font-weight:800; margin-bottom:6px; }
+  .pos-empty-cart p { max-width:245px; margin:0; color:#8a95a7!important; line-height:1.5; }
+  .ticket-item-card { padding:15px!important; margin-bottom:11px!important; background:#fff!important; border:1px solid #e5eaf1!important; border-radius:13px!important; box-shadow:0 2px 6px rgba(16,24,40,.025); }
+  .ticket-item-card .ticket-item-name { color:#233047!important; font-size:.83rem; line-height:1.35; }
+  .ticket-item-card .ticket-item-price { color:#344054!important; font-size:.85rem; font-weight:800; white-space:nowrap; }
+  .ticket-item-card .ticket-item-meta { color:#8a95a7!important; font-size:.72rem; }
+  .ticket-item-card .ticket-addon-text { color:#b56a16!important; font-size:.7rem; }
+  .ticket-item-card .ticket-item-controls { border-top:1px solid #edf0f5!important; margin-top:12px!important; padding-top:10px!important; }
+  .ticket-item-card .ticket-remove-btn { color:#d04444!important; font-size:.71rem; font-weight:700; }
+  .ticket-item-card .ticket-qty-btn { display:grid; place-items:center; width:29px; height:29px; padding:0!important; border:1px solid #dfe5ed!important; border-radius:8px!important; color:#465367!important; background:#fff!important; }
+  .ticket-item-card .ticket-qty-btn:hover { color:var(--terminal-primary)!important; border-color:var(--terminal-primary)!important; }
+  .ticket-item-card .ticket-qty { min-width:18px; color:#263247!important; text-align:center; font-size:.8rem; }
+  .pos-ticket-summary { padding:18px 20px 20px!important; border-top:1px solid var(--terminal-line)!important; background:#fff!important; box-shadow:0 -4px 16px rgba(16,24,40,.02); }
+  .pos-ticket-summary .text-white { color:#344054!important; }
+  .pos-ticket-summary .text-muted { color:#8590a3!important; }
+  .pos-ticket-summary .text-uppercase { letter-spacing:.03em; }
+  .pos-ticket-summary .form-select { max-width:180px; min-height:34px; font-size:.72rem!important; border-color:#dfe5ee!important; background:#fff!important; color:#344054!important; }
+  .pos-ticket-summary #ticketDiscount { color:#bd7a22!important; font-weight:750; }
+  .pos-ticket-summary #ticketTotal { color:var(--terminal-primary)!important; font-size:1.9rem!important; letter-spacing:-.045em; }
+  .pos-ticket-summary .pos-clear-ticket { flex:0 0 43px; width:43px; height:45px; border:1px solid #f1cccc!important; background:#fff8f8!important; color:#c24141!important; border-radius:11px!important; }
+  .pos-ticket-summary .pos-checkout-btn { min-height:46px; border:0!important; background:var(--terminal-primary)!important; color:#fff!important; border-radius:11px!important; box-shadow:0 5px 12px color-mix(in srgb,var(--terminal-primary) 17%,transparent); font-size:.91rem!important; font-weight:850!important; }
+  .pos-ticket-summary .pos-checkout-btn:hover { filter:brightness(.95); transform:translateY(-1px); }
+  .pos-ticket-summary .pos-checkout-btn:disabled { background:#b5bfce!important; box-shadow:none; }
+  .pos-header .dropdown-menu-dark { background:#fff!important; color:#344054!important; }
+  .pos-header .dropdown-menu-dark .dropdown-item { color:#344054!important; }
+  .pos-header .dropdown-menu-dark .dropdown-item:hover { color:#172033!important; background:#f2f5fa!important; }
+  .pos-header .dropdown-menu-dark .dropdown-header { color:#7b8799!important; }
+  .pos-header .dropdown-menu-dark .dropdown-divider { border-color:#e6eaf1!important; }
+
+  /* Light, consistent dialogs while retaining the cashier PIN keypad and receipt behavior. */
+  .modal-content.bg-dark { background:#fff!important; color:#202b3d!important; border:1px solid #e2e8f0!important; border-radius:18px!important; box-shadow:0 24px 80px rgba(15,23,42,.22); }
+  .modal-content.bg-dark .modal-header, .modal-content.bg-dark .modal-footer { border-color:#e9edf3!important; }
+  .modal-content.bg-dark .modal-title, .modal-content.bg-dark .text-white { color:#1f2937!important; }
+  .modal-content.bg-dark .text-white-50, .modal-content.bg-dark .text-muted { color:#788397!important; }
+  .modal-content.bg-dark .bg-black { background:#f6f8fb!important; }
+  .modal-content.bg-dark .form-control.bg-dark, .modal-content.bg-dark .form-control.bg-black, .modal-content.bg-dark .form-select.bg-dark {
+    background:#fff!important; color:#202b3d!important; border-color:#dfe5ee!important;
   }
-  .product-card:active {
-    transform: scale(0.98);
-  }
-  .category-pill {
-    background: #1e293b;
-    border: 1px solid #334155;
-    color: #94a3b8;
-    border-radius: 9999px;
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
-  }
-  .category-pill.active, .category-pill:hover {
-    background: #3b82f6;
-    color: #ffffff;
-    border-color: #3b82f6;
-  }
-  .pin-btn {
-    height: 60px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    border-radius: 12px;
-  }
+  .modal-content.bg-dark .form-control::placeholder { color:#99a3b3!important; }
+  .modal-content.bg-dark .btn-close-white { filter:invert(1) grayscale(100%) brightness(35%); }
+  .modal-content.bg-dark .list-group-item-dark { background:#fff!important; color:#344054!important; border-color:#e5eaf1!important; }
+  .modal-content.bg-dark .text-warning { color:#b56a16!important; }
+  .modal-content.bg-dark .text-info { color:var(--terminal-primary)!important; }
+  .modal-content.bg-dark .btn-outline-light { background:#fff!important; color:#344054!important; border-color:#dfe5ee!important; }
+  .modal-content.bg-dark .btn-outline-light:hover { color:var(--terminal-primary)!important; border-color:var(--terminal-primary)!important; background:#f7faff!important; }
+  .modal-content.bg-dark .btn-secondary { background:#e9eef5!important; border-color:#e9eef5!important; color:#344054!important; }
+  .modal-content.bg-dark .btn-secondary:hover { background:#dce4ef!important; }
+  .modal-content.bg-dark .pin-btn { height:56px; border-radius:12px!important; font-size:1.22rem; font-weight:800; box-shadow:0 2px 5px rgba(16,24,40,.04); }
+  #lockModal .modal-content { max-width:100%; }
+  #lockModal .modal-header { padding:20px; }
+  #lockModal .modal-body { padding:22px!important; }
+  #pinDisplay { letter-spacing:.35em; font-weight:800; }
+  .modal-content.bg-dark .btn-primary { background:var(--terminal-primary)!important; border-color:var(--terminal-primary)!important; }
+  .modal-content.bg-dark .btn-success { background:var(--terminal-secondary)!important; border-color:var(--terminal-secondary)!important; }
+
   /* Thermal Receipt Print Styles (80mm & 58mm) */
   @media print {
-    body * {
-      visibility: hidden;
-    }
-    #thermalReceiptPrintArea, #thermalReceiptPrintArea * {
-      visibility: visible;
-    }
+    body * { visibility: hidden; }
+    #thermalReceiptPrintArea, #thermalReceiptPrintArea * { visibility: visible; }
     #thermalReceiptPrintArea {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 80mm;
-      max-width: 100%;
-      background: white !important;
-      color: black !important;
-      font-family: 'Courier New', Courier, monospace !important;
-      font-size: 12px !important;
-      line-height: 1.3 !important;
-      padding: 5mm !important;
+      position:absolute; left:0; top:0; width:80mm; max-width:100%; background:#fff!important; color:#000!important;
+      font-family:'Courier New',Courier,monospace!important; font-size:12px!important; line-height:1.3!important; padding:5mm!important;
     }
-    .no-print {
-      display: none !important;
-    }
+    .no-print { display:none!important; }
+  }
+  @media (max-width:1199.98px) {
+    .pos-header { padding-left:18px; padding-right:18px; }
+    .pos-catalog-panel { padding:20px!important; }
+    .pos-header-actions { gap:7px; }
+  }
+  @media (max-width:991.98px) {
+    .pos-header { position:sticky; padding:10px 14px; flex-wrap:wrap; }
+    .pos-brand-copy strong { max-width:45vw; }
+    .pos-header-actions { flex-wrap:wrap; }
+    .pos-catalog-panel { height:auto; min-height:0; overflow:visible; padding:18px 14px!important; }
+    .pos-ticket-panel { height:auto; min-height:570px; overflow:visible; border-left:0; border-top:1px solid var(--terminal-line); }
+    .ticket-items { min-height:170px; max-height:45vh; }
+    .pos-empty-cart { min-height:170px; }
+  }
+  @media (max-width:575.98px) {
+    .pos-header { align-items:flex-start!important; gap:10px!important; }
+    .pos-brand-lockup { max-width:100%; }
+    .pos-brand-mark { width:39px; height:39px; flex-basis:39px; }
+    .pos-brand-copy strong { max-width:50vw; font-size:.9rem; }
+    .pos-device-badge { display:none; }
+    .pos-header-actions { width:100%; justify-content:flex-start; gap:7px; }
+    .pos-header .btn { min-height:36px; }
+    .pos-network-status { padding:7px 9px; }
+    .pos-cashier-btn { margin-left:auto; max-width:150px; }
+    .pos-cashier-name { max-width:83px; }
+    .pos-catalog-panel { padding:15px 12px!important; }
+    #productsGrid .col-6 { width:50%; }
+    .product-card { min-height:124px; padding:12px!important; border-radius:13px!important; }
+    .product-card .product-title { font-size:.78rem; }
+    .product-card .product-price { font-size:.9rem; }
+    .product-card .product-add-icon { width:26px; height:26px; }
+    .category-pill { padding:8px 12px; font-size:.7rem; }
+    .pos-order-type { padding:10px 6px!important; font-size:.68rem!important; }
+    .pos-ticket-summary { padding:15px!important; }
+    .pos-ticket-summary #ticketTotal { font-size:1.55rem!important; }
   }
 </style>
 
-<!-- Top POS Header Bar -->
-<header class="pos-header py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-  <div class="d-flex align-items-center gap-3">
-    <a id="posBackToSaaS" href="<?= BASE_URL ?>/dashboard" class="btn btn-sm btn-outline-secondary text-white-50 d-none" aria-hidden="true" tabindex="-1">
-      <i class="bi bi-arrow-left me-1"></i> Back to SaaS
+<!-- Modern POS Header Bar -->
+<header class="pos-header d-flex flex-wrap justify-content-between align-items-center gap-3 no-print">
+  <div class="pos-brand-lockup">
+    <a id="posBackToSaaS" href="<?= BASE_URL ?>/dashboard" class="btn btn-sm d-none" aria-hidden="true" tabindex="-1" title="Return to management">
+      <i class="bi bi-arrow-left"></i>
     </a>
-    <div class="fw-bold fs-5 d-flex align-items-center gap-2">
-      <i class="bi bi-shop text-primary"></i>
-      <span><?= htmlspecialchars($catalog['restaurant']['name'] ?? 'Restaurant POS') ?></span>
-    </div>
-    <span class="badge bg-dark border border-secondary text-white-50 small">
-      <?= htmlspecialchars($activeDevice['device_name'] ?? 'Main Terminal') ?>
+    <span class="pos-brand-mark">
+      <?php if ($posLogoUrl !== ''): ?>
+        <img src="<?= htmlspecialchars($posLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($posRestaurantName, ENT_QUOTES, 'UTF-8') ?> logo">
+      <?php else: ?>
+        <i class="bi bi-shop-window" aria-hidden="true"></i>
+      <?php endif; ?>
     </span>
+    <div class="pos-brand-copy">
+      <strong><?= htmlspecialchars($posRestaurantName, ENT_QUOTES, 'UTF-8') ?></strong>
+      <small><i class="bi bi-display me-1"></i>Point of sale</small>
+    </div>
+    <span class="pos-device-badge"><i class="bi bi-tablet-landscape"></i><?= htmlspecialchars((string)($activeDevice['device_name'] ?? 'Main Terminal'), ENT_QUOTES, 'UTF-8') ?></span>
   </div>
 
-  <div class="d-flex align-items-center gap-2">
-    <!-- Network Status Pill -->
-    <span id="posNetworkStatus" class="badge bg-success bg-opacity-25 text-success border border-success d-flex align-items-center gap-1 px-2 py-1">
-      <span class="spinner-grow spinner-grow-sm text-success" style="width: 8px; height: 8px;"></span>
+  <div class="pos-header-actions">
+    <span id="posNetworkStatus" class="pos-network-status online" role="status" aria-live="polite">
+      <span class="pos-status-dot" aria-hidden="true"></span>
       <span id="posNetworkText">Online</span>
     </span>
 
-    <!-- Unsynced Queue Badge -->
-    <button id="posSyncBtn" class="btn btn-sm btn-outline-info d-flex align-items-center gap-1" onclick="window.posApp.syncQueue()">
-      <i class="bi bi-arrow-repeat"></i>
-      <span>Sync (<span id="unsyncedCount">0</span>)</span>
+    <button id="posSyncBtn" class="btn pos-sync-btn" onclick="window.posApp.syncQueue()" title="Synchronize saved orders">
+      <i class="bi bi-arrow-repeat"></i><span>Sync</span><span class="pos-sync-count" id="unsyncedCount">0</span>
     </button>
 
-    <!-- Emergency Backup -->
-    <button class="btn btn-sm btn-outline-warning" title="Emergency JSON Backup" onclick="window.PosDB.exportUnsyncedOrdersJSON()">
+    <button class="btn pos-icon-btn" type="button" title="Download emergency order backup" aria-label="Download emergency order backup" onclick="window.PosDB.exportUnsyncedOrdersJSON()">
       <i class="bi bi-download"></i>
     </button>
 
-    <!-- Active Cashier Profile / Lock Button -->
     <div class="dropdown">
-      <button class="btn btn-sm btn-secondary dropdown-toggle d-flex align-items-center gap-1" data-bs-toggle="dropdown">
-        <i class="bi bi-person-fill"></i>
-        <span id="activeCashierName"><?= htmlspecialchars($user['full_name']) ?></span>
+      <button class="btn pos-cashier-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open cashier menu">
+        <span class="pos-cashier-avatar"><i class="bi bi-person-fill"></i></span>
+        <span id="activeCashierName" class="pos-cashier-name"><?= htmlspecialchars((string)($user['full_name'] ?? $user['username'] ?? 'Cashier'), ENT_QUOTES, 'UTF-8') ?></span>
       </button>
-      <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end shadow">
+      <ul class="dropdown-menu dropdown-menu-end">
         <li><h6 class="dropdown-header">POS Terminal Session</h6></li>
         <li><a class="dropdown-item" href="javascript:void(0)" onclick="window.posApp.showLockModal()"><i class="bi bi-shield-lock me-2"></i>Lock Terminal (PIN)</a></li>
-        <li><a class="dropdown-item" href="<?= BASE_URL ?>/shifts/active"><i class="bi bi-safe me-2"></i>Manage Cash Drawer</a></li>
+        <li><a class="dropdown-item" href="<?= BASE_URL ?>/shifts/active"><i class="bi bi-safe2 me-2"></i>Manage Cash Drawer</a></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Exit POS</a></li>
       </ul>
