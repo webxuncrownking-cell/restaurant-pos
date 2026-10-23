@@ -131,7 +131,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
 
         <?php if ($user): ?>
           <div class="dropdown">
-            <button class="dropdown-toggle app-user-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open user menu">
+            <button class="app-user-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open user menu">
               <span class="app-user-avatar"><i class="bi bi-person-fill" aria-hidden="true"></i></span>
               <span class="app-user-copy">
                 <strong><?= htmlspecialchars((string)($user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8') ?></strong>
