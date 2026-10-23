@@ -389,7 +389,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
             <i class="bi bi-credit-card-2-front me-1"></i> Charge / Pay
           </button>
         </div>
-        <button id="saveOpenOrderBtn" class="btn btn-outline-primary w-100 mt-2" type="button" onclick="window.posApp.saveOpenOrder()" title="Send this dine-in ticket to the kitchen and leave the bill unpaid">
+        <button id="saveOpenOrderBtn" class="btn btn-outline-primary w-100 mt-2" type="button" disabled onclick="window.posApp.saveOpenOrder()" title="Send this dine-in ticket to the kitchen and leave the bill unpaid">
           <i class="bi bi-fire me-1"></i> Send to Kitchen / Save Open Bill
         </button>
       </div>
@@ -981,6 +981,11 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
     setOrderType(type) {
       this.orderType = type;
+      const openOrderButton = document.getElementById('saveOpenOrderBtn');
+      if (openOrderButton) {
+        openOrderButton.classList.toggle('d-none', type !== 'dine_in');
+        openOrderButton.disabled = type !== 'dine_in' || !this.currentTableId;
+      }
       ['dine_in', 'takeout', 'delivery'].forEach(t => {
         const btn = document.getElementById(t === 'dine_in' ? 'typeDineIn' : (t === 'takeout' ? 'typeTakeout' : 'typeDelivery'));
         if (t === type) {
@@ -994,6 +999,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
     setTable(tableId) {
       this.currentTableId = tableId ? parseInt(tableId, 10) : null;
+      const openOrderButton = document.getElementById('saveOpenOrderBtn');
+      if (openOrderButton) {
+        openOrderButton.disabled = this.orderType !== 'dine_in' || !this.currentTableId;
+      }
       void this.persistDraftTicket();
     },
 
