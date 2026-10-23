@@ -551,7 +551,7 @@ class PosSyncService
                     canonical_payload_hash, offline_reconciliation_status, client_reported_at, server_received_at,
                     synced_at, created_at
                  ) VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW()
+                    ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW()
                  )",
                 [
                     $restaurantId,
