@@ -27,6 +27,7 @@ class ReportService
                 FROM orders
                 WHERE restaurant_id = :restaurant_id 
                   AND order_status != 'cancelled'
+                  AND payment_status = 'paid'
                   AND DATE(created_at) BETWEEN :start_date AND :end_date";
 
         $row = Database::fetchOne($sql, [
@@ -57,6 +58,7 @@ class ReportService
                 FROM orders
                 WHERE restaurant_id = :restaurant_id
                   AND order_status != 'cancelled'
+                  AND payment_status = 'paid'
                   AND created_at >= DATE_SUB(CURDATE(), INTERVAL :days DAY)
                 GROUP BY DATE(created_at)
                 ORDER BY sale_date ASC";
@@ -128,6 +130,7 @@ class ReportService
                 JOIN users u ON u.restaurant_id = o.restaurant_id AND u.id = o.cashier_id
                 WHERE o.restaurant_id = :restaurant_id
                   AND o.order_status != 'cancelled'
+                  AND o.payment_status = 'paid'
                   AND DATE(o.created_at) BETWEEN :start_date AND :end_date
                 GROUP BY u.id, u.full_name
                 ORDER BY total_collected DESC";
