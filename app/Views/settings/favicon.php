@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
   remove?.addEventListener('change', () => {
     if (remove.checked) {
       if (input) input.value = '';
-      const fallback = '<?= htmlspecialchars(BASE_URL . '/public/favicon.svg', ENT_QUOTES, 'UTF-8') ?>';
+      const fallback = '<?= htmlspecialchars($favicon_fallback_url, ENT_QUOTES, 'UTF-8') ?>';
       if (largePreview) largePreview.src = fallback;
       if (tabPreview) tabPreview.src = fallback;
     }
