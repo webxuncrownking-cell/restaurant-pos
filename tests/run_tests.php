@@ -943,6 +943,119 @@ Database::query("DELETE FROM order_items WHERE restaurant_id = 1 AND order_id IN
 Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id IN (?, ?)", [$mergeTargetId, $mergeSourceId]);
 Database::query("DELETE FROM restaurant_tables WHERE restaurant_id = 1 AND id = ?", [$mergeTableId]);
 
+// 19d. Open bill checkout and partial/split payment allocation.
+echo PHP_EOL . "19d. Testing Open Bills & Split Payments:" . PHP_EOL;
+$openBillPayload = $orderPayload;
+$openBillPayload['client_uuid'] = \App\Services\\DeviceService::generateUuidV4();
+$openBillPayload['order_number'] = 'OPEN-' . substr(str_replace('-', '', $openBillPayload['client_uuid']), 0, 12);
+$openBillPayload['save_as_open'] = true;
+$openBillPayload['paid_amount'] = 0;
+$openBillPayload['change_amount'] = 0;
+unset($openBillPayload['payment']);
+$openBillSync = \App\Services\\PosSyncService::processOrderSync(1, $openBillPayload);
+$openBillId = (int)$openBillSync['server_order_id'];
+$openBillRow = Database::fetchOne(
+    "SELECT payment_status, paid_amount, total_amount FROM orders WHERE restaurant_id = 1 AND id = ?",
+    [$openBillId]
+);
+$openPaymentCount = Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM payments WHERE restaurant_id = 1 AND order_id = ?",
+    [$openBillId]
+);
+assertTest(
+    "POS Can Save Unpaid Open Dine-in Bill Without Creating Payment",
+    $openBillSync['status'] === 'synced'
+        && $openBillRow['payment_status'] === 'unpaid'
+        && abs((float)$openBillRow['paid_amount']) < 0.01
+        && (int)$openPaymentCount['total'] === 0
+);
+
+$billShares = \App\Services\\BillService::createEqualSplits(1, $openBillId, 1, 2, ['Test Guest A', 'Test Guest B']);
+$shareTotalCents = (int)round(array_sum(array_column($billShares, 'amount_due')) * 100);
+$openBillCents = (int)round((float)$openBillRow['total_amount'] * 100);
+assertTest(
+    "Equal Bill Shares Reconcile to Exact Total",
+    count($billShares) === 2
+        && $billShares[0]['split_label'] === 'Test Guest A'
+        && $billShares[1]['split_label'] === 'Test Guest B'
+        && $shareTotalCents === $openBillCents
+);
+
+$firstShareId = (int)$billShares[0]['id'];
+$firstShareHalf = round((float)$billShares[0]['amount_due'] / 2, 2);
+$partialPaymentUuid = \App\Services\\DeviceService::generateUuidV4();
+$partialPayment = \App\Services\\BillService::recordPayment(
+    1, $openBillId, 1, $partialPaymentUuid, $firstShareHalf, $firstShareHalf, 'cash', $firstShareId
+);
+$paymentCountAfterPartial = (int)(Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM payments WHERE restaurant_id = 1 AND order_id = ?",
+    [$openBillId]
+)['total'] ?? 0);
+$partialOrder = Database::fetchOne(
+    "SELECT payment_status FROM orders WHERE restaurant_id = 1 AND id = ?",
+    [$openBillId]
+);
+assertTest(
+    "Partial Payment Leaves Open Bill Partially Paid",
+    $partialPayment['status'] === 'recorded'
+        && $partialOrder['payment_status'] === 'partially_paid'
+        && $paymentCountAfterPartial === 1
+);
+
+$duplicatePayment = \App\Services\\BillService::recordPayment(
+    1, $openBillId, 1, $partialPaymentUuid, $firstShareHalf, $firstShareHalf, 'cash', $firstShareId
+);
+$paymentCountAfterRetry = (int)(Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM payments WHERE restaurant_id = 1 AND order_id = ?",
+    [$openBillId]
+)['total'] ?? 0);
+assertTest(
+    "Payment Retry Is Idempotent and Does Not Duplicate Collection",
+    $duplicatePayment['status'] === 'already_recorded' && $paymentCountAfterRetry === 1
+);
+
+$shareAfterHalf = array_values(array_filter(
+    \App\Services\\BillService::getSplits(1, $openBillId),
+    static fn(array $split): bool => (int)$split['id'] === $firstShareId
+))[0];
+$remainingFirstShare = round((float)$shareAfterHalf['balance_due'], 2);
+\App\Services\\BillService::recordPayment(
+    1, $openBillId, 1, \App\Services\\DeviceService::generateUuidV4(),
+    $remainingFirstShare, $remainingFirstShare, 'cash', $firstShareId
+);
+$secondShareId = (int)$billShares[1]['id'];
+$secondShareAmount = round((float)$billShares[1]['amount_due'], 2);
+\App\Services\\BillService::recordPayment(
+    1, $openBillId, 1, \App\Services\\DeviceService::generateUuidV4(),
+    $secondShareAmount, $secondShareAmount, 'card', $secondShareId
+);
+$settledOrder = Database::fetchOne(
+    "SELECT payment_status, paid_amount, total_amount FROM orders WHERE restaurant_id = 1 AND id = ?",
+    [$openBillId]
+);
+$settledPayments = Database::fetchOne(
+    "SELECT COALESCE(SUM(amount),0) AS amount, COUNT(*) AS total FROM payments WHERE restaurant_id = 1 AND order_id = ?",
+    [$openBillId]
+);
+$settledShares = \App\Services\\BillService::getSplits(1, $openBillId);
+assertTest(
+    "Split Shares Can Be Paid in Multiple Transactions and Reconcile",
+    $settledOrder['payment_status'] === 'paid'
+        && abs((float)$settledOrder['paid_amount'] - (float)$settledOrder['total_amount']) < 0.01
+        && abs((float)$settledPayments['amount'] - (float)$settledOrder['total_amount']) < 0.01
+        && (int)$settledPayments['total'] === 3
+        && count(array_filter($settledShares, static fn(array $split): bool => (float)$split['balance_due'] < 0.01)) === 2
+);
+
+Database::query("DELETE FROM bill_split_payment_allocations WHERE restaurant_id = 1 AND order_id = ?", [$openBillId]);
+Database::query("DELETE FROM order_status_history WHERE restaurant_id = 1 AND order_id = ?", [$openBillId]);
+Database::query("DELETE FROM payments WHERE restaurant_id = 1 AND order_id = ?", [$openBillId]);
+Database::query("DELETE FROM order_bill_splits WHERE restaurant_id = 1 AND order_id = ?", [$openBillId]);
+Database::query("DELETE FROM order_item_addons WHERE restaurant_id = 1 AND order_item_id IN (SELECT id FROM order_items WHERE restaurant_id = 1 AND order_id = ?)", [$openBillId]);
+Database::query("DELETE FROM inventory_movements WHERE restaurant_id = 1 AND reference_id = ?", [$openBillId]);
+Database::query("DELETE FROM order_items WHERE restaurant_id = 1 AND order_id = ?", [$openBillId]);
+Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id = ?", [$openBillId]);
+
 // 20. Phase 7: Analytics Reports & SaaS Subscription Billing
 echo PHP_EOL . "20. Testing BI Reports & SaaS Billing Subscriptions:" . PHP_EOL;
 $reportKpis = \App\Services\ReportService::getKpiSummary(1, date('Y-01-01'), date('Y-12-31'));
