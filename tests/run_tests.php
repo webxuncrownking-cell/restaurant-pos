@@ -852,6 +852,97 @@ if (!empty($transferTestTableId)) {
 }
 Database::query("DELETE FROM pos_device_sequences WHERE client_uuid = ?", [$testClientUuid]);
 
+// 19c. Merge safeguards: same table/cashier/shift only; line and payment totals must be preserved.
+echo PHP_EOL . "19c. Testing Same-Table Ticket Merge:" . PHP_EOL;
+$mergeTableId = \\App\\Services\\TableService::createTable(1, [
+    'table_number' => 'MERGE-TEST',
+    'name' => 'Merge Test Table',
+    'capacity' => 4,
+    'floor_zone' => 'Main Dining',
+    'status' => 'occupied'
+]);
+$mergeTargetUuid = \\App\\Services\\DeviceService::generateUuidV4();
+$mergeSourceUuid = \\App\\Services\\DeviceService::generateUuidV4();
+$mergeTargetNumber = 'M-TGT-' . substr(str_replace('-', '', $mergeTargetUuid), 0, 12);
+$mergeSourceNumber = 'M-SRC-' . substr(str_replace('-', '', $mergeSourceUuid), 0, 12);
+
+Database::query(
+    "INSERT INTO orders
+        (restaurant_id, client_uuid, device_id, order_number, order_type, table_id, cashier_id,
+         order_status, payment_status, subtotal, total_amount, paid_amount, change_amount, client_reported_at, server_received_at)
+     VALUES (1, ?, 1, ?, 'dine_in', ?, 1, 'pending', 'paid', 100, 100, 100, 0, NOW(), NOW())",
+    [$mergeTargetUuid, $mergeTargetNumber, $mergeTableId]
+);
+$mergeTargetId = (int)Database::lastInsertId();
+Database::query(
+    "INSERT INTO orders
+        (restaurant_id, client_uuid, device_id, order_number, order_type, table_id, cashier_id,
+         order_status, payment_status, subtotal, total_amount, paid_amount, change_amount, client_reported_at, server_received_at)
+     VALUES (1, ?, 1, ?, 'dine_in', ?, 1, 'pending', 'paid', 50, 50, 50, 0, NOW(), NOW())",
+    [$mergeSourceUuid, $mergeSourceNumber, $mergeTableId]
+);
+$mergeSourceId = (int)Database::lastInsertId();
+
+Database::query(
+    "INSERT INTO order_items (restaurant_id, order_id, product_id, product_name, quantity, unit_price, cost_price, tax_rate, subtotal)
+     VALUES (1, ?, 1, 'Merge Test Item A', 1, 100, 0, 0, 100)",
+    [$mergeTargetId]
+);
+Database::query(
+    "INSERT INTO order_items (restaurant_id, order_id, product_id, product_name, quantity, unit_price, cost_price, tax_rate, subtotal)
+     VALUES (1, ?, 1, 'Merge Test Item B', 1, 50, 0, 0, 50)",
+    [$mergeSourceId]
+);
+Database::query(
+    "INSERT INTO payments (restaurant_id, order_id, cashier_id, payment_method, amount, tendered_amount, change_amount)
+     VALUES (1, ?, 1, 'cash', 100, 100, 0)",
+    [$mergeTargetId]
+);
+Database::query(
+    "INSERT INTO payments (restaurant_id, order_id, cashier_id, payment_method, amount, tendered_amount, change_amount)
+     VALUES (1, ?, 1, 'card', 50, 50, 0)",
+    [$mergeSourceId]
+);
+
+$mergeResult = \\App\\Services\\TableService::mergeActiveDineInTickets(1, $mergeTargetId, $mergeSourceId, 1);
+$mergedOrder = Database::fetchOne(
+    "SELECT total_amount, paid_amount, order_status FROM orders WHERE restaurant_id = 1 AND id = ?",
+    [$mergeTargetId]
+);
+$mergedSource = Database::fetchOne(
+    "SELECT order_status FROM orders WHERE restaurant_id = 1 AND id = ?",
+    [$mergeSourceId]
+);
+$mergedItems = Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM order_items WHERE restaurant_id = 1 AND order_id = ?",
+    [$mergeTargetId]
+);
+$mergedPayments = Database::fetchOne(
+    "SELECT COUNT(*) AS total, COALESCE(SUM(amount),0) AS amount FROM payments WHERE restaurant_id = 1 AND order_id = ?",
+    [$mergeTargetId]
+);
+$mergeHistory = Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM order_status_history WHERE restaurant_id = 1 AND order_id IN (?, ?) AND notes LIKE 'Merged %'",
+    [$mergeTargetId, $mergeSourceId]
+);
+assertTest(
+    "Merge Pending Same-Table Tickets Preserves Payment Totals",
+    abs((float)$mergedOrder['total_amount'] - 150.0) < 0.01
+        && abs((float)$mergedOrder['paid_amount'] - 150.0) < 0.01
+        && $mergedOrder['order_status'] === 'pending'
+        && $mergedSource['order_status'] === 'cancelled'
+        && (int)$mergedItems['total'] === 2
+        && (int)$mergedPayments['total'] === 2
+        && abs((float)$mergedPayments['amount'] - 150.0) < 0.01
+        && (int)$mergeHistory['total'] === 2
+);
+
+Database::query("DELETE FROM order_status_history WHERE restaurant_id = 1 AND order_id IN (?, ?)", [$mergeTargetId, $mergeSourceId]);
+Database::query("DELETE FROM payments WHERE restaurant_id = 1 AND order_id IN (?, ?)", [$mergeTargetId, $mergeSourceId]);
+Database::query("DELETE FROM order_items WHERE restaurant_id = 1 AND order_id IN (?, ?)", [$mergeTargetId, $mergeSourceId]);
+Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id IN (?, ?)", [$mergeTargetId, $mergeSourceId]);
+Database::query("DELETE FROM restaurant_tables WHERE restaurant_id = 1 AND id = ?", [$mergeTableId]);
+
 // 20. Phase 7: Analytics Reports & SaaS Subscription Billing
 echo PHP_EOL . "20. Testing BI Reports & SaaS Billing Subscriptions:" . PHP_EOL;
 $reportKpis = \App\Services\ReportService::getKpiSummary(1, date('Y-01-01'), date('Y-12-31'));
