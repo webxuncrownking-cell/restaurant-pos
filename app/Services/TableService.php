@@ -210,7 +210,7 @@ class TableService
         }
 
         $pdo = Database::getInstance();
-        $driver = (string)$pdo->getAttribute(\\PDO::ATTR_DRIVER_NAME);
+        $driver = (string)$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
         $lockSuffix = $driver === 'sqlite' ? '' : ' FOR UPDATE';
 
         try {
@@ -228,7 +228,7 @@ class TableService
                  " . $lockSuffix
             );
             $orderStmt->execute([$restaurantId, $orderId]);
-            $order = $orderStmt->fetch(\\PDO::FETCH_ASSOC);
+            $order = $orderStmt->fetch(\PDO::FETCH_ASSOC);
             if (!$order) {
                 throw new InvalidArgumentException('Only an active dine-in ticket assigned to a table can be transferred.');
             }
@@ -245,7 +245,7 @@ class TableService
                  " . $lockSuffix
             );
             $tableStmt->execute([$restaurantId, $destinationTableId]);
-            $destination = $tableStmt->fetch(\\PDO::FETCH_ASSOC);
+            $destination = $tableStmt->fetch(\PDO::FETCH_ASSOC);
             if (!$destination || $destination['status'] !== 'available') {
                 throw new InvalidArgumentException('The destination table must be active and marked available.');
             }
@@ -257,7 +257,7 @@ class TableService
                  LIMIT 1" . $lockSuffix
             );
             $occupiedByTicket->execute([$restaurantId, $destinationTableId]);
-            if ($occupiedByTicket->fetch(\\PDO::FETCH_ASSOC)) {
+            if ($occupiedByTicket->fetch(\PDO::FETCH_ASSOC)) {
                 throw new InvalidArgumentException('The destination table already has an active ticket.');
             }
 
@@ -309,7 +309,7 @@ class TableService
                 'destination_table_id' => $destinationTableId,
                 'destination_table_number' => (string)$destination['table_number']
             ];
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             throw $e;
         }
