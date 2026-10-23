@@ -16,6 +16,29 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   .kitchen-eyebrow { color:#8491a5; text-transform:uppercase; letter-spacing:.13em; font-size:.68rem; font-weight:800; }
   .kitchen-heading { font-size:1.7rem; font-weight:850; letter-spacing:-.04em; color:#172033; margin:3px 0 5px; }
   .kitchen-subtitle { color:#718096; margin:0; font-size:.88rem; }
+  .kitchen-pos-terminal {
+    color:#6c757d;
+    background-color:#fff;
+    border:1px solid #6c757d;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+  }
+  .kitchen-pos-terminal:hover {
+    color:#fff;
+    background-color:#6c757d;
+    border-color:#6c757d;
+  }
+  .kitchen-pos-terminal:focus-visible {
+    color:#fff;
+    background-color:#6c757d;
+    border-color:#6c757d;
+    box-shadow:0 0 0 .2rem rgba(108,117,125,.28);
+    outline:0;
+  }
+  .kitchen-pos-terminal:active {
+    color:#fff;
+    background-color:#565e64;
+    border-color:#51585e;
+  }
   .kitchen-live-pill { display:inline-flex; align-items:center; gap:7px; border:1px solid #b9eed6; border-radius:999px; padding:7px 11px; color:#08794e; background:#eafaf2; font-weight:750; font-size:.74rem; white-space:nowrap; }
   .kitchen-live-dot { width:7px; height:7px; border-radius:50%; background:#10b981; box-shadow:0 0 0 4px rgba(16,185,129,.12); }
   .kitchen-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; margin-bottom:20px; }
@@ -96,7 +119,7 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
     </div>
     <div class="d-flex flex-wrap align-items-center gap-2">
       <span class="kitchen-live-pill" id="kitchenLiveState"><span class="kitchen-live-dot"></span> Live updates on</span>
-      <a class="btn btn-outline-secondary bg-white" href="<?= BASE_URL ?>/pos"><i class="bi bi-display me-1"></i> POS Terminal</a>
+      <a class="btn kitchen-pos-terminal" href="<?= BASE_URL ?>/pos"><i class="bi bi-display me-1"></i> POS Terminal</a>
       <button class="btn btn-primary" type="button" onclick="window.location.reload()"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
     </div>
   </section>
