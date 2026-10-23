@@ -36,16 +36,25 @@ class PosSyncService
         if (!is_string($hashJson)) {
             throw new RuntimeException('Unable to serialize the POS catalog snapshot.');
         }
-        $snapshotHash = hash('sha256', $hashJson);
+        $normalizedCatalogHash = hash('sha256', $hashJson);
 
-        if ($latest && hash_equals((string)$latest['snapshot_hash'], $snapshotHash)) {
-            return $latest;
+        if ($latest) {
+            $latestPayload = json_decode((string)($latest['snapshot_json'] ?? ''), true);
+            if (is_array($latestPayload)) {
+                $latestPayload['version'] = 'catalog-snapshot';
+                $latestNormalizedJson = json_encode($latestPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                if (is_string($latestNormalizedJson) && hash_equals(hash('sha256', $latestNormalizedJson), $normalizedCatalogHash)) {
+                    return $latest;
+                }
+            }
         }
 
         $jsonStr = json_encode($posCatalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if (!is_string($jsonStr)) {
             throw new RuntimeException('Unable to serialize the POS catalog snapshot.');
         }
+        // Keep snapshot_hash equal to the hash of the exact stored JSON.
+        $snapshotHash = hash('sha256', $jsonStr);
         $versionUuid = DeviceService::generateUuidV4();
 
         Database::query(
