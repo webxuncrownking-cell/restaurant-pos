@@ -75,7 +75,7 @@ $restaurantNameEsc = htmlspecialchars($restaurantName, ENT_QUOTES, 'UTF-8');
         </div>
       </div>
       <form method="POST" action="<?= BASE_URL ?>/settings/migrate" class="ms-lg-auto">
-        <?= \\App\\Core\\CSRF::formField() ?>
+        <?= \App\Core\CSRF::formField() ?>
         <button type="submit" class="btn btn-warning fw-semibold"><i class="bi bi-database-gear me-1"></i> Apply Safe Settings Update</button>
       </form>
     </div>

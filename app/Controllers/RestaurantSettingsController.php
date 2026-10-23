@@ -449,7 +449,7 @@ class RestaurantSettingsController
             'logo_path' => $this->hasLogoColumn(),
             'favicon_path' => $this->hasFaviconColumn(),
             'tagline' => $this->hasTaglineColumn(),
-            default => throw new \\InvalidArgumentException('Unsupported restaurant settings column.')
+            default => throw new \InvalidArgumentException('Unsupported restaurant settings column.')
         };
 
         if ($exists) return;
