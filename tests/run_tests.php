@@ -946,13 +946,13 @@ Database::query("DELETE FROM restaurant_tables WHERE restaurant_id = 1 AND id = 
 // 19d. Open bill checkout and partial/split payment allocation.
 echo PHP_EOL . "19d. Testing Open Bills & Split Payments:" . PHP_EOL;
 $openBillPayload = $orderPayload;
-$openBillPayload['client_uuid'] = \App\Services\\DeviceService::generateUuidV4();
+$openBillPayload['client_uuid'] = \App\Services\DeviceService::generateUuidV4();
 $openBillPayload['order_number'] = 'OPEN-' . substr(str_replace('-', '', $openBillPayload['client_uuid']), 0, 12);
 $openBillPayload['save_as_open'] = true;
 $openBillPayload['paid_amount'] = 0;
 $openBillPayload['change_amount'] = 0;
 unset($openBillPayload['payment']);
-$openBillSync = \App\Services\\PosSyncService::processOrderSync(1, $openBillPayload);
+$openBillSync = \App\Services\PosSyncService::processOrderSync(1, $openBillPayload);
 $openBillId = (int)$openBillSync['server_order_id'];
 $openBillRow = Database::fetchOne(
     "SELECT payment_status, paid_amount, total_amount FROM orders WHERE restaurant_id = 1 AND id = ?",
@@ -970,7 +970,7 @@ assertTest(
         && (int)$openPaymentCount['total'] === 0
 );
 
-$billShares = \App\Services\\BillService::createEqualSplits(1, $openBillId, 1, 2, ['Test Guest A', 'Test Guest B']);
+$billShares = \App\Services\BillService::createEqualSplits(1, $openBillId, 1, 2, ['Test Guest A', 'Test Guest B']);
 $shareTotalCents = (int)round(array_sum(array_column($billShares, 'amount_due')) * 100);
 $openBillCents = (int)round((float)$openBillRow['total_amount'] * 100);
 assertTest(
@@ -983,8 +983,8 @@ assertTest(
 
 $firstShareId = (int)$billShares[0]['id'];
 $firstShareHalf = round((float)$billShares[0]['amount_due'] / 2, 2);
-$partialPaymentUuid = \App\Services\\DeviceService::generateUuidV4();
-$partialPayment = \App\Services\\BillService::recordPayment(
+$partialPaymentUuid = \App\Services\DeviceService::generateUuidV4();
+$partialPayment = \App\Services\BillService::recordPayment(
     1, $openBillId, 1, $partialPaymentUuid, $firstShareHalf, $firstShareHalf, 'cash', $firstShareId
 );
 $paymentCountAfterPartial = (int)(Database::fetchOne(
@@ -1002,7 +1002,7 @@ assertTest(
         && $paymentCountAfterPartial === 1
 );
 
-$duplicatePayment = \App\Services\\BillService::recordPayment(
+$duplicatePayment = \App\Services\BillService::recordPayment(
     1, $openBillId, 1, $partialPaymentUuid, $firstShareHalf, $firstShareHalf, 'cash', $firstShareId
 );
 $paymentCountAfterRetry = (int)(Database::fetchOne(
@@ -1015,18 +1015,18 @@ assertTest(
 );
 
 $shareAfterHalf = array_values(array_filter(
-    \App\Services\\BillService::getSplits(1, $openBillId),
+    \App\Services\BillService::getSplits(1, $openBillId),
     static fn(array $split): bool => (int)$split['id'] === $firstShareId
 ))[0];
 $remainingFirstShare = round((float)$shareAfterHalf['balance_due'], 2);
-\App\Services\\BillService::recordPayment(
-    1, $openBillId, 1, \App\Services\\DeviceService::generateUuidV4(),
+\App\Services\BillService::recordPayment(
+    1, $openBillId, 1, \App\Services\DeviceService::generateUuidV4(),
     $remainingFirstShare, $remainingFirstShare, 'cash', $firstShareId
 );
 $secondShareId = (int)$billShares[1]['id'];
 $secondShareAmount = round((float)$billShares[1]['amount_due'], 2);
-\App\Services\\BillService::recordPayment(
-    1, $openBillId, 1, \App\Services\\DeviceService::generateUuidV4(),
+\App\Services\BillService::recordPayment(
+    1, $openBillId, 1, \App\Services\DeviceService::generateUuidV4(),
     $secondShareAmount, $secondShareAmount, 'card', $secondShareId
 );
 $settledOrder = Database::fetchOne(
@@ -1037,7 +1037,7 @@ $settledPayments = Database::fetchOne(
     "SELECT COALESCE(SUM(amount),0) AS amount, COUNT(*) AS total FROM payments WHERE restaurant_id = 1 AND order_id = ?",
     [$openBillId]
 );
-$settledShares = \App\Services\\BillService::getSplits(1, $openBillId);
+$settledShares = \App\Services\BillService::getSplits(1, $openBillId);
 assertTest(
     "Split Shares Can Be Paid in Multiple Transactions and Reconcile",
     $settledOrder['payment_status'] === 'paid'
