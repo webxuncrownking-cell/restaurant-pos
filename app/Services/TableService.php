@@ -179,4 +179,140 @@ class TableService
         Database::query($sql, [':restaurant_id' => $restaurantId, ':id' => $tableId]);
         return true;
     }
+    /**
+     * Active dine-in tickets that can be moved between floor tables.
+     */
+    public static function getActiveDineInOrders(int $restaurantId): array
+    {
+        return Database::fetchAll(
+            "SELECT o.id, o.order_number, o.order_status, o.created_at, o.table_id,
+                    t.table_number, t.name AS table_name
+             FROM orders o
+             JOIN restaurant_tables t
+               ON t.restaurant_id = o.restaurant_id AND t.id = o.table_id
+             WHERE o.restaurant_id = ?
+               AND o.order_type = 'dine_in'
+               AND o.order_status IN ('pending','preparing','ready','served')
+               AND o.table_id IS NOT NULL
+             ORDER BY o.created_at ASC, o.id ASC",
+            [$restaurantId]
+        );
+    }
+
+    /**
+     * Transfer one active dine-in ticket and record the change in order history.
+     * The destination must be an empty, available table in the same restaurant.
+     */
+    public static function transferActiveDineInOrder(int $restaurantId, int $orderId, int $destinationTableId, int $changedByUserId): array
+    {
+        if ($restaurantId <= 0 || $orderId <= 0 || $destinationTableId <= 0 || $changedByUserId <= 0) {
+            throw new InvalidArgumentException('Choose a valid order and destination table.');
+        }
+
+        $pdo = Database::getInstance();
+        $driver = (string)$pdo->getAttribute(\\PDO::ATTR_DRIVER_NAME);
+        $lockSuffix = $driver === 'sqlite' ? '' : ' FOR UPDATE';
+
+        try {
+            $pdo->beginTransaction();
+
+            $orderStmt = $pdo->prepare(
+                "SELECT o.id, o.table_id, o.order_status, o.order_type,
+                        t.table_number AS source_table_number
+                 FROM orders o
+                 JOIN restaurant_tables t
+                   ON t.restaurant_id = o.restaurant_id AND t.id = o.table_id
+                 WHERE o.restaurant_id = ? AND o.id = ?
+                   AND o.order_type = 'dine_in'
+                   AND o.order_status IN ('pending','preparing','ready','served')
+                 " . $lockSuffix
+            );
+            $orderStmt->execute([$restaurantId, $orderId]);
+            $order = $orderStmt->fetch(\\PDO::FETCH_ASSOC);
+            if (!$order) {
+                throw new InvalidArgumentException('Only an active dine-in ticket assigned to a table can be transferred.');
+            }
+
+            $sourceTableId = (int)$order['table_id'];
+            if ($sourceTableId === $destinationTableId) {
+                throw new InvalidArgumentException('Choose a different destination table.');
+            }
+
+            $tableStmt = $pdo->prepare(
+                "SELECT id, table_number, status
+                 FROM restaurant_tables
+                 WHERE restaurant_id = ? AND id = ? AND deleted_at IS NULL AND is_active = 1
+                 " . $lockSuffix
+            );
+            $tableStmt->execute([$restaurantId, $destinationTableId]);
+            $destination = $tableStmt->fetch(\\PDO::FETCH_ASSOC);
+            if (!$destination || $destination['status'] !== 'available') {
+                throw new InvalidArgumentException('The destination table must be active and marked available.');
+            }
+
+            $occupiedByTicket = $pdo->prepare(
+                "SELECT id FROM orders
+                 WHERE restaurant_id = ? AND table_id = ?
+                   AND order_status IN ('pending','preparing','ready','served')
+                 LIMIT 1" . $lockSuffix
+            );
+            $occupiedByTicket->execute([$restaurantId, $destinationTableId]);
+            if ($occupiedByTicket->fetch(\\PDO::FETCH_ASSOC)) {
+                throw new InvalidArgumentException('The destination table already has an active ticket.');
+            }
+
+            $update = $pdo->prepare(
+                "UPDATE orders SET table_id = ?, updated_at = CURRENT_TIMESTAMP
+                 WHERE restaurant_id = ? AND id = ? AND table_id = ?
+                   AND order_status IN ('pending','preparing','ready','served')"
+            );
+            $update->execute([$destinationTableId, $restaurantId, $orderId, $sourceTableId]);
+            if ($update->rowCount() !== 1) {
+                throw new RuntimeException('The ticket changed while it was being transferred. Refresh the floor plan and try again.');
+            }
+
+            $pdo->prepare(
+                "UPDATE restaurant_tables SET status = 'occupied'
+                 WHERE restaurant_id = ? AND id = ?"
+            )->execute([$restaurantId, $destinationTableId]);
+
+            $remaining = $pdo->prepare(
+                "SELECT COUNT(*) FROM orders
+                 WHERE restaurant_id = ? AND table_id = ?
+                   AND order_status IN ('pending','preparing','ready','served')"
+            );
+            $remaining->execute([$restaurantId, $sourceTableId]);
+            if ((int)$remaining->fetchColumn() === 0) {
+                $pdo->prepare(
+                    "UPDATE restaurant_tables SET status = 'available'
+                     WHERE restaurant_id = ? AND id = ? AND status = 'occupied'"
+                )->execute([$restaurantId, $sourceTableId]);
+            }
+
+            $note = 'Table transfer from #' . (string)$order['source_table_number']
+                . ' to #' . (string)$destination['table_number']
+                . ' by staff #' . $changedByUserId;
+            $history = $pdo->prepare(
+                "INSERT INTO order_status_history
+                    (restaurant_id, order_id, from_status, to_status, changed_by_user_id, notes)
+                 VALUES (?, ?, ?, ?, ?, ?)"
+            );
+            $history->execute([
+                $restaurantId, $orderId, (string)$order['order_status'],
+                (string)$order['order_status'], $changedByUserId, $note
+            ]);
+
+            $pdo->commit();
+            return [
+                'order_id' => $orderId,
+                'source_table_id' => $sourceTableId,
+                'destination_table_id' => $destinationTableId,
+                'destination_table_number' => (string)$destination['table_number']
+            ];
+        } catch (\\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
 }
