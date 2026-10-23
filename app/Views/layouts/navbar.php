@@ -29,6 +29,7 @@ $navGroups = [
 
 if ($canManageBranding) {
   $navGroups['Account'][] = ['label' => 'Branding & Logo', 'route' => '/settings/branding', 'icon' => 'bi-palette2'];
+  $navGroups['Account'][] = ['label' => 'Favicon Settings', 'route' => '/settings/favicon', 'icon' => 'bi-app-indicator'];
 }
 
 $pageTitle = 'Restaurant workspace';
