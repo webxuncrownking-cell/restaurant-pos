@@ -7,3 +7,5 @@ coverage/
 *.log
 .env*
 !.env.example
+# Restaurant logos uploaded through the in-app Branding & Logo settings
+/public/uploads/restaurant-logos/*
