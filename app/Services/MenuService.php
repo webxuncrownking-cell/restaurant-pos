@@ -430,6 +430,11 @@ class MenuService
 
         $categories = self::getCategories($restaurantId, true);
         $products = self::getProducts($restaurantId, null, true);
+        foreach ($products as &$product) {
+            $imagePath = trim((string)($product['image_path'] ?? ''));
+            $product['image_url'] = $imagePath !== '' ? BASE_URL . '/' . ltrim($imagePath, '/') : '';
+        }
+        unset($product);
 
         return [
             'version'       => date('YmdHis'),
