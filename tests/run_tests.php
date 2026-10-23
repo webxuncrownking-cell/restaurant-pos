@@ -1056,6 +1056,55 @@ Database::query("DELETE FROM inventory_movements WHERE restaurant_id = 1 AND ref
 Database::query("DELETE FROM order_items WHERE restaurant_id = 1 AND order_id = ?", [$openBillId]);
 Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id = ?", [$openBillId]);
 
+// 19e. Item-based splitting: assign order lines to guest shares with exact cent allocation.
+echo PHP_EOL . "19e. Testing Item-Based Bill Splitting:" . PHP_EOL;
+$itemBillPayload = $orderPayload;
+$itemBillPayload['client_uuid'] = \\App\\Services\\DeviceService::generateUuidV4();
+$itemBillPayload['order_number'] = 'ITEM-' . substr(str_replace('-', '', $itemBillPayload['client_uuid']), 0, 12);
+$itemBillPayload['save_as_open'] = true;
+$itemBillPayload['paid_amount'] = 0;
+$itemBillPayload['change_amount'] = 0;
+unset($itemBillPayload['payment']);
+$itemBillSync = \\App\\Services\\PosSyncService::processOrderSync(1, $itemBillPayload);
+$itemBillId = (int)$itemBillSync['server_order_id'];
+$itemBillRow = Database::fetchOne(
+    "SELECT total_amount, payment_status FROM orders WHERE restaurant_id = 1 AND id = ?",
+    [$itemBillId]
+);
+$itemBillLines = Database::fetchAll(
+    "SELECT id FROM order_items WHERE restaurant_id = 1 AND order_id = ? ORDER BY id ASC",
+    [$itemBillId]
+);
+$itemAssignments = [];
+foreach ($itemBillLines as $lineIndex => $line) {
+    $itemAssignments[(string)$line['id']] = ($lineIndex % 2) + 1;
+}
+$itemShares = \\App\\Services\\BillService::createItemSplits(
+    1, $itemBillId, 1, 2, ['Item Guest A', 'Item Guest B'], $itemAssignments
+);
+$itemShareTotalCents = (int)round(array_sum(array_column($itemShares, 'amount_due')) * 100);
+$itemAssignedCount = 0;
+foreach ($itemShares as $share) $itemAssignedCount += count($share['items']);
+assertTest(
+    "Item-Based Splits Assign Every Line and Reconcile Exactly",
+    $itemBillSync['status'] === 'synced'
+        && $itemBillRow['payment_status'] === 'unpaid'
+        && count($itemBillLines) >= 2
+        && count($itemShares) === 2
+        && $itemAssignedCount === count($itemBillLines)
+        && $itemShareTotalCents === (int)round((float)$itemBillRow['total_amount'] * 100)
+        && count(array_filter($itemShares, static fn(array $share): bool => count($share['items']) > 0)) === 2
+);
+
+Database::query("DELETE FROM bill_split_payment_allocations WHERE restaurant_id = 1 AND order_id = ?", [$itemBillId]);
+Database::query("DELETE FROM bill_split_items WHERE restaurant_id = 1 AND order_id = ?", [$itemBillId]);
+Database::query("DELETE FROM order_status_history WHERE restaurant_id = 1 AND order_id = ?", [$itemBillId]);
+Database::query("DELETE FROM order_bill_splits WHERE restaurant_id = 1 AND order_id = ?", [$itemBillId]);
+Database::query("DELETE FROM order_item_addons WHERE restaurant_id = 1 AND order_item_id IN (SELECT id FROM order_items WHERE restaurant_id = 1 AND order_id = ?)", [$itemBillId]);
+Database::query("DELETE FROM inventory_movements WHERE restaurant_id = 1 AND reference_id = ?", [$itemBillId]);
+Database::query("DELETE FROM order_items WHERE restaurant_id = 1 AND order_id = ?", [$itemBillId]);
+Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id = ?", [$itemBillId]);
+
 // 20. Phase 7: Analytics Reports & SaaS Subscription Billing
 echo PHP_EOL . "20. Testing BI Reports & SaaS Billing Subscriptions:" . PHP_EOL;
 $reportKpis = \App\Services\ReportService::getKpiSummary(1, date('Y-01-01'), date('Y-12-31'));
