@@ -44,6 +44,7 @@ use App\Controllers\ShiftController;
 use App\Controllers\PosController;
 use App\Controllers\ReportController;
 use App\Controllers\BillingController;
+use App\Controllers\RestaurantSettingsController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -125,6 +126,10 @@ $router->get('/reports', [ReportController::class, 'index']);
 $router->get('/reports/data.json', [ReportController::class, 'dataJson']);
 $router->get('/billing', [BillingController::class, 'index']);
 $router->post('/billing/upgrade', [BillingController::class, 'upgrade']);
+
+// Restaurant branding and logo settings
+$router->get('/settings/branding', [RestaurantSettingsController::class, 'branding']);
+$router->post('/settings/branding', [RestaurantSettingsController::class, 'saveBranding']);
 
 // Diagnostics & Setup Routes
 $router->get('/install', [InstallController::class, 'index']);
