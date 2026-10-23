@@ -348,10 +348,10 @@ try {
     $syncStockAfter = Database::fetchOne("SELECT current_stock FROM ingredients WHERE restaurant_id = ? AND id = ?", [1, $syncIngredientId]);
 
     assertTest(
-        "POS Sync Inserts Order Using Required Schema Fields",
+        "POS Sync Inserts Paid Order into Kitchen Queue",
         ($syncResult['status'] ?? '') === 'synced'
             && $syncOrder
-            && $syncOrder['order_status'] === 'completed'
+            && $syncOrder['order_status'] === 'pending'
             && $syncOrder['payment_status'] === 'paid'
             && !empty($syncOrder['client_reported_at'])
             && !empty($syncOrder['server_received_at'])
