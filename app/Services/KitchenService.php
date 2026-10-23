@@ -121,7 +121,7 @@ class KitchenService
 
             $lockSuffix = $driver === 'sqlite' ? '' : ' FOR UPDATE';
             $stmt = $pdo->prepare(
-                'SELECT id, order_status FROM orders WHERE restaurant_id = ? AND id = ?' . $lockSuffix
+                'SELECT id, order_status, order_type, table_id FROM orders WHERE restaurant_id = ? AND id = ?' . $lockSuffix
             );
             $stmt->execute([$restaurantId, $orderId]);
             $order = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -154,6 +154,40 @@ class KitchenService
                 $restaurantId, $orderId, $currentStatus, $targetStatus,
                 $changedByUserId, 'Updated via Kitchen Display'
             ]);
+
+            // Release the table only when every active ticket assigned to it has completed.
+            // If a booked reservation is due within two hours, restore the Reserved state.
+            if ($targetStatus === 'completed' && $order['order_type'] === 'dine_in' && !empty($order['table_id'])) {
+                $tableId = (int)$order['table_id'];
+                $activeStmt = $pdo->prepare(
+                    "SELECT COUNT(*) FROM orders
+                     WHERE restaurant_id = ? AND table_id = ?
+                       AND order_status IN ('pending','preparing','ready','served')"
+                );
+                $activeStmt->execute([$restaurantId, $tableId]);
+                if ((int)$activeStmt->fetchColumn() === 0) {
+                    $reservationDue = false;
+                    try {
+                        $reservationStmt = $pdo->prepare(
+                            "SELECT COUNT(*) FROM reservations
+                             WHERE restaurant_id = ? AND table_id = ? AND status = 'booked'
+                               AND reservation_at >= NOW()
+                               AND reservation_at < DATE_ADD(NOW(), INTERVAL 2 HOUR)"
+                        );
+                        $reservationStmt->execute([$restaurantId, $tableId]);
+                        $reservationDue = (int)$reservationStmt->fetchColumn() > 0;
+                    } catch (Throwable $ignored) {
+                        // Older installations may not yet have run the Reservations migration.
+                    }
+
+                    $newTableStatus = $reservationDue ? 'reserved' : 'available';
+                    $tableStmt = $pdo->prepare(
+                        "UPDATE restaurant_tables SET status = ?
+                         WHERE restaurant_id = ? AND id = ? AND status = 'occupied'"
+                    );
+                    $tableStmt->execute([$newTableStatus, $restaurantId, $tableId]);
+                }
+            }
 
             $pdo->commit();
             return ['order_id' => $orderId, 'from_status' => $currentStatus, 'to_status' => $targetStatus];
