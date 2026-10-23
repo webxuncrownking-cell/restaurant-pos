@@ -29,6 +29,7 @@ class TableController
 
         $tables = TableService::getTables($restaurantId, $zone);
         $floorZones = TableService::getFloorZones($restaurantId);
+        $activeOrders = TableService::getActiveDineInOrders($restaurantId);
 
         // Count totals
         $totalTables = count($tables);
@@ -46,6 +47,7 @@ class TableController
 
         Response::render('tables/index', [
             'tables' => $tables,
+            'activeOrders' => $activeOrders,
             'floorZones' => $floorZones,
             'currentZone' => $zone ?: 'all',
             'stats' => [
@@ -99,6 +101,30 @@ class TableController
         try {
             TableService::updateStatus($restaurantId, $tableId, $status);
             $_SESSION['flash_success'] = 'Table status updated to ' . ucfirst($status) . '.';
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
+        }
+
+        Response::redirect('/tables');
+    }
+
+    /**
+     * Transfer an active dine-in ticket to an available floor table.
+     */
+    public function transferOrder(Request $request): void
+    {
+        Auth::requireAuth();
+        CSRF::validateToken($request->post('_csrf_token'));
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $orderId = filter_var($request->post('order_id'), FILTER_VALIDATE_INT);
+        $destinationTableId = filter_var($request->post('destination_table_id'), FILTER_VALIDATE_INT);
+
+        try {
+            if (!$orderId || !$destinationTableId || $restaurantId <= 0) {
+                throw new \\InvalidArgumentException('Choose an order and destination table.');
+            }
+            $result = TableService::transferActiveDineInOrder($restaurantId, (int)$orderId, (int)$destinationTableId, (int)Auth::id());
+            $_SESSION['flash_success'] = 'Order transferred to Table #' . $result['destination_table_number'] . '.';
         } catch (Exception $e) {
             $_SESSION['flash_error'] = $e->getMessage();
         }
