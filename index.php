@@ -119,6 +119,7 @@ $router->post('/reservations/waitlist/action', [ReservationsController::class, '
 $router->get('/bills', [BillsController::class, 'index']);
 $router->post('/bills/migrate', [BillsController::class, 'migrate']);
 $router->post('/bills/split', [BillsController::class, 'createEqualSplits']);
+$router->post('/bills/split-items', [BillsController::class, 'createItemSplits']);
 $router->post('/bills/payment', [BillsController::class, 'collectPayment']);
 
 // Phase 3: POS Terminals & Devices Routes
