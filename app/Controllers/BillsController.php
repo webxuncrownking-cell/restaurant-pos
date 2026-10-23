@@ -83,6 +83,43 @@ class BillsController
         Response::redirect('/bills');
     }
 
+    public function createItemSplits(Request $request): void
+    {
+        $restaurantId = $this->authorize();
+        $this->validateCsrf($request);
+        $this->requireSchema();
+
+        $orderId = filter_var($request->post('order_id'), FILTER_VALIDATE_INT);
+        $count = filter_var($request->post('split_count'), FILTER_VALIDATE_INT);
+        $rawLabels = trim((string)$request->post('split_labels', ''));
+        $labels = $rawLabels === '' ? [] : preg_split('/\r?\n/', $rawLabels);
+        $assignments = $request->post('item_assignments', []);
+
+        try {
+            if (!$orderId || $orderId <= 0 || !$count || $count < 2 || $count > 12) {
+                throw new InvalidArgumentException('Choose a bill and split it into 2 to 12 guest shares.');
+            }
+            if (!is_array($assignments)) {
+                throw new InvalidArgumentException('Assign each order line to a guest share.');
+            }
+            BillService::createItemSplits(
+                $restaurantId,
+                (int)$orderId,
+                (int)Auth::id(),
+                (int)$count,
+                is_array($labels) ? $labels : [],
+                $assignments
+            );
+            Session::setFlash('success', 'Item lines assigned to guest shares. Each share can now be paid in one or more transactions.');
+        } catch (InvalidArgumentException $e) {
+            Session::setFlash('warning', $e->getMessage());
+        } catch (Throwable $e) {
+            error_log('[Bills Item Split] ' . $e->getMessage());
+            Session::setFlash('danger', 'Unable to split this bill by item lines.');
+        }
+        Response::redirect('/bills');
+    }
+
     public function collectPayment(Request $request): void
     {
         $restaurantId = $this->authorize();
