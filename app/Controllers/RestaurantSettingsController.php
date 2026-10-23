@@ -160,6 +160,7 @@ class RestaurantSettingsController
             'favicon_column_ready' => $faviconColumnReady,
             'favicon_path' => $faviconPath,
             'favicon_url' => $faviconUrl,
+            'favicon_fallback_url' => $fallbackPath !== '' ? BASE_URL . '/' . ltrim($fallbackPath, '/') : BASE_URL . '/public/favicon.svg',
             'using_logo_fallback' => $faviconPath === '' && $fallbackPath !== '',
             'title' => 'Favicon Settings - Restaurant POS'
         ], 'app');
