@@ -428,7 +428,7 @@ class MenuService
                 $restaurantSql . ", tagline, logo_path FROM restaurants WHERE id = ? AND status = 'active' AND deleted_at IS NULL",
                 [$restaurantId]
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             $restaurant = Database::fetchOne(
                 $restaurantSql . " FROM restaurants WHERE id = ? AND status = 'active' AND deleted_at IS NULL",
                 [$restaurantId]
