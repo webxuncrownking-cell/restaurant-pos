@@ -135,6 +135,32 @@ class TableController
     }
 
     /**
+     * Merge two compatible, new dine-in tickets while preserving payment totals.
+     */
+    public function mergeOrders(Request $request): void
+    {
+        Auth::requireAuth();
+        CSRF::validateToken($request->post('_csrf_token'));
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $targetOrderId = filter_var($request->post('target_order_id'), FILTER_VALIDATE_INT);
+        $sourceOrderId = filter_var($request->post('source_order_id'), FILTER_VALIDATE_INT);
+
+        try {
+            if (!$targetOrderId || !$sourceOrderId || $restaurantId <= 0) {
+                throw new \InvalidArgumentException('Choose the ticket to keep and the ticket to merge into it.');
+            }
+            $result = TableService::mergeActiveDineInTickets(
+                $restaurantId, (int)$targetOrderId, (int)$sourceOrderId, (int)Auth::id()
+            );
+            $_SESSION['flash_success'] = 'Tickets merged. Combined total: ₱' . number_format((float)$result['merged_total'], 2) . '.';
+        } catch (Exception $e) {
+            $_SESSION['flash_error'] = $e->getMessage();
+        }
+
+        Response::redirect('/tables');
+    }
+
+    /**
      * Delete table (soft delete)
      */
     public function delete(Request $request): void
