@@ -20,7 +20,6 @@
     $fallbackLogoPath = trim((string)($faviconRestaurant['logo_path'] ?? ''));
     $faviconLogoPath = $customFaviconPath !== '' ? $customFaviconPath : $fallbackLogoPath;
     $faviconExtension = strtolower(pathinfo($faviconLogoPath, PATHINFO_EXTENSION));
-    $faviconExtension = strtolower(pathinfo($faviconLogoPath, PATHINFO_EXTENSION));
     $faviconMimeTypes = ['png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'webp' => 'image/webp', 'svg' => 'image/svg+xml', 'ico' => 'image/x-icon'];
     $faviconType = $faviconMimeTypes[$faviconExtension] ?? 'image/svg+xml';
     $faviconUrl = $faviconLogoPath !== ''
