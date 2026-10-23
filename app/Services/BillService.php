@@ -22,13 +22,14 @@ class BillService
             $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
             if ($driver === 'sqlite') {
                 $tables = Database::fetchAll("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('order_bill_splits','bill_split_payment_allocations','bill_split_items')");
-                $column = Database::fetchOne("PRAGMA table_info(payments)");
-                return count($tables) === 3 && $column !== null;
+                $paymentColumns = Database::fetchAll("PRAGMA table_info(payments)");
+                $hasPaymentUuid = count(array_filter($paymentColumns, static fn(array $column): bool => ($column['name'] ?? '') === 'client_payment_uuid')) > 0;
+                return count($tables) === 3 && $hasPaymentUuid;
             }
             $tables = Database::fetchAll(
                 "SELECT table_name FROM information_schema.tables
                  WHERE table_schema = DATABASE()
-                   AND table_name IN ('order_bill_splits','bill_split_payment_allocations')"
+                   AND table_name IN ('order_bill_splits','bill_split_payment_allocations','bill_split_items')"
             );
             $column = Database::fetchOne(
                 "SELECT column_name FROM information_schema.columns
@@ -48,7 +49,9 @@ class BillService
         $pdo = Database::getInstance();
         $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         if ($driver === 'sqlite') {
-            $pdo->exec("ALTER TABLE payments ADD COLUMN client_payment_uuid TEXT NULL");
+            $paymentColumns = Database::fetchAll("PRAGMA table_info(payments)");
+            $hasPaymentUuid = count(array_filter($paymentColumns, static fn(array $column): bool => ($column['name'] ?? '') === 'client_payment_uuid')) > 0;
+            if (!$hasPaymentUuid) $pdo->exec("ALTER TABLE payments ADD COLUMN client_payment_uuid TEXT NULL");
             $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS uk_payment_client_uuid ON payments (restaurant_id, client_payment_uuid)");
             $pdo->exec("CREATE TABLE IF NOT EXISTS order_bill_splits (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
