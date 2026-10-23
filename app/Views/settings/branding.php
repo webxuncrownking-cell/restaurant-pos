@@ -66,7 +66,7 @@ $restaurantName = (string)($restaurant['name'] ?? 'Your Restaurant');
   <?php endif; ?>
 
   <form method="POST" action="<?= BASE_URL ?>/settings/branding" enctype="multipart/form-data">
-    <?= \\App\\Core\\CSRF::formField() ?>
+    <?= \App\Core\CSRF::formField() ?>
     <div class="row g-4 align-items-stretch">
       <div class="col-12 col-xl-5">
         <section class="card border-0 branding-card">
