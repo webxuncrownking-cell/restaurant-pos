@@ -20,6 +20,35 @@ class RestaurantSettingsController
 {
     private const MAX_LOGO_BYTES = 2097152;
 
+    /**
+     * Apply non-destructive settings migrations on an existing installation.
+     * Only missing restaurant branding columns are added; existing rows are preserved.
+     */
+    public function migrateSettingsSchema(Request $request): void
+    {
+        $this->authorizeBranding();
+
+        $csrfToken = $request->post('csrf_token');
+        if (!is_string($csrfToken)) $csrfToken = $request->post('_csrf_token');
+        if (!is_string($csrfToken) || !CSRF::validate($csrfToken)) {
+            Session::setFlash('danger', 'Your security token expired. Refresh the page and try again.');
+            Response::redirect('/settings');
+            return;
+        }
+
+        try {
+            $this->addMissingRestaurantColumn('logo_path', 'VARCHAR(255) NULL');
+            $this->addMissingRestaurantColumn('favicon_path', 'VARCHAR(255) NULL');
+            $this->addMissingRestaurantColumn('tagline', 'VARCHAR(180) NULL');
+            Session::setFlash('success', 'Settings database update complete. Missing branding fields were added without deleting restaurant, menu, or sales data.');
+        } catch (Throwable $e) {
+            error_log('[Restaurant Settings Migration] ' . $e->getMessage());
+            Session::setFlash('danger', 'The settings database update could not be completed. Check database permissions and the PHP error log, then try again.');
+        }
+
+        Response::redirect('/settings');
+    }
+
     public function settings(Request $request): void
     {
         $restaurantId = $this->authorizeBranding();
@@ -412,6 +441,33 @@ class RestaurantSettingsController
         }
 
         return (int)$restaurantId;
+    }
+
+    private function addMissingRestaurantColumn(string $column, string $definition): void
+    {
+        $exists = match ($column) {
+            'logo_path' => $this->hasLogoColumn(),
+            'favicon_path' => $this->hasFaviconColumn(),
+            'tagline' => $this->hasTaglineColumn(),
+            default => throw new \\InvalidArgumentException('Unsupported restaurant settings column.')
+        };
+
+        if ($exists) return;
+
+        $pdo = Database::getInstance();
+        $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $afterClause = '';
+        if ($driver !== 'sqlite') {
+            $afterClause = match ($column) {
+                'logo_path' => ' AFTER name',
+                'favicon_path' => ' AFTER logo_path',
+                'tagline' => ' AFTER name',
+                default => ''
+            };
+        }
+
+        // $column, $definition, and the column position are internal allowlisted values.
+        $pdo->exec('ALTER TABLE restaurants ADD COLUMN ' . $column . ' ' . $definition . $afterClause);
     }
 
     private function hasTaglineColumn(): bool

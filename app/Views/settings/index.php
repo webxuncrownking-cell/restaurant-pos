@@ -65,20 +65,19 @@ $restaurantNameEsc = htmlspecialchars($restaurantName, ENT_QUOTES, 'UTF-8');
     <a class="btn btn-outline-secondary bg-white" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
   </div>
 
-  <?php if (empty($tagline_column_ready)): ?>
-    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-start gap-3" role="alert">
-      <i class="bi bi-database-exclamation fs-4"></i>
-      <div>
-        <strong class="d-block mb-1">One-time database update required for the tagline</strong>
-        <p class="mb-2">Run this statement once in phpMyAdmin → select your restaurant database → SQL. Other settings will continue to work while tagline editing is disabled.</p>
-        <code>ALTER TABLE restaurants ADD COLUMN tagline VARCHAR(180) NULL AFTER name;</code>
+  <?php if (empty($tagline_column_ready) || empty($logo_column_ready) || empty($favicon_column_ready)): ?>
+    <div class="alert alert-warning border-0 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3" role="alert">
+      <div class="d-flex align-items-start gap-3 flex-grow-1">
+        <i class="bi bi-database-exclamation fs-4"></i>
+        <div>
+          <strong class="d-block mb-1">One-time settings database update needed</strong>
+          <p class="mb-0">This existing installation is missing one or more branding fields. Apply a safe update to add only the missing columns; your restaurant, menu, users, and sales data will be preserved.</p>
+        </div>
       </div>
-    </div>
-  <?php endif; ?>
-
-  <?php if (empty($logo_column_ready) || empty($favicon_column_ready)): ?>
-    <div class="alert alert-warning border-0 shadow-sm" role="alert">
-      Some image settings need their database columns. Run the existing-image migration at <code>sql/migrations/20261023_favicon_and_product_images.sql</code> if logo or favicon settings are disabled.
+      <form method="POST" action="<?= BASE_URL ?>/settings/migrate" class="ms-lg-auto">
+        <?= \\App\\Core\\CSRF::formField() ?>
+        <button type="submit" class="btn btn-warning fw-semibold"><i class="bi bi-database-gear me-1"></i> Apply Safe Settings Update</button>
+      </form>
     </div>
   <?php endif; ?>
 

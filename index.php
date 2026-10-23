@@ -131,6 +131,7 @@ $router->post('/billing/upgrade', [BillingController::class, 'upgrade']);
 // Unified restaurant settings
 $router->get('/settings', [RestaurantSettingsController::class, 'settings']);
 $router->post('/settings', [RestaurantSettingsController::class, 'saveSettings']);
+$router->post('/settings/migrate', [RestaurantSettingsController::class, 'migrateSettingsSchema']);
 // Legacy paths remain compatible and redirect to the unified settings page.
 $router->get('/settings/branding', [RestaurantSettingsController::class, 'branding']);
 $router->post('/settings/branding', [RestaurantSettingsController::class, 'saveSettings']);
