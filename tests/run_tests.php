@@ -1059,13 +1059,13 @@ Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id = ?", [$openB
 // 19e. Item-based splitting: assign order lines to guest shares with exact cent allocation.
 echo PHP_EOL . "19e. Testing Item-Based Bill Splitting:" . PHP_EOL;
 $itemBillPayload = $orderPayload;
-$itemBillPayload['client_uuid'] = \\App\\Services\\DeviceService::generateUuidV4();
+$itemBillPayload['client_uuid'] = \App\Services\DeviceService::generateUuidV4();
 $itemBillPayload['order_number'] = 'ITEM-' . substr(str_replace('-', '', $itemBillPayload['client_uuid']), 0, 12);
 $itemBillPayload['save_as_open'] = true;
 $itemBillPayload['paid_amount'] = 0;
 $itemBillPayload['change_amount'] = 0;
 unset($itemBillPayload['payment']);
-$itemBillSync = \\App\\Services\\PosSyncService::processOrderSync(1, $itemBillPayload);
+$itemBillSync = \App\Services\PosSyncService::processOrderSync(1, $itemBillPayload);
 $itemBillId = (int)$itemBillSync['server_order_id'];
 $itemBillRow = Database::fetchOne(
     "SELECT total_amount, payment_status FROM orders WHERE restaurant_id = 1 AND id = ?",
@@ -1079,7 +1079,7 @@ $itemAssignments = [];
 foreach ($itemBillLines as $lineIndex => $line) {
     $itemAssignments[(string)$line['id']] = ($lineIndex % 2) + 1;
 }
-$itemShares = \\App\\Services\\BillService::createItemSplits(
+$itemShares = \App\Services\BillService::createItemSplits(
     1, $itemBillId, 1, 2, ['Item Guest A', 'Item Guest B'], $itemAssignments
 );
 $itemShareTotalCents = (int)round(array_sum(array_column($itemShares, 'amount_due')) * 100);
