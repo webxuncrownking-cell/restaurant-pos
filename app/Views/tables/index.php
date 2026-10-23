@@ -98,6 +98,44 @@
     </section>
   <?php endif; ?>
 
+  <?php if (count($activeOrders ?? []) >= 2): ?>
+    <section class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-3 p-lg-4">
+        <div class="d-flex align-items-start gap-3 mb-3">
+          <span class="d-inline-grid place-items-center rounded-3 bg-warning bg-opacity-10 text-warning p-2"><i class="bi bi-intersect fs-5"></i></span>
+          <div>
+            <h2 class="h6 fw-bold mb-1">Merge New Dine-in Tickets</h2>
+            <p class="text-muted small mb-0">Combines line items and payment records under the ticket you keep. To protect accounting, both tickets must be pending, paid, from the same table, cashier, device, and shift, with no void/refund or inventory-conflict history. The merge is audited.</p>
+          </div>
+        </div>
+        <form method="POST" action="<?= BASE_URL ?>/tables/merge" class="row g-2 align-items-end">
+          <input type="hidden" name="_csrf_token" value="<?= \App\Core\CSRF::getToken() ?>">
+          <div class="col-12 col-lg-5">
+            <label class="form-label small fw-semibold" for="mergeTargetOrder">Keep this ticket</label>
+            <select class="form-select" id="mergeTargetOrder" name="target_order_id" required>
+              <option value="">Choose primary ticket...</option>
+              <?php foreach ($activeOrders as $activeOrder): ?>
+                <option value="<?= (int)$activeOrder['id'] ?>"><?= htmlspecialchars((string)$activeOrder['order_number'], ENT_QUOTES, 'UTF-8') ?> · Table #<?= htmlspecialchars((string)$activeOrder['table_number'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars(ucfirst((string)$activeOrder['order_status']), ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-12 col-lg-5">
+            <label class="form-label small fw-semibold" for="mergeSourceOrder">Merge this ticket into it</label>
+            <select class="form-select" id="mergeSourceOrder" name="source_order_id" required>
+              <option value="">Choose ticket to merge...</option>
+              <?php foreach ($activeOrders as $activeOrder): ?>
+                <option value="<?= (int)$activeOrder['id'] ?>"><?= htmlspecialchars((string)$activeOrder['order_number'], ENT_QUOTES, 'UTF-8') ?> · Table #<?= htmlspecialchars((string)$activeOrder['table_number'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars(ucfirst((string)$activeOrder['order_status']), ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-12 col-lg-2 d-grid">
+            <button type="submit" class="btn btn-warning fw-semibold"><i class="bi bi-intersect me-1"></i> Merge tickets</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  <?php endif; ?>
+
   <!-- Tables Visual Grid -->
   <?php if (empty($tables)): ?>
     <div class="card border-0 shadow-sm text-center py-5">
