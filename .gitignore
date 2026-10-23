@@ -10,3 +10,8 @@ coverage/
 # Restaurant logos uploaded through the in-app Branding & Logo settings
 /public/uploads/restaurant-logos/*
 !/public/uploads/restaurant-logos/.gitkeep
+# Restaurant favicon and product images uploaded through the application
+/public/uploads/restaurant-favicons/*
+!/public/uploads/restaurant-favicons/.gitkeep
+/public/uploads/menu-products/*
+!/public/uploads/menu-products/.gitkeep
