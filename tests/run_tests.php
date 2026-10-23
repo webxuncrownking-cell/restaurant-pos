@@ -854,15 +854,15 @@ Database::query("DELETE FROM pos_device_sequences WHERE client_uuid = ?", [$test
 
 // 19c. Merge safeguards: same table/cashier/shift only; line and payment totals must be preserved.
 echo PHP_EOL . "19c. Testing Same-Table Ticket Merge:" . PHP_EOL;
-$mergeTableId = \\App\\Services\\TableService::createTable(1, [
+$mergeTableId = \App\Services\TableService::createTable(1, [
     'table_number' => 'MERGE-TEST',
     'name' => 'Merge Test Table',
     'capacity' => 4,
     'floor_zone' => 'Main Dining',
     'status' => 'occupied'
 ]);
-$mergeTargetUuid = \\App\\Services\\DeviceService::generateUuidV4();
-$mergeSourceUuid = \\App\\Services\\DeviceService::generateUuidV4();
+$mergeTargetUuid = \App\Services\DeviceService::generateUuidV4();
+$mergeSourceUuid = \App\Services\DeviceService::generateUuidV4();
 $mergeTargetNumber = 'M-TGT-' . substr(str_replace('-', '', $mergeTargetUuid), 0, 12);
 $mergeSourceNumber = 'M-SRC-' . substr(str_replace('-', '', $mergeSourceUuid), 0, 12);
 
@@ -904,7 +904,7 @@ Database::query(
     [$mergeSourceId]
 );
 
-$mergeResult = \\App\\Services\\TableService::mergeActiveDineInTickets(1, $mergeTargetId, $mergeSourceId, 1);
+$mergeResult = \App\Services\TableService::mergeActiveDineInTickets(1, $mergeTargetId, $mergeSourceId, 1);
 $mergedOrder = Database::fetchOne(
     "SELECT total_amount, paid_amount, order_status FROM orders WHERE restaurant_id = 1 AND id = ?",
     [$mergeTargetId]
