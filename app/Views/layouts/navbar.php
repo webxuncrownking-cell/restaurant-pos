@@ -1,120 +1,156 @@
 <?php
-$user = \App\Core\Auth::user();
-$isPlatform = \App\Core\Auth::isPlatformAdmin();
-$restaurant = \App\Core\TenantContext::getRestaurant();
-$graceDays = \App\Core\TenantContext::getGraceDaysRemaining();
-$isSubValid = \App\Core\TenantContext::isSubscriptionValid();
+$user = \\App\\Core\\Auth::user();
+$isPlatform = \\App\\Core\\Auth::isPlatformAdmin();
+$restaurant = \\App\\Core\\TenantContext::getRestaurant();
+$graceDays = \\App\\Core\\TenantContext::getGraceDaysRemaining();
+$isSubValid = \\App\\Core\\TenantContext::isSubscriptionValid();
+$currentPath = (new \\App\\Core\\Request())->getPath();
+$canManageBranding = $restaurant !== null && ($isPlatform || \\App\\Core\\Auth::roleSlug() === 'owner');
+
+$navGroups = [
+  'Workspace' => [
+    ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
+    ['label' => 'Menu Management', 'route' => '/menu', 'icon' => 'bi-journal-richtext'],
+    ['label' => 'Inventory', 'route' => '/inventory', 'icon' => 'bi-box-seam'],
+    ['label' => 'Tables & Floor Plan', 'route' => '/tables', 'icon' => 'bi-grid-3x3-gap'],
+  ],
+  'Operations' => [
+    ['label' => 'POS Terminals', 'route' => '/devices', 'icon' => 'bi-tablet-landscape'],
+    ['label' => 'Cashier Shifts', 'route' => '/shifts', 'icon' => 'bi-safe2'],
+    ['label' => 'Reports & Analytics', 'route' => '/reports', 'icon' => 'bi-graph-up-arrow'],
+  ],
+  'Account' => [
+    ['label' => 'Subscription & Billing', 'route' => '/billing', 'icon' => 'bi-credit-card-2-front'],
+  ],
+  'System' => [
+    ['label' => 'System Diagnostics', 'route' => '/install', 'icon' => 'bi-gear'],
+  ],
+];
+
+if ($canManageBranding) {
+  $navGroups['Account'][] = ['label' => 'Branding & Logo', 'route' => '/settings/branding', 'icon' => 'bi-palette2'];
+}
+
+$pageTitle = 'Restaurant workspace';
+foreach ($navGroups as $items) {
+  foreach ($items as $item) {
+    if ($currentPath === $item['route'] || str_starts_with($currentPath, $item['route'] . '/')) {
+      $pageTitle = $item['label'];
+    }
+  }
+}
+
+$logoPath = (string)($restaurant['logo_path'] ?? '');
+$logoUrl = $logoPath !== '' ? BASE_URL . '/' . ltrim($logoPath, '/') : '';
+$restaurantName = $restaurant['name'] ?? ($isPlatform ? 'SaaS Platform' : 'Restaurant POS');
+$roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Admin' : 'Staff');
 ?>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm py-2">
-  <div class="container-fluid px-3">
-    <!-- Brand / Tenant Name -->
-    <a class="navbar-brand d-flex align-items-center gap-2" href="<?= BASE_URL ?>/dashboard">
-      <span class="navbar-brand-badge">POS</span>
-      <span class="fw-semibold text-truncate" style="max-width: 260px;">
-        <?= htmlspecialchars($restaurant['name'] ?? ($isPlatform ? 'SaaS Platform Admin' : 'Restaurant POS')) ?>
+<div class="app-shell">
+  <aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
+    <a class="app-brand" href="<?= BASE_URL ?>/dashboard" aria-label="<?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?> dashboard">
+      <span class="app-brand-mark">
+        <?php if ($logoUrl !== ''): ?>
+          <img src="<?= htmlspecialchars($logoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?> logo">
+        <?php else: ?>
+          <i class="bi bi-shop-window" aria-hidden="true"></i>
+        <?php endif; ?>
+      </span>
+      <span class="app-brand-copy">
+        <strong><?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?></strong>
+        <small><?= $isPlatform && !$restaurant ? 'PLATFORM CONTROL CENTER' : 'RESTAURANT WORKSPACE' ?></small>
       </span>
     </a>
 
-    <!-- Mobile Hamburger Toggle -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#posNavbar" aria-controls="posNavbar" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <div class="app-sidebar-context">
+      <span class="context-dot" aria-hidden="true"></span>
+      <span><?= $isPlatform && !$restaurant ? 'Platform administration' : 'Workspace is ready' ?></span>
+    </div>
 
-    <div class="collapse navbar-collapse" id="posNavbar">
-      <!-- Navigation Links -->
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/dashboard">
-            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/menu">
-            <i class="bi bi-journal-text me-1"></i> Menu
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/inventory">
-            <i class="bi bi-boxes me-1"></i> Inventory
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/tables">
-            <i class="bi bi-grid-3x3-gap me-1"></i> Tables
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/devices">
-            <i class="bi bi-tablet-landscape me-1"></i> Terminals
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/shifts">
-            <i class="bi bi-safe me-1"></i> Shifts
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/reports">
-            <i class="bi bi-graph-up me-1"></i> Reports
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/billing">
-            <i class="bi bi-credit-card me-1"></i> Billing
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="<?= BASE_URL ?>/install">
-            <i class="bi bi-tools me-1"></i> Tests
-          </a>
-        </li>
-      </ul>
+    <nav class="app-sidebar-nav">
+      <?php foreach ($navGroups as $groupLabel => $items): ?>
+        <div class="app-nav-group">
+          <div class="app-nav-heading"><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></div>
+          <?php foreach ($items as $item):
+            $active = $currentPath === $item['route'] || str_starts_with($currentPath, $item['route'] . '/');
+          ?>
+            <a class="app-nav-link <?= $active ? 'active' : '' ?>"
+               href="<?= BASE_URL . $item['route'] ?>"
+               <?= $active ? 'aria-current="page"' : '' ?>>
+              <i class="bi <?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>
+              <span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
+            </a>
+          <?php endforeach; ?>
+        </div>
+      <?php endforeach; ?>
+    </nav>
 
-      <!-- Status Indicators & User Profile -->
-      <div class="d-flex align-items-center flex-wrap gap-2">
-        <!-- Launch POS Terminal Button -->
-        <a href="<?= BASE_URL ?>/pos" class="btn btn-primary btn-sm fw-bold px-3 d-flex align-items-center gap-1 shadow-sm">
-          <i class="bi bi-display"></i> POS Terminal
-        </a>
-
-        <!-- Connectivity Status Pill -->
-        <span class="badge bg-success bg-opacity-25 text-success border border-success status-pill d-flex align-items-center gap-1">
-          <span class="spinner-grow spinner-grow-sm text-success" style="width: 8px; height: 8px;" role="status"></span>
-          Online
+    <div class="app-sidebar-bottom">
+      <a class="app-sidebar-pos" href="<?= BASE_URL ?>/pos">
+        <span class="pos-icon"><i class="bi bi-display" aria-hidden="true"></i></span>
+        <span class="flex-grow-1">
+          <strong>Open POS Terminal</strong>
+          <small>Go to cashier workspace</small>
         </span>
+        <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+      </a>
+      <div class="app-sidebar-version">Restaurant POS <span class="mx-1">·</span> Management</div>
+    </div>
+  </aside>
 
-        <!-- Subscription Grace Indicator -->
+  <button type="button" class="app-sidebar-backdrop" id="appSidebarBackdrop" aria-label="Close navigation menu"></button>
+
+  <main class="app-main">
+    <header class="app-topbar">
+      <div class="app-topbar-left">
+        <button type="button" class="app-mobile-toggle" id="appSidebarToggle" aria-label="Open navigation menu" aria-controls="appSidebar" aria-expanded="false">
+          <i class="bi bi-list" aria-hidden="true"></i>
+        </button>
+        <div class="app-page-context">
+          <small><?= $isPlatform && !$restaurant ? 'PLATFORM ADMINISTRATION' : 'RESTAURANT MANAGEMENT' ?></small>
+          <strong><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></strong>
+        </div>
+      </div>
+
+      <div class="app-topbar-actions">
+        <span class="status-pill app-connectivity"><span class="context-dot" aria-hidden="true"></span> Online</span>
         <?php if ($restaurant): ?>
           <?php if ($isSubValid): ?>
-            <span class="badge bg-primary bg-opacity-25 text-primary border border-primary status-pill">
-              <i class="bi bi-shield-check me-1"></i> Subscription Active
+            <span class="status-pill d-none d-xl-inline-flex bg-primary bg-opacity-10 text-primary border border-primary-subtle">
+              <i class="bi bi-shield-check me-1" aria-hidden="true"></i> Subscription Active
             </span>
           <?php else: ?>
-            <span class="badge bg-warning bg-opacity-25 text-warning border border-warning status-pill">
-              <i class="bi bi-exclamation-triangle me-1"></i> Grace Period: <?= $graceDays ?>d left
+            <span class="status-pill d-none d-xl-inline-flex bg-warning bg-opacity-10 text-dark border border-warning-subtle">
+              <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i> Grace Period: <?= (int)$graceDays ?>d left
             </span>
           <?php endif; ?>
         <?php endif; ?>
 
-        <!-- Active User Profile Dropdown -->
+        <a href="<?= BASE_URL ?>/pos" class="app-topbar-pos">
+          <i class="bi bi-display" aria-hidden="true"></i><span>POS Terminal</span>
+        </a>
+
         <?php if ($user): ?>
           <div class="dropdown">
-            <button class="btn btn-outline-light btn-sm dropdown-toggle d-flex align-items-center gap-2 px-3 py-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-person-circle"></i>
-              <span class="fw-medium"><?= htmlspecialchars($user['full_name']) ?></span>
-              <span class="badge bg-secondary ms-1"><?= htmlspecialchars($user['role_name'] ?? ($isPlatform ? 'SuperAdmin' : 'Staff')) ?></span>
+            <button class="dropdown-toggle app-user-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open user menu">
+              <span class="app-user-avatar"><i class="bi bi-person-fill" aria-hidden="true"></i></span>
+              <span class="app-user-copy">
+                <strong><?= htmlspecialchars((string)($user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8') ?></strong>
+                <small><?= htmlspecialchars((string)$roleLabel, ENT_QUOTES, 'UTF-8') ?></small>
+              </span>
+              <i class="bi bi-chevron-down user-chevron" aria-hidden="true"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow">
-              <li><h6 class="dropdown-header">Signed in as <?= htmlspecialchars($user['username']) ?></h6></li>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 mt-2">
+              <li><h6 class="dropdown-header">Signed in as <?= htmlspecialchars((string)($user['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h6></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2"></i>Change Password</a></li>
-              <li><a class="dropdown-item" href="<?= BASE_URL ?>/install"><i class="bi bi-check2-circle me-2"></i>System Diagnostics</a></li>
+              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2 text-secondary"></i>Change Password</a></li>
+              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li>
+              <?php if ($canManageBranding): ?>
+                <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings/branding"><i class="bi bi-palette2 me-2 text-secondary"></i>Branding & Logo</a></li>
+              <?php endif; ?>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
+              <li><a class="dropdown-item rounded-2 py-2 text-danger" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
             </ul>
           </div>
         <?php endif; ?>
       </div>
-    </div>
-  </div>
-</nav>
+    </header>
