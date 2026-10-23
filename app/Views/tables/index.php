@@ -60,6 +60,44 @@
     </div>
   </div>
 
+  <?php if (!empty($activeOrders)): ?>
+    <section class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-3 p-lg-4">
+        <div class="d-flex align-items-start gap-3 mb-3">
+          <span class="d-inline-grid place-items-center rounded-3 bg-primary bg-opacity-10 text-primary p-2"><i class="bi bi-arrow-left-right fs-5"></i></span>
+          <div>
+            <h2 class="h6 fw-bold mb-1">Transfer Active Dine-in Order</h2>
+            <p class="text-muted small mb-0">Move one open kitchen ticket to a free table. The order history records the transfer; the source table is released when it has no other active tickets.</p>
+          </div>
+        </div>
+        <form method="POST" action="<?= BASE_URL ?>/tables/transfer" class="row g-2 align-items-end">
+          <input type="hidden" name="_csrf_token" value="<?= \\App\\Core\\CSRF::getToken() ?>">
+          <div class="col-12 col-lg-5">
+            <label class="form-label small fw-semibold" for="transferOrder">Active order</label>
+            <select class="form-select" id="transferOrder" name="order_id" required>
+              <option value="">Choose an order...</option>
+              <?php foreach ($activeOrders as $activeOrder): ?>
+                <option value="<?= (int)$activeOrder['id'] ?>"><?= htmlspecialchars((string)$activeOrder['order_number'], ENT_QUOTES, 'UTF-8') ?> · Table #<?= htmlspecialchars((string)$activeOrder['table_number'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars(ucfirst((string)$activeOrder['order_status']), ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-12 col-lg-5">
+            <label class="form-label small fw-semibold" for="transferDestination">Destination table</label>
+            <select class="form-select" id="transferDestination" name="destination_table_id" required>
+              <option value="">Choose an available table...</option>
+              <?php foreach (($allTables ?? $tables) as $targetTable): if (($targetTable['status'] ?? '') !== 'available') continue; ?>
+                <option value="<?= (int)$targetTable['id'] ?>"><?= htmlspecialchars('#' . $targetTable['table_number'] . ' · ' . $targetTable['name'] . ' · ' . $targetTable['floor_zone'], ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="col-12 col-lg-2 d-grid">
+            <button type="submit" class="btn btn-primary" <?= empty(array_filter(($allTables ?? $tables), static fn(array $targetTable): bool => ($targetTable['status'] ?? '') === 'available')) ? 'disabled' : '' ?>><i class="bi bi-arrow-left-right me-1"></i> Transfer order</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  <?php endif; ?>
+
   <!-- Tables Visual Grid -->
   <?php if (empty($tables)): ?>
     <div class="card border-0 shadow-sm text-center py-5">
