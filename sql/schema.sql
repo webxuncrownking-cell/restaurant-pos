@@ -72,6 +72,7 @@ CREATE TABLE `platform_users` (
 CREATE TABLE `restaurants` (
   `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(150) NOT NULL,
+  `tagline` VARCHAR(180) NULL,
   `logo_path` VARCHAR(255) NULL,
   `favicon_path` VARCHAR(255) NULL,
   `slug` VARCHAR(100) NOT NULL UNIQUE,

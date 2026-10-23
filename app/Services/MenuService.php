@@ -419,14 +419,21 @@ class MenuService
      */
     public static function getPosCatalog(int $restaurantId): array
     {
-        $restaurant = Database::fetchOne(
-            "SELECT id, name, contact_phone AS phone, contact_email AS email,
-                    business_registration_number AS tin, receipt_header AS address,
-                    receipt_footer
-             FROM restaurants
-             WHERE id = ? AND status = 'active' AND deleted_at IS NULL",
-            [$restaurantId]
-        );
+        $restaurantSql = "SELECT id, name, contact_phone AS phone, contact_email AS email,
+                                  business_registration_number AS tin, receipt_header AS address,
+                                  receipt_footer";
+        try {
+            // Tagline is optional on older databases until the migration is applied.
+            $restaurant = Database::fetchOne(
+                $restaurantSql . ", tagline, logo_path FROM restaurants WHERE id = ? AND status = 'active' AND deleted_at IS NULL",
+                [$restaurantId]
+            );
+        } catch (\Throwable $e) {
+            $restaurant = Database::fetchOne(
+                $restaurantSql . " FROM restaurants WHERE id = ? AND status = 'active' AND deleted_at IS NULL",
+                [$restaurantId]
+            );
+        }
 
         $categories = self::getCategories($restaurantId, true);
         $products = self::getProducts($restaurantId, null, true);

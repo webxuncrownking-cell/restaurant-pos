@@ -20,27 +20,200 @@ class RestaurantSettingsController
 {
     private const MAX_LOGO_BYTES = 2097152;
 
-    public function branding(Request $request): void
+    public function settings(Request $request): void
     {
         $restaurantId = $this->authorizeBranding();
         $restaurant = TenantContext::getRestaurant();
-
         if (!$restaurant || (int)($restaurant['id'] ?? 0) !== $restaurantId) {
             Response::forbidden('The selected restaurant could not be loaded.');
         }
 
         $logoColumnReady = $this->hasLogoColumn();
-        $flashes = Session::getFlashes();
-        $logoPath = $logoColumnReady ? (string)($restaurant['logo_path'] ?? '') : '';
-        $logoUrl = $logoPath !== '' ? BASE_URL . '/' . ltrim($logoPath, '/') : '';
+        $faviconColumnReady = $this->hasFaviconColumn();
+        $taglineColumnReady = $this->hasTaglineColumn();
 
-        Response::render('settings/branding', [
+        $logoPath = $logoColumnReady ? trim((string)($restaurant['logo_path'] ?? '')) : '';
+        $faviconPath = $faviconColumnReady ? trim((string)($restaurant['favicon_path'] ?? '')) : '';
+        $fallbackFaviconPath = $faviconPath !== '' ? $faviconPath : $logoPath;
+        $logoUrl = $logoPath !== '' ? BASE_URL . '/' . ltrim($logoPath, '/') : '';
+        $faviconUrl = $fallbackFaviconPath !== ''
+            ? BASE_URL . '/' . ltrim($fallbackFaviconPath, '/')
+            : BASE_URL . '/public/favicon.svg';
+        $faviconType = match (strtolower(pathinfo($fallbackFaviconPath, PATHINFO_EXTENSION))) {
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'webp' => 'image/webp',
+            'ico' => 'image/x-icon',
+            default => 'image/svg+xml'
+        };
+
+        Response::render('settings/index', [
             'restaurant' => $restaurant,
-            'flashes' => $flashes,
+            'flashes' => Session::getFlashes(),
             'logo_column_ready' => $logoColumnReady,
+            'favicon_column_ready' => $faviconColumnReady,
+            'tagline_column_ready' => $taglineColumnReady,
             'logo_url' => $logoUrl,
-            'title' => 'Branding & Logo - Restaurant POS'
+            'favicon_url' => $faviconUrl,
+            'favicon_type' => $faviconType,
+            'has_custom_favicon' => $faviconPath !== '',
+            'title' => 'Settings - Restaurant POS'
         ], 'app');
+    }
+
+    public function saveSettings(Request $request): void
+    {
+        $restaurantId = $this->authorizeBranding();
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant || (int)($restaurant['id'] ?? 0) !== $restaurantId) {
+            Response::forbidden('The selected restaurant could not be loaded.');
+        }
+
+        $csrfToken = $request->post('csrf_token');
+        if (!is_string($csrfToken)) $csrfToken = $request->post('_csrf_token');
+        if (!is_string($csrfToken) || !CSRF::validate($csrfToken)) {
+            Session::setFlash('danger', 'Your security token expired. Refresh the page and try again.');
+            Response::redirect('/settings');
+            return;
+        }
+
+        $restaurantName = trim((string)$request->post('restaurant_name', $restaurant['name'] ?? ''));
+        $tagline = trim((string)$request->post('tagline', $restaurant['tagline'] ?? ''));
+        $primaryColor = trim((string)$request->post('pos_primary_color', $restaurant['pos_primary_color'] ?? '#2563eb'));
+        $secondaryColor = trim((string)$request->post('pos_secondary_color', $restaurant['pos_secondary_color'] ?? '#059669'));
+
+        if ($restaurantName === '' || mb_strlen($restaurantName) > 150) {
+            Session::setFlash('danger', 'Enter a restaurant name of 1 to 150 characters.');
+            Response::redirect('/settings');
+            return;
+        }
+        if (mb_strlen($tagline) > 180) {
+            Session::setFlash('danger', 'The tagline must be 180 characters or fewer.');
+            Response::redirect('/settings');
+            return;
+        }
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', $primaryColor) || !preg_match('/^#[0-9a-fA-F]{6}$/', $secondaryColor)) {
+            Session::setFlash('danger', 'Choose valid six-digit HEX colors for the primary and secondary brand colors.');
+            Response::redirect('/settings');
+            return;
+        }
+
+        $logoColumnReady = $this->hasLogoColumn();
+        $faviconColumnReady = $this->hasFaviconColumn();
+        $taglineColumnReady = $this->hasTaglineColumn();
+        $logoUpload = $_FILES['restaurant_logo'] ?? null;
+        $faviconUpload = $_FILES['restaurant_favicon'] ?? null;
+        $hasLogoUpload = is_array($logoUpload) && (int)($logoUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $hasFaviconUpload = is_array($faviconUpload) && (int)($faviconUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        $removeLogo = (string)$request->post('remove_logo', '') === '1';
+        $removeFavicon = (string)$request->post('remove_favicon', '') === '1';
+
+        if (!$logoColumnReady && ($hasLogoUpload || $removeLogo)) {
+            Session::setFlash('warning', 'Logo storage is not available in this database yet. Your settings were not changed.');
+            Response::redirect('/settings');
+            return;
+        }
+        if (!$faviconColumnReady && ($hasFaviconUpload || $removeFavicon)) {
+            Session::setFlash('warning', 'Favicon storage is not available in this database yet. Your settings were not changed.');
+            Response::redirect('/settings');
+            return;
+        }
+
+        $oldLogoPath = trim((string)($restaurant['logo_path'] ?? ''));
+        $oldFaviconPath = trim((string)($restaurant['favicon_path'] ?? ''));
+        $newLogoPath = $oldLogoPath !== '' ? $oldLogoPath : null;
+        $newFaviconPath = $oldFaviconPath !== '' ? $oldFaviconPath : null;
+        $uploadedLogoPath = null;
+        $uploadedFaviconPath = null;
+        $databaseCommitted = false;
+        $pdo = null;
+
+        try {
+            if ($hasLogoUpload) {
+                $uploadedLogoPath = $this->storeUploadedLogo($logoUpload, $restaurantId);
+                $newLogoPath = $uploadedLogoPath;
+            } elseif ($removeLogo) {
+                $newLogoPath = null;
+            }
+
+            if ($hasFaviconUpload) {
+                $uploadedFaviconPath = $this->storeUploadedFavicon($faviconUpload, $restaurantId);
+                $newFaviconPath = $uploadedFaviconPath;
+            } elseif ($removeFavicon) {
+                $newFaviconPath = null;
+            }
+
+            $updates = [
+                'name' => $restaurantName,
+                'pos_primary_color' => $primaryColor,
+                'pos_secondary_color' => $secondaryColor
+            ];
+            if ($logoColumnReady) $updates['logo_path'] = $newLogoPath;
+            if ($faviconColumnReady) $updates['favicon_path'] = $newFaviconPath;
+            if ($taglineColumnReady) $updates['tagline'] = $tagline;
+
+            $sets = [];
+            $values = [];
+            foreach ($updates as $column => $value) {
+                // Column names come only from this fixed allowlist, never from user input.
+                $sets[] = $column . ' = ?';
+                $values[] = $value;
+            }
+            $values[] = $restaurantId;
+
+            $pdo = Database::getInstance();
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare('UPDATE restaurants SET ' . implode(', ', $sets) . ' WHERE id = ? AND deleted_at IS NULL');
+            $stmt->execute($values);
+
+            if ($stmt->rowCount() === 0) {
+                $exists = Database::fetchOne('SELECT id FROM restaurants WHERE id = ? AND deleted_at IS NULL', [$restaurantId]);
+                if (!$exists) {
+                    throw new \RuntimeException('The restaurant record no longer exists.');
+                }
+            }
+
+            $pdo->commit();
+            $databaseCommitted = true;
+
+            if ($oldLogoPath !== '' && $oldLogoPath !== $newLogoPath) {
+                $this->deleteStoredLogo($oldLogoPath);
+            }
+            if ($oldFaviconPath !== '' && $oldFaviconPath !== $newFaviconPath) {
+                $this->deleteStoredFavicon($oldFaviconPath);
+            }
+
+            Session::setFlash('success', 'Settings saved. Restaurant identity, branding, logo, colors, and favicon have been updated.');
+            if (!$taglineColumnReady) {
+                Session::setFlash('warning', 'The rest of your settings were saved, but tagline editing requires the one-time tagline database migration shown on this page.');
+            }
+        } catch (Throwable $e) {
+            try {
+                if ($pdo instanceof PDO && $pdo->inTransaction()) $pdo->rollBack();
+            } catch (Throwable $ignored) {
+                // Preserve the original error below.
+            }
+
+            if (!$databaseCommitted && $uploadedLogoPath !== null && $uploadedLogoPath !== $oldLogoPath) {
+                $this->deleteStoredLogo($uploadedLogoPath);
+            }
+            if (!$databaseCommitted && $uploadedFaviconPath !== null && $uploadedFaviconPath !== $oldFaviconPath) {
+                $this->deleteStoredFavicon($uploadedFaviconPath);
+            }
+
+            error_log('[Restaurant Settings] ' . $e->getMessage());
+            Session::setFlash('danger', $e instanceof \RuntimeException
+                ? $e->getMessage()
+                : 'Unable to save settings. Check folder permissions and the PHP error log, then try again.');
+        }
+
+        Response::redirect('/settings');
+    }
+
+    public function branding(Request $request): void
+    {
+        $this->authorizeBranding();
+        Response::redirect('/settings');
     }
 
     public function saveBranding(Request $request): void
@@ -140,30 +313,8 @@ class RestaurantSettingsController
 
     public function favicon(Request $request): void
     {
-        $restaurantId = $this->authorizeBranding();
-        $restaurant = TenantContext::getRestaurant();
-        if (!$restaurant || (int)($restaurant['id'] ?? 0) !== $restaurantId) {
-            Response::forbidden('The selected restaurant could not be loaded.');
-        }
-
-        $faviconColumnReady = $this->hasFaviconColumn();
-        $faviconPath = $faviconColumnReady ? (string)($restaurant['favicon_path'] ?? '') : '';
-        $fallbackPath = trim((string)($restaurant['logo_path'] ?? ''));
-        $previewPath = $faviconPath !== '' ? $faviconPath : $fallbackPath;
-        $faviconUrl = $previewPath !== ''
-            ? BASE_URL . '/' . ltrim($previewPath, '/')
-            : BASE_URL . '/public/favicon.svg';
-
-        Response::render('settings/favicon', [
-            'restaurant' => $restaurant,
-            'flashes' => Session::getFlashes(),
-            'favicon_column_ready' => $faviconColumnReady,
-            'favicon_path' => $faviconPath,
-            'favicon_url' => $faviconUrl,
-            'favicon_fallback_url' => $fallbackPath !== '' ? BASE_URL . '/' . ltrim($fallbackPath, '/') : BASE_URL . '/public/favicon.svg',
-            'using_logo_fallback' => $faviconPath === '' && $fallbackPath !== '',
-            'title' => 'Favicon Settings - Restaurant POS'
-        ], 'app');
+        $this->authorizeBranding();
+        Response::redirect('/settings');
     }
 
     public function saveFavicon(Request $request): void
@@ -261,6 +412,23 @@ class RestaurantSettingsController
         }
 
         return (int)$restaurantId;
+    }
+
+    private function hasTaglineColumn(): bool
+    {
+        try {
+            $pdo = Database::getInstance();
+            $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            if ($driver === 'sqlite') {
+                $columns = Database::fetchAll('PRAGMA table_info(restaurants)');
+                return in_array('tagline', array_column($columns, 'name'), true);
+            }
+
+            return Database::fetchOne("SHOW COLUMNS FROM restaurants LIKE 'tagline'") !== null;
+        } catch (Throwable $e) {
+            error_log('[Restaurant Settings] Unable to inspect tagline schema: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function hasLogoColumn(): bool

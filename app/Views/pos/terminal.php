@@ -13,6 +13,7 @@ $posSecondaryColor = (string)($restaurant['pos_secondary_color'] ?? '#059669');
 if (!preg_match('/^#[0-9a-fA-F]{6}$/', $posPrimaryColor)) $posPrimaryColor = '#2563eb';
 if (!preg_match('/^#[0-9a-fA-F]{6}$/', $posSecondaryColor)) $posSecondaryColor = '#059669';
 $posRestaurantName = (string)($catalog['restaurant']['name'] ?? $restaurant['name'] ?? 'Restaurant POS');
+$posTagline = trim((string)($catalog['restaurant']['tagline'] ?? $restaurant['tagline'] ?? ''));
 $posLogoPath = trim((string)($restaurant['logo_path'] ?? $catalog['restaurant']['logo_path'] ?? ''));
 $posLogoUrl = $posLogoPath !== '' ? BASE_URL . '/' . ltrim($posLogoPath, '/') : '';
 include APP_ROOT . '/app/Views/layouts/header.php';
@@ -240,7 +241,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     </span>
     <div class="pos-brand-copy">
       <strong><?= htmlspecialchars($posRestaurantName, ENT_QUOTES, 'UTF-8') ?></strong>
-      <small><i class="bi bi-display me-1"></i>Point of sale</small>
+      <small><?php if ($posTagline !== ''): ?><?= htmlspecialchars($posTagline, ENT_QUOTES, 'UTF-8') ?><?php else: ?><i class="bi bi-display me-1"></i>Point of sale<?php endif; ?></small>
     </div>
     <span class="pos-device-badge"><i class="bi bi-tablet-landscape"></i><?= htmlspecialchars((string)($activeDevice['device_name'] ?? 'Main Terminal'), ENT_QUOTES, 'UTF-8') ?></span>
   </div>
