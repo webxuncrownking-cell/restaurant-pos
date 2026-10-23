@@ -45,6 +45,7 @@ use App\Controllers\PosController;
 use App\Controllers\ReportController;
 use App\Controllers\BillingController;
 use App\Controllers\RestaurantSettingsController;
+use App\Controllers\KitchenController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -118,6 +119,9 @@ $router->post('/shifts/movement', [ShiftController::class, 'addMovement']);
 $router->post('/shifts/close', [ShiftController::class, 'close']);
 
 // Phase 4, 5 & 6: Offline-First POS Terminal & API Sync
+$router->get('/kitchen', [KitchenController::class, 'index']);
+$router->get('/kitchen/orders.json', [KitchenController::class, 'ordersJson']);
+$router->post('/kitchen/status', [KitchenController::class, 'updateStatus']);
 $router->get('/pos', [PosController::class, 'showTerminal']);
 $router->get('/api/pos/bootstrap', [PosController::class, 'bootstrapApi']);
 $router->post('/api/pos/sync', [PosController::class, 'syncApi']);
