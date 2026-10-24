@@ -650,7 +650,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   // for the queued order/payment retries.
   function generateClientUuid() {
     if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-      return window.generateClientUuid();
+      return window.crypto.randomUUID();
     }
     const bytes = new Uint8Array(16);
     if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
