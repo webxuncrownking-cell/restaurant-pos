@@ -214,6 +214,7 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
                   <span class="kitchen-qty"><?= htmlspecialchars($quantityLabel === '' ? '0' : $quantityLabel, ENT_QUOTES, 'UTF-8') ?>×</span>
                   <div class="flex-grow-1 min-w-0">
                     <div class="kitchen-item-name"><?= htmlspecialchars((string)$item['product_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="kitchen-item-variant"><strong>Station:</strong> <?= htmlspecialchars(trim((string)($item['kitchen_station'] ?? 'Hot Kitchen')) !== '' ? (string)$item['kitchen_station'] : 'Hot Kitchen', ENT_QUOTES, 'UTF-8') ?></div>
                     <?php if (!empty($item['variant_name'])): ?>
                       <div class="kitchen-item-variant"><?= htmlspecialchars((string)$item['variant_name'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
