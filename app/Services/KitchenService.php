@@ -247,6 +247,23 @@ class KitchenService
                 throw new InvalidArgumentException('That status change is not allowed. Refresh the kitchen display and use the next available action.');
             }
 
+            if ($targetStatus === 'served') {
+                self::ensureItemStatusSchema();
+                $unfinishedStmt = $pdo->prepare(
+                    "SELECT COUNT(*)
+                     FROM order_items oi
+                     LEFT JOIN kitchen_item_status kis
+                       ON kis.restaurant_id = oi.restaurant_id
+                      AND kis.order_item_id = oi.id
+                     WHERE oi.restaurant_id = ? AND oi.order_id = ?
+                       AND COALESCE(kis.status, 'pending') <> 'served'"
+                );
+                $unfinishedStmt->execute([$restaurantId, $orderId]);
+                if ((int)$unfinishedStmt->fetchColumn() > 0) {
+                    throw new InvalidArgumentException('Serve every item individually before marking the whole order as served.');
+                }
+            }
+
             $update = $pdo->prepare(
                 'UPDATE orders SET order_status = ?, updated_at = CURRENT_TIMESTAMP
                  WHERE restaurant_id = ? AND id = ? AND order_status = ?'
