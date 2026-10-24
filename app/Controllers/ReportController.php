@@ -1,9 +1,8 @@
 <?php
 /**
  * Restaurant POS & Management SaaS
- * Reports & Analytics Controller
+ * Reports & Analytics controller.
  */
-
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -13,25 +12,24 @@ use App\Core\Response;
 use App\Core\TenantContext;
 use App\Core\Auth;
 use App\Services\ReportService;
+use DateTimeImmutable;
 
 class ReportController
 {
-    /**
-     * Reports & Analytics Dashboard View
-     */
     public function index(Request $request): void
     {
         Auth::requireAuth();
         $restaurantId = TenantContext::getRestaurantId();
-
-        $startDate = $request->get('start_date', date('Y-m-d', strtotime('-30 days')));
-        $endDate = $request->get('end_date', date('Y-m-d'));
+        [$startDate, $endDate] = $this->getDateRange($request);
 
         $kpis = ReportService::getKpiSummary($restaurantId, $startDate, $endDate);
-        $dailyTrend = ReportService::getDailySalesTrend($restaurantId, 30);
+        $dailyTrend = ReportService::getDailySalesTrendForRange($restaurantId, $startDate, $endDate);
         $paymentMethods = ReportService::getPaymentMethodBreakdown($restaurantId, $startDate, $endDate);
-        $topProducts = ReportService::getTopSellingProducts($restaurantId, 10);
+        $topProducts = ReportService::getTopSellingProducts($restaurantId, 10, $startDate, $endDate);
+        $profitability = ReportService::getProductProfitability($restaurantId, $startDate, $endDate);
         $cashierStats = ReportService::getCashierPerformance($restaurantId, $startDate, $endDate);
+        $adjustments = ReportService::getFinancialAdjustments($restaurantId, $startDate, $endDate);
+        $shiftReconciliation = ReportService::getShiftReconciliation($restaurantId, $startDate, $endDate);
 
         Response::render('reports/index', [
             'startDate' => $startDate,
@@ -40,25 +38,121 @@ class ReportController
             'dailyTrend' => $dailyTrend,
             'paymentMethods' => $paymentMethods,
             'topProducts' => $topProducts,
-            'cashierStats' => $cashierStats
+            'profitability' => $profitability,
+            'cashierStats' => $cashierStats,
+            'adjustments' => $adjustments,
+            'shiftReconciliation' => $shiftReconciliation
         ]);
     }
 
-    /**
-     * Async JSON endpoint for Chart.js updates
-     */
     public function dataJson(Request $request): void
     {
         Auth::requireAuth();
         $restaurantId = TenantContext::getRestaurantId();
-
-        $startDate = $request->get('start_date', date('Y-m-d', strtotime('-30 days')));
-        $endDate = $request->get('end_date', date('Y-m-d'));
+        [$startDate, $endDate] = $this->getDateRange($request);
 
         Response::json([
             'kpis' => ReportService::getKpiSummary($restaurantId, $startDate, $endDate),
-            'dailyTrend' => ReportService::getDailySalesTrend($restaurantId, 30),
-            'paymentMethods' => ReportService::getPaymentMethodBreakdown($restaurantId, $startDate, $endDate)
+            'dailyTrend' => ReportService::getDailySalesTrendForRange($restaurantId, $startDate, $endDate),
+            'paymentMethods' => ReportService::getPaymentMethodBreakdown($restaurantId, $startDate, $endDate),
+            'financialAdjustments' => ReportService::getFinancialAdjustments($restaurantId, $startDate, $endDate)
         ]);
+    }
+
+    /**
+     * Export only the selected tenant's data and requested date window.
+     */
+    public function exportCsv(Request $request): void
+    {
+        Auth::requireAuth();
+        $restaurantId = TenantContext::getRestaurantId();
+        [$startDate, $endDate] = $this->getDateRange($request);
+        $type = strtolower(trim((string)$request->get('type', 'sales')));
+
+        switch ($type) {
+            case 'profitability':
+                $filename = 'menu-profitability';
+                $headers = ['Menu Item', 'Category', 'Units Sold', 'Net Line Revenue (PHP)', 'Estimated Food Cost (PHP)', 'Estimated Gross Profit (PHP)', 'Food Cost %', 'Gross Margin %'];
+                $rows = array_map(static fn(array $r): array => [
+                    $r['item_name'], $r['category_name'], $r['total_quantity_sold'], $r['total_revenue'],
+                    $r['estimated_food_cost'], $r['estimated_gross_profit'], $r['food_cost_pct'], $r['gross_margin_pct']
+                ], ReportService::getProductProfitability($restaurantId, $startDate, $endDate));
+                break;
+            case 'cashiers':
+                $filename = 'cashier-performance';
+                $headers = ['Cashier', 'Orders Handled', 'Collected (PHP)'];
+                $rows = array_map(static fn(array $r): array => [$r['cashier_name'], $r['orders_handled'], $r['total_collected']],
+                    ReportService::getCashierPerformance($restaurantId, $startDate, $endDate));
+                break;
+            case 'reconciliation':
+                $filename = 'cash-reconciliation';
+                $headers = ['Shift ID', 'Cashier', 'Opened At', 'Closed At', 'Opening Cash (PHP)', 'Expected Cash (PHP)', 'Closing Cash (PHP)', 'Cash Difference (PHP)'];
+                $rows = array_map(static fn(array $r): array => [
+                    $r['shift_id'], $r['cashier_name'], $r['opened_at'], $r['closed_at'], $r['opening_cash'],
+                    $r['expected_cash'], $r['closing_cash'], $r['cash_difference']
+                ], ReportService::getShiftReconciliation($restaurantId, $startDate, $endDate, 200));
+                break;
+            case 'sales':
+                $filename = 'daily-sales';
+                $headers = ['Date', 'Orders', 'Sales Revenue (PHP)'];
+                $rows = array_map(static fn(array $r): array => [$r['sale_date'], $r['order_count'], $r['daily_revenue']],
+                    ReportService::getDailySalesTrendForRange($restaurantId, $startDate, $endDate));
+                break;
+            default:
+                Response::redirect('/reports?start_date=' . rawurlencode($startDate) . '&end_date=' . rawurlencode($endDate));
+                return;
+        }
+
+        $filename .= '-' . $startDate . '-to-' . $endDate . '.csv';
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('X-Content-Type-Options: nosniff');
+
+        $stream = fopen('php://output', 'w');
+        if ($stream === false) return;
+        fwrite($stream, "\xEF\xBB\xBF");
+        fputcsv($stream, $headers);
+        foreach ($rows as $row) {
+            $safeRow = [];
+            foreach ($row as $value) {
+                if (is_string($value) && preg_match('/^[\=\+\-\@\t\r]/', $value)) $value = "'" . $value;
+                $safeRow[] = $value;
+            }
+            fputcsv($stream, $safeRow);
+        }
+        fclose($stream);
+    }
+
+    private function getDateRange(Request $request): array
+    {
+        $today = date('Y-m-d');
+        $defaultStart = date('Y-m-d', strtotime('-30 days'));
+        $start = $this->validDate((string)$request->get('start_date', $defaultStart)) ?? $defaultStart;
+        $end = $this->validDate((string)$request->get('end_date', $today)) ?? $today;
+
+        if ($start > $end) {
+            [$start, $end] = [$end, $start];
+        }
+
+        // Keep ad-hoc reports from accidentally querying years of data.
+        $startObject = new DateTimeImmutable($start);
+        $endObject = new DateTimeImmutable($end);
+        if ($startObject->diff($endObject)->days > 730) {
+            $start = $endObject->modify('-730 days')->format('Y-m-d');
+        }
+
+        return [$start, $end];
+    }
+
+    private function validDate(string $value): ?string
+    {
+        $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        $errors = DateTimeImmutable::getLastErrors();
+        if (!$date || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))
+            || $date->format('Y-m-d') !== $value) {
+            return null;
+        }
+        return $value;
     }
 }
