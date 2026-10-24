@@ -66,6 +66,9 @@ class KitchenService
     {
         if ($restaurantId <= 0) return [];
 
+        // Ensure the additive item-status table exists before the ticket query joins it.
+        self::ensureItemStatusSchema();
+
         $orders = Database::fetchAll(
             "SELECT o.id, o.order_number, o.order_type, o.table_id, o.order_status,
                     o.payment_status, o.notes, o.created_at, o.updated_at,
