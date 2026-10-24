@@ -35,14 +35,21 @@ class KitchenController
             }
         }
 
-        Response::render('kitchen/index', 200, [
+        // Render directly because some existing XAMPP installations use a legacy
+        // Response::render() signature. This view includes its own header/navbar/footer.
+        $viewData = [
             'tickets' => $tickets,
             'counts' => $counts,
             'delayed_count' => $delayedCount,
             'ticket_signature' => KitchenService::ticketSignature($tickets),
             'flashes' => Session::getFlashes(),
-            'title' => 'Kitchen Display - Restaurant POS'
-        ]);
+            'title' => 'Kitchen Display - Restaurant POS',
+        ];
+        http_response_code(200);
+        if (!headers_sent()) header('Content-Type: text/html; charset=utf-8');
+        extract($viewData, EXTR_SKIP);
+        require APP_ROOT . '/app/Views/kitchen/index.php';
+        return;
     }
 
     public function ordersJson(Request $request): void
