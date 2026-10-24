@@ -321,6 +321,219 @@ class MenuController
         }
     }
 
+    public function updateProduct(Request $request, array $params): void
+    {
+        Auth::requirePermission('menu.manage_catalog');
+        $productId = (int)($params['id'] ?? 0);
+        $redirectEdit = static function (string $message) use ($productId): void {
+            Response::redirect('/menu/products/' . $productId . '/edit?error=' . urlencode($message));
+        };
+        if (!CSRF::validate($request->csrfToken())) {
+            $redirectEdit('Invalid security token');
+            return;
+        }
+
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant) { Response::redirect('/dashboard'); return; }
+        $restaurantId = (int)$restaurant['id'];
+        $current = MenuService::getProduct($restaurantId, $productId);
+        if (!$current) { Response::redirect('/menu?error=Menu+item+not+found'); return; }
+
+        $imageColumnReady = $this->hasProductImageColumn();
+        $imageUpload = $_FILES['product_image'] ?? null;
+        $hasImageUpload = is_array($imageUpload)
+            && (int)($imageUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        if ($hasImageUpload && !$imageColumnReady) {
+            $redirectEdit('Run the product image database migration before uploading images');
+            return;
+        }
+
+        $name = trim((string)$request->post('name', ''));
+        $categoryId = (int)$request->post('category_id', 0);
+        $sku = strtoupper(trim((string)$request->post('sku', '')));
+        if ($sku === '') $sku = strtoupper(trim((string)$current['sku']));
+        $basePriceRaw = $request->post('base_price', '');
+        $costPriceRaw = $request->post('cost_price', '0');
+        $taxRateRaw = $request->post('tax_rate', '12');
+        $productType = (string)$request->post('product_type', 'recipe');
+        $directStockIngredientId = (int)$request->post('direct_stock_ingredient_id', 0);
+
+        if ($name === '' || mb_strlen($name) > 150 || $categoryId <= 0 ||
+            !is_numeric($basePriceRaw) || !is_numeric($costPriceRaw) || !is_numeric($taxRateRaw)) {
+            $redirectEdit('Please enter valid required product details');
+            return;
+        }
+        $basePrice = (float)$basePriceRaw;
+        $costPrice = (float)$costPriceRaw;
+        $taxRate = (float)$taxRateRaw;
+        if (!is_finite($basePrice) || $basePrice < 0 || !is_finite($costPrice) || $costPrice < 0 ||
+            !is_finite($taxRate) || $taxRate < 0 || $taxRate > 100) {
+            $redirectEdit('Prices must be non-negative and tax must be 0 to 100');
+            return;
+        }
+        if (!in_array($productType, ['direct', 'recipe'], true)) {
+            $redirectEdit('Choose a valid product inventory type');
+            return;
+        }
+        if ($productType === 'direct' && $directStockIngredientId <= 0) {
+            $redirectEdit('Direct-stock products must be linked to an ingredient');
+            return;
+        }
+        if (!preg_match('/^[A-Z0-9._-]{1,50}$/', $sku)) {
+            $redirectEdit('SKU must contain only letters, numbers, dot, dash, or underscore');
+            return;
+        }
+
+        $category = Database::fetchOne(
+            "SELECT id FROM categories WHERE id = ? AND restaurant_id = ? AND (is_active = 1 OR id = ?)",
+            [$categoryId, $restaurantId, (int)$current['category_id']]
+        );
+        if (!$category) { $redirectEdit('Select an active category from your restaurant'); return; }
+        if ($productType === 'direct') {
+            $ingredient = Database::fetchOne(
+                "SELECT id FROM ingredients WHERE id = ? AND restaurant_id = ? AND is_active = 1",
+                [$directStockIngredientId, $restaurantId]
+            );
+            if (!$ingredient) { $redirectEdit('Select an active stock ingredient from your restaurant'); return; }
+        } else {
+            $directStockIngredientId = 0;
+        }
+
+        $existingSku = Database::fetchOne(
+            "SELECT id FROM products WHERE restaurant_id = ? AND sku = ? AND id <> ?",
+            [$restaurantId, $sku, $productId]
+        );
+        if ($existingSku) { $redirectEdit('That SKU already exists in your menu'); return; }
+
+        $variantsInput = $request->post('variants', []);
+        if (!is_array($variantsInput) || count($variantsInput) > 50) {
+            $redirectEdit('A product can have up to 50 variants');
+            return;
+        }
+        $variants = [];
+        foreach ($variantsInput as $variantInput) {
+            if (!is_array($variantInput)) continue;
+            $variantName = trim((string)($variantInput['name'] ?? ''));
+            if ($variantName === '') continue;
+            $adjustmentRaw = $variantInput['price_adjustment'] ?? '0';
+            if (mb_strlen($variantName) > 100 || !is_numeric($adjustmentRaw)) {
+                $redirectEdit('Check the variant name and price adjustment');
+                return;
+            }
+            $adjustment = (float)$adjustmentRaw;
+            if (!is_finite($adjustment) || $basePrice + $adjustment < 0) {
+                $redirectEdit('Variant prices cannot be negative');
+                return;
+            }
+            $variantIdRaw = $variantInput['id'] ?? '';
+            $variantId = $variantIdRaw === '' ? 0 : filter_var($variantIdRaw, FILTER_VALIDATE_INT);
+            if ($variantId === false || ($variantId !== 0 && $variantId < 1)) {
+                $redirectEdit('Invalid variant reference');
+                return;
+            }
+            $variants[] = ['id' => (int)$variantId, 'name' => $variantName, 'additional_price' => $adjustment];
+        }
+
+        $addonGroupIds = $request->post('addon_group_ids', []);
+        if (!is_array($addonGroupIds)) $addonGroupIds = [];
+        $addonGroupIds = array_values(array_unique(array_filter(array_map('intval', $addonGroupIds), static fn(int $id): bool => $id > 0)));
+        if (count($addonGroupIds) > 100) { $redirectEdit('Too many add-on groups selected'); return; }
+        foreach ($addonGroupIds as $groupId) {
+            $group = Database::fetchOne(
+                "SELECT id FROM product_addon_groups WHERE id = ? AND restaurant_id = ?",
+                [$groupId, $restaurantId]
+            );
+            if (!$group) { $redirectEdit('An add-on group is not available for this restaurant'); return; }
+        }
+
+        $oldPath = trim((string)($current['image_path'] ?? ''));
+        $newPath = $oldPath !== '' ? $oldPath : null;
+        if (!$hasImageUpload && (string)$request->post('remove_image', '') === '1') $newPath = null;
+        $uploadedPath = null;
+        $pdo = Database::getConnection();
+        try {
+            $pdo->beginTransaction();
+            if ($hasImageUpload) {
+                $uploadedPath = $this->storeUploadedProductImage($imageUpload, $restaurantId);
+                $newPath = $uploadedPath;
+            }
+
+            if ($imageColumnReady) {
+                Database::query(
+                    "UPDATE products SET category_id = ?, name = ?, sku = ?, base_price = ?, cost_price = ?, tax_rate = ?,
+                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?, image_path = ?
+                     WHERE restaurant_id = ? AND id = ?",
+                    [$categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
+                     $productType, $productType === 'direct' ? $directStockIngredientId : null,
+                     $variants ? 1 : 0, $newPath, $restaurantId, $productId]
+                );
+            } else {
+                Database::query(
+                    "UPDATE products SET category_id = ?, name = ?, sku = ?, base_price = ?, cost_price = ?, tax_rate = ?,
+                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?
+                     WHERE restaurant_id = ? AND id = ?",
+                    [$categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
+                     $productType, $productType === 'direct' ? $directStockIngredientId : null,
+                     $variants ? 1 : 0, $restaurantId, $productId]
+                );
+            }
+
+            $existingVariantRows = Database::fetchAll(
+                "SELECT id FROM product_variants WHERE restaurant_id = ? AND product_id = ?",
+                [$restaurantId, $productId]
+            );
+            $existingVariantIds = array_map(static fn(array $row): int => (int)$row['id'], $existingVariantRows);
+            Database::query(
+                "UPDATE product_variants SET is_active = 0 WHERE restaurant_id = ? AND product_id = ?",
+                [$restaurantId, $productId]
+            );
+
+            foreach ($variants as $variant) {
+                if ($variant['id'] > 0) {
+                    if (!in_array($variant['id'], $existingVariantIds, true)) {
+                        throw new \InvalidArgumentException('A submitted variant does not belong to this menu item.');
+                    }
+                    Database::query(
+                        "UPDATE product_variants SET name = ?, additional_price = ?, cost_price = ?, is_active = 1
+                         WHERE restaurant_id = ? AND product_id = ? AND id = ?",
+                        [$variant['name'], $variant['additional_price'], $costPrice, $restaurantId, $productId, $variant['id']]
+                    );
+                } else {
+                    $variantSku = substr($sku, 0, 35) . '-V' . strtoupper(bin2hex(random_bytes(4)));
+                    Database::query(
+                        "INSERT INTO product_variants
+                         (restaurant_id, product_id, name, sku, additional_price, cost_price, is_active)
+                         VALUES (?, ?, ?, ?, ?, ?, 1)",
+                        [$restaurantId, $productId, $variant['name'], $variantSku, $variant['additional_price'], $costPrice]
+                    );
+                }
+            }
+
+            Database::query(
+                "DELETE FROM product_addon_group_assignments WHERE restaurant_id = ? AND product_id = ?",
+                [$restaurantId, $productId]
+            );
+            foreach ($addonGroupIds as $groupId) {
+                Database::query(
+                    "INSERT INTO product_addon_group_assignments (restaurant_id, product_id, group_id) VALUES (?, ?, ?)",
+                    [$restaurantId, $productId, $groupId]
+                );
+            }
+
+            $pdo->commit();
+            if ($oldPath !== '' && $oldPath !== $newPath) $this->deleteStoredProductImage($oldPath);
+            Response::redirect('/menu?product_updated=1');
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($uploadedPath !== null && $uploadedPath !== $oldPath) $this->deleteStoredProductImage($uploadedPath);
+            error_log('Menu product update failed: ' . $e);
+            $message = $e instanceof \InvalidArgumentException
+                ? $e->getMessage()
+                : 'Unable to update this menu item. Check SKU uniqueness and submitted values.';
+            $redirectEdit($message);
+        }
+    }
+
     public function saveProductImage(Request $request): void
     {
         Auth::requirePermission('menu.manage_catalog');
