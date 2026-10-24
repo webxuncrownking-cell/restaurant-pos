@@ -42,7 +42,7 @@ $hasCustomFavicon = !empty($favicon_path);
       </div>
       <p class="text-secondary mb-0">Set a small browser-tab icon for <?= htmlspecialchars($restaurantName, ENT_QUOTES, 'UTF-8') ?>. This is saved separately from the restaurant logo.</p>
     </div>
-    <a class="btn btn-outline-secondary bg-white" href="<?= BASE_URL ?>/settings/branding"><i class="bi bi-arrow-left me-1"></i> Branding &amp; Logo</a>
+    <a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/settings/branding"><i class="bi bi-arrow-left me-1"></i> Branding &amp; Logo</a>
   </div>
 
   <?php if (empty($favicon_column_ready)): ?>
