@@ -99,20 +99,21 @@ class KitchenService
         $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
         $items = Database::fetchAll(
             "SELECT oi.id, oi.order_id, oi.product_name, oi.variant_name, oi.quantity,
-                    oi.special_instructions,
+                    oi.special_instructions, COALESCE(p.kitchen_station, 'Hot Kitchen') AS kitchen_station,
                     COALESCE(kis.status, 'pending') AS kitchen_status,
                     GROUP_CONCAT(
                       CONCAT(a.addon_name, CASE WHEN a.quantity > 1 THEN CONCAT(' ×', a.quantity) ELSE '' END)
                       ORDER BY a.id SEPARATOR ', '
                     ) AS addons
              FROM order_items oi
+             LEFT JOIN products p ON p.id = oi.product_id AND p.restaurant_id = oi.restaurant_id
              LEFT JOIN order_item_addons a
                ON a.order_item_id = oi.id AND a.restaurant_id = oi.restaurant_id
              LEFT JOIN kitchen_item_status kis
                ON kis.order_item_id = oi.id AND kis.restaurant_id = oi.restaurant_id
              WHERE oi.restaurant_id = ? AND oi.order_id IN ($placeholders)
              GROUP BY oi.id, oi.order_id, oi.product_name, oi.variant_name,
-                      oi.quantity, oi.special_instructions, kis.status
+                      oi.quantity, oi.special_instructions, kis.status, p.kitchen_station
              ORDER BY oi.id ASC",
             array_merge([$restaurantId], $orderIds)
         );
