@@ -5,7 +5,7 @@
  * This file lives at the application root (next to index.php) so its default
  * scope includes /pos when the app is installed under an XAMPP subdirectory.
  */
-const CACHE_NAME = 'restaurant-pos-shell-v6';
+const CACHE_NAME = 'restaurant-pos-shell-v7';
 const APP_BASE_PATH = new URL(self.registration.scope).pathname.replace(/\/$/, '');
 const appUrl = (path) => `${APP_BASE_PATH}${path.startsWith('/') ? path : '/' + path}`;
 
@@ -14,13 +14,21 @@ const POS_BOOTSTRAP_PREFIX = appUrl('/api/pos/bootstrap');
 const POS_DB_URL = appUrl('/public/assets/js/pos-db.js');
 const FAVICON_URL = appUrl('/public/favicon.svg');
 
+const BOOTSTRAP_CSS_URL = appUrl('/public/assets/css/bootstrap.min.css');
+const BOOTSTRAP_JS_URL = appUrl('/public/assets/js/bootstrap.bundle.min.js');
+const QR_ICONS_URL = appUrl('/public/assets/css/qr-icons.css');
+const QR_CODE_URL = appUrl('/public/assets/js/qrcode.min.js');
+
 const PRECACHE_URLS = [
   POS_URL,
   POS_DB_URL,
   FAVICON_URL,
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js'
+  BOOTSTRAP_CSS_URL,
+  BOOTSTRAP_JS_URL,
+  QR_ICONS_URL,
+  QR_CODE_URL,
+  // Keep the shared management icon font cached for the existing admin screens.
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
 ];
 
 self.addEventListener('install', (event) => {
