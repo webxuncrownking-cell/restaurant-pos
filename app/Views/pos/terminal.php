@@ -645,6 +645,26 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   const cashierId = <?= (int)($user['id'] ?? 1) ?>;
   const shiftId = <?= $activeShift ? (int)$activeShift['id'] : 'null' ?>;
 
+  // generateClientUuid() is not available in every non-secure LAN context (HTTP
+  // on a tablet). getRandomValues() still works there and keeps the UUID stable
+  // for the queued order/payment retries.
+  function generateClientUuid() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.generateClientUuid();
+    }
+    const bytes = new Uint8Array(16);
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      window.crypto.getRandomValues(bytes);
+    } else {
+      for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' +
+      hex.slice(16, 20) + '-' + hex.slice(20);
+  }
+
   const app = {
     catalog: initialCatalog,
     tables: initialTables,
@@ -1446,7 +1466,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       let queued = false;
       try {
         const calcs = this.getCalculations();
-        const clientUuid = crypto.randomUUID();
+        const clientUuid = generateClientUuid();
         const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
         const orderPayload = {
           client_uuid: clientUuid,
@@ -1547,7 +1567,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           }
         }
 
-        const clientUuid = crypto.randomUUID();
+        const clientUuid = generateClientUuid();
         const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
         orderPayload = {
@@ -1577,7 +1597,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
             addons: item.addons
           })),
           payment: {
-            client_payment_uuid: crypto.randomUUID(),
+            client_payment_uuid: generateClientUuid(),
             payment_method: 'cash',
             amount: calcs.total,
             tendered_amount: tendered,
