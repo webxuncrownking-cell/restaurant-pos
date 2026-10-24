@@ -82,6 +82,12 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   .kitchen-item-name { color:#243047; font-size:.84rem; font-weight:800; line-height:1.35; overflow-wrap:anywhere; }
   .kitchen-item-variant { color:#728096; font-weight:650; font-size:.74rem; margin-top:3px; }
   .kitchen-item-addon { font-size:.72rem; color:#5c6f8b; margin-top:5px; }
+  .kitchen-item-status-row { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin:8px 0 0 38px; }
+  .kitchen-item-status { display:inline-flex; align-items:center; border-radius:7px; padding:4px 7px; font-size:.65rem; font-weight:800; background:#f1f5f9; color:#64748b; }
+  .kitchen-item-status.preparing { background:#eaf2ff; color:#1d4ed8; }
+  .kitchen-item-status.ready { background:#dff9ed; color:#047857; }
+  .kitchen-item-status.served { background:#eef1f5; color:#5b6474; }
+  .kitchen-item-status-row .btn { font-size:.67rem; padding:4px 7px; }
   .kitchen-item-note { margin:7px 0 0 38px; color:#8a4b07; font-size:.75rem; background:#fff8e8; border-radius:8px; border:1px solid #fae3b0; padding:7px 9px; overflow-wrap:anywhere; }
   .kitchen-ticket-note { margin:0 16px 14px; border-left:3px solid #d8e3f1; padding:3px 0 3px 10px; color:#68768a; font-size:.76rem; overflow-wrap:anywhere; }
   .kitchen-ticket-actions { display:flex; flex-wrap:wrap; gap:8px; padding:13px 16px 16px; border-top:1px solid #edf1f6; background:#fbfcfe; }
@@ -197,6 +203,12 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
             <?php foreach ($ticket['items'] as $item):
               $quantityLabel = rtrim(rtrim(number_format((float)$item['quantity'], 2, '.', ''), '0'), '.');
             ?>
+              <?php
+                $itemStatus = (string)($item['kitchen_status'] ?? 'pending');
+                $itemStatusLabels = ['pending' => 'Not started', 'preparing' => 'Preparing', 'ready' => 'Ready', 'served' => 'Served'];
+                $itemNextStatus = ['pending' => 'preparing', 'preparing' => 'ready', 'ready' => 'served'][$itemStatus] ?? '';
+                $itemNextLabel = ['preparing' => 'Start', 'ready' => 'Mark ready', 'served' => 'Mark served'][$itemNextStatus] ?? '';
+              ?>
               <div class="kitchen-item">
                 <div class="kitchen-item-line">
                   <span class="kitchen-qty"><?= htmlspecialchars($quantityLabel === '' ? '0' : $quantityLabel, ENT_QUOTES, 'UTF-8') ?>×</span>
@@ -209,6 +221,18 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
                       <div class="kitchen-item-addon"><i class="bi bi-plus-circle me-1"></i><?= htmlspecialchars((string)$item['addons'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
                   </div>
+                </div>
+                <div class="kitchen-item-status-row">
+                  <span class="kitchen-item-status <?= htmlspecialchars($itemStatus, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($itemStatusLabels[$itemStatus] ?? 'Not started', ENT_QUOTES, 'UTF-8') ?></span>
+                  <?php if ($itemNextStatus !== ''): ?>
+                    <form method="POST" action="<?= BASE_URL ?>/kitchen/item-status" class="d-inline-flex">
+                      <?= \App\Core\CSRF::formField() ?>
+                      <input type="hidden" name="order_id" value="<?= (int)$ticket['id'] ?>">
+                      <input type="hidden" name="item_id" value="<?= (int)$item['id'] ?>">
+                      <input type="hidden" name="status" value="<?= htmlspecialchars($itemNextStatus, ENT_QUOTES, 'UTF-8') ?>">
+                      <button type="submit" class="btn btn-outline-primary"><?= htmlspecialchars($itemNextLabel, ENT_QUOTES, 'UTF-8') ?></button>
+                    </form>
+                  <?php endif; ?>
                 </div>
                 <?php if (!empty($item['special_instructions'])): ?>
                   <div class="kitchen-item-note"><i class="bi bi-chat-left-text me-1"></i><?= htmlspecialchars((string)$item['special_instructions'], ENT_QUOTES, 'UTF-8') ?></div>
