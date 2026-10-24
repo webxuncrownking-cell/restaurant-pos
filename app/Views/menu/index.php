@@ -6,7 +6,19 @@
   .menu-product-photo img { height:100%; width:100%; object-fit:cover; display:block; }
   .menu-product-photo .menu-photo-empty { font-size:2rem; color:#b2bdcd; }
   .menu-photo-form { background:#f8fafc; border:1px solid #e7ecf3; border-radius:12px; padding:10px; }
-  .menu-photo-form .form-control { min-width:0; }
+  .menu-photo-form .d-flex { align-items:stretch !important; gap:.5rem !important; }
+  .menu-photo-form .form-control[type="file"] {
+    display:block; flex:1 1 0%; width:1%; min-width:0;
+    height:42px; min-height:42px; padding:.3rem .5rem;
+    line-height:1.4; overflow:hidden;
+  }
+  .menu-photo-form .form-control[type="file"]::file-selector-button {
+    height:100%; margin:-.3rem .65rem -.3rem -.5rem;
+    padding:.3rem .75rem; border-width:0 1px 0 0;
+    border-style:solid; border-color:#dbe2ec; background:#f1f5f9;
+  }
+  .menu-photo-form .btn { flex:0 0 auto; min-height:42px; }
+  .menu-photo-form .form-text { margin-top:.45rem; line-height:1.35; }
 </style>
 
 <div class="container py-4">
@@ -164,9 +176,12 @@
                 </div>
               </div>
 
-              <div class="d-flex gap-2 pt-2 border-top">
+              <div class="d-flex flex-wrap gap-2 pt-2 border-top">
                 <a href="<?= BASE_URL ?>/menu/products/<?= (int)$prod['id'] ?>/recipe" class="btn btn-outline-primary btn-sm flex-grow-1">
                   <i class="bi bi-card-checklist me-1"></i> Recipe BOM
+                </a>
+                <a href="<?= BASE_URL ?>/menu/products/<?= (int)$prod['id'] ?>/edit" class="btn btn-outline-secondary btn-sm" title="Edit menu item" aria-label="Edit <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                  <i class="bi bi-pencil-square"></i> Edit
                 </a>
                 <form method="POST" action="<?= BASE_URL ?>/menu/products/status">
                   <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
