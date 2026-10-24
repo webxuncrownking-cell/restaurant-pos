@@ -166,6 +166,7 @@ $router->post('/api/pos/sync', [PosController::class, 'syncApi']);
 // Phase 7: Business Intelligence Reports & SaaS Billing Routes
 $router->get('/reports', [ReportController::class, 'index']);
 $router->get('/reports/data.json', [ReportController::class, 'dataJson']);
+$router->get('/reports/export.csv', [ReportController::class, 'exportCsv']);
 $router->get('/billing', [BillingController::class, 'index']);
 $router->post('/billing/upgrade', [BillingController::class, 'upgrade']);
 
