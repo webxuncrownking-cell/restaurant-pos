@@ -26,7 +26,13 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
   .res-icon { display:grid; place-items:center; flex:0 0 40px; width:40px; height:40px; border-radius:12px; color:#2563eb; background:#eff6ff; font-size:1.1rem; }
   .res-metric { display:flex; align-items:center; gap:13px; background:#fff; border:1px solid #e4eaf2; border-radius:14px; padding:14px 16px; }
   .res-metric strong { display:block; font-size:1.4rem; line-height:1; color:#172033; }
-  .res-metric span { display:block; margin-top:5px; color:#718096; font-size:.75rem; }
+  .res-metric > div > span { display:block; margin-top:5px; color:#718096; font-size:.75rem; }
+  .res-metric > .res-icon {
+    display:grid; place-items:center; margin:0; padding:0;
+    width:40px; height:40px; flex:0 0 40px; line-height:1;
+    color:#2563eb; background:#eff6ff; font-size:1.1rem;
+  }
+  .res-metric > .res-icon > .bi { display:block; line-height:1; font-size:1.1rem; }
   .res-list-empty { padding:30px 18px; text-align:center; color:#718096; }
   .res-list-empty i { display:block; font-size:1.7rem; margin-bottom:7px; color:#a6b2c2; }
   .res-status { display:inline-flex; align-items:center; padding:5px 8px; border-radius:999px; font-size:.68rem; font-weight:800; text-transform:capitalize; background:#f1f5f9; color:#475569; }
@@ -59,7 +65,7 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
       <p class="res-subtitle">Plan upcoming bookings, organize walk-ins, and seat guests from one place.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary bg-white"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
+      <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
       <a href="<?= BASE_URL ?>/pos" class="btn btn-primary"><i class="bi bi-display me-1"></i> POS Terminal</a>
     </div>
   </section>
