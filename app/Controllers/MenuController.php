@@ -266,25 +266,25 @@ class MenuController
                 $stmt = $pdo->prepare(
                     "INSERT INTO products
                         (restaurant_id, category_id, name, sku, base_price, cost_price, tax_rate,
-                         product_type, direct_stock_ingredient_id, has_variants, is_active, image_path)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)"
+                         product_type, direct_stock_ingredient_id, has_variants, is_active, image_path, kitchen_station)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)"
                 );
                 $stmt->execute([
                     $restaurantId, $categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                     $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                    $variants ? 1 : 0, $productImagePath
+                    $variants ? 1 : 0, $productImagePath, $kitchenStation
                 ]);
             } else {
                 $stmt = $pdo->prepare(
                     "INSERT INTO products
                         (restaurant_id, category_id, name, sku, base_price, cost_price, tax_rate,
-                         product_type, direct_stock_ingredient_id, has_variants, is_active)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+                         product_type, direct_stock_ingredient_id, has_variants, is_active, kitchen_station)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)"
                 );
                 $stmt->execute([
                     $restaurantId, $categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                     $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                    $variants ? 1 : 0
+                    $variants ? 1 : 0, $kitchenStation
                 ]);
             }
             $productId = (int)$pdo->lastInsertId();
@@ -469,20 +469,20 @@ class MenuController
             if ($imageColumnReady) {
                 Database::query(
                     "UPDATE products SET category_id = ?, name = ?, sku = ?, base_price = ?, cost_price = ?, tax_rate = ?,
-                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?, image_path = ?
+                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?, image_path = ?, kitchen_station = ?
                      WHERE restaurant_id = ? AND id = ?",
                     [$categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                      $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                     $variants ? 1 : 0, $newPath, $restaurantId, $productId]
+                     $variants ? 1 : 0, $newPath, $kitchenStation, $restaurantId, $productId]
                 );
             } else {
                 Database::query(
                     "UPDATE products SET category_id = ?, name = ?, sku = ?, base_price = ?, cost_price = ?, tax_rate = ?,
-                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?
+                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?, kitchen_station = ?
                      WHERE restaurant_id = ? AND id = ?",
                     [$categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                      $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                     $variants ? 1 : 0, $restaurantId, $productId]
+                     $variants ? 1 : 0, $kitchenStation, $restaurantId, $productId]
                 );
             }
 
