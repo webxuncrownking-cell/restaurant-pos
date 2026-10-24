@@ -15,7 +15,7 @@
       <a href="<?= BASE_URL ?>/inventory/adjustment" class="btn btn-outline-warning btn-sm d-flex align-items-center gap-1">
         <i class="bi bi-sliders"></i> Adjust Stock
       </a>
-      <a href="<?= BASE_URL ?>/inventory/stock-in" class="btn btn-pos-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
+      <a href="<?= BASE_URL ?>/inventory/stock-in" class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm">
         <i class="bi bi-box-arrow-in-down"></i> Receive Goods (Stock In)
       </a>
     </div>
