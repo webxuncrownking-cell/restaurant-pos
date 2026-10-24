@@ -1729,7 +1729,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           return;
         }
 
-        if (res.status !== 'success' || !Array.isArray(res.results)) {
+        if (!['success', 'partial'].includes(res.status) || !Array.isArray(res.results)) {
           console.error('[POS Sync] Unexpected server response for queued orders:', res);
           this.showSyncNotice(
             `The server returned an unexpected sync response. ${pending.length} order(s) remain queued locally; do not submit them again.`,
