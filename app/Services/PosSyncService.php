@@ -12,6 +12,7 @@ use App\Core\Database;
 use InvalidArgumentException;
 use RuntimeException;
 use Exception;
+use Throwable;
 
 class PosSyncService
 {
@@ -203,6 +204,52 @@ class PosSyncService
             'catalog' => $catalogData,
             'tables' => $tables,
             'staff' => $staffMembers
+        ];
+    }
+
+    /**
+     * Process each queued order independently. A bad ticket must not block
+     * later valid tickets in the same batch. Successful items remain idempotent
+     * if the response is lost and the client retries the batch.
+     */
+    public static function processOrderSyncBatch(int $restaurantId, array $orders): array
+    {
+        $results = [];
+        foreach ($orders as $orderPayload) {
+            $clientUuid = is_array($orderPayload)
+                ? trim((string)($orderPayload['client_uuid'] ?? ''))
+                : '';
+            try {
+                if (!is_array($orderPayload)) {
+                    throw new InvalidArgumentException('Order payload must be an object.');
+                }
+                $results[] = self::processOrderSync($restaurantId, $orderPayload);
+            } catch (Throwable $e) {
+                error_log('[POS Sync] Order ' . ($clientUuid !== '' ? $clientUuid : '(missing client UUID)') . ' failed: ' . $e);
+                $results[] = [
+                    'status' => 'failed',
+                    'client_uuid' => $clientUuid,
+                    'server_order_id' => null,
+                    'error' => $e instanceof InvalidArgumentException
+                        ? $e->getMessage()
+                        : 'Server could not process this order. It remains queued locally; retry after checking the server log.'
+                ];
+            }
+        }
+
+        $hasFailures = count(array_filter(
+            $results,
+            static fn(array $result): bool => !in_array($result['status'] ?? '', ['synced', 'already_synced'], true)
+        )) > 0;
+
+        return [
+            'status' => $hasFailures ? 'partial' : 'success',
+            'results' => $results,
+            'processed_count' => count($results),
+            'failed_count' => count(array_filter(
+                $results,
+                static fn(array $result): bool => !in_array($result['status'] ?? '', ['synced', 'already_synced'], true)
+            ))
         ];
     }
 
