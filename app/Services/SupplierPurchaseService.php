@@ -396,7 +396,7 @@ class SupplierPurchaseService
     /**
      * Receive the whole order exactly once. Stock changes and status transition share one DB transaction.
      */
-    public static function receivePurchaseOrder(int $restaurantId, int $orderId, int $userId): void
+    public static function receivePurchaseOrder(int $restaurantId, int $orderId, int $userId, array $batchInfo = []): void
     {
         if ($restaurantId <= 0 || $orderId <= 0 || $userId <= 0) throw new InvalidArgumentException('A valid workspace, purchase order, and staff account are required.');
         $pdo = Database::getConnection();
@@ -424,6 +424,8 @@ class SupplierPurchaseService
             );
             if (!$lines) throw new InvalidArgumentException('This purchase order has no ingredient lines.');
 
+            $batchTrackingEnabled = ExpiryWasteService::schemaReady();
+
             foreach ($lines as $line) {
                 $qtyBase = (float)$line['quantity_base'];
                 $baseCost = $qtyBase > 0 ? (float)$line['subtotal'] / $qtyBase : 0.0;
@@ -438,6 +440,22 @@ class SupplierPurchaseService
                     'PO ' . $order['po_number'] . ': ' . $line['quantity_purchased'] . ' ' . $line['purchase_unit'] . ' received',
                     $userId
                 );
+
+                if ($batchTrackingEnabled) {
+                    $meta = $batchInfo[(string)$line['id']] ?? $batchInfo[(int)$line['id']] ?? [];
+                    if (!is_array($meta)) $meta = [];
+                    ExpiryWasteService::createReceiptBatch(
+                        $restaurantId,
+                        (int)$line['ingredient_id'],
+                        $orderId,
+                        (int)$line['id'],
+                        $qtyBase,
+                        $baseCost,
+                        $userId,
+                        isset($meta['batch_code']) ? (string)$meta['batch_code'] : null,
+                        isset($meta['expiry_date']) ? (string)$meta['expiry_date'] : null
+                    );
+                }
             }
 
             Database::query(
