@@ -178,6 +178,9 @@ foreach (($ingredients ?? []) as $ingredient) {
     <section class="procurement-card">
       <header class="procurement-card-head"><span class="procurement-icon"><i class="bi bi-clipboard2-check"></i></span><div><h2 class="procurement-heading">Purchase order history</h2><p class="procurement-help">Draft → Ordered → Received. Receipt updates the inventory ledger and stock balance exactly once.</p></div></header>
       <div class="procurement-card-body">
+        <?php if (empty($expiry_tracking_ready) && !empty(array_filter($purchaseOrders, static fn(array $po): bool => $po['status'] === 'ordered'))): ?>
+          <div class="alert alert-warning small">Expiry/lot capture is not enabled yet. Purchase receiving will still work, but new receipts will not create expiry batches until you <a href="<?= BASE_URL ?>/expiry">apply the Expiry &amp; Wastage setup</a>.</div>
+        <?php endif; ?>
         <?php if (empty($purchaseOrders)): ?><div class="procurement-empty"><i class="bi bi-clipboard2"></i>No purchase orders yet.</div>
         <?php else: foreach ($purchaseOrders as $po): ?>
           <article class="procurement-order">
@@ -192,7 +195,22 @@ foreach (($ingredients ?? []) as $ingredient) {
             <div class="procurement-order-body">
               <?php foreach ($po['items'] as $line): ?>
                 <div class="procurement-order-line">
-                  <div><div class="procurement-order-line-name"><?= $h($line['ingredient_name']) ?></div><div class="procurement-order-line-detail"><?= number_format((float)$line['quantity_purchased'], 4) ?> <?= $h($line['purchase_unit']) ?> (<?= number_format((float)$line['quantity_base'], 4) ?> <?= $h($line['base_unit']) ?> base) × <?= $money((float)$line['unit_cost']) ?> / purchase unit</div></div>
+                  <div>
+                    <div class="procurement-order-line-name"><?= $h($line['ingredient_name']) ?></div>
+                    <div class="procurement-order-line-detail"><?= number_format((float)$line['quantity_purchased'], 4) ?> <?= $h($line['purchase_unit']) ?> (<?= number_format((float)$line['quantity_base'], 4) ?> <?= $h($line['base_unit']) ?> base) × <?= $money((float)$line['unit_cost']) ?> / purchase unit</div>
+                    <?php if ($po['status'] === 'ordered' && !empty($expiry_tracking_ready)): ?>
+                      <div class="row g-2 mt-2">
+                        <div class="col-12 col-md-6">
+                          <label class="form-label small fw-semibold mb-1" for="batch-code-<?= (int)$line['id'] ?>">Batch / lot code</label>
+                          <input class="form-control form-control-sm" id="batch-code-<?= (int)$line['id'] ?>" form="receive-po-<?= (int)$po['id'] ?>" name="batch_info[<?= (int)$line['id'] ?>][batch_code]" maxlength="100" placeholder="Optional lot code">
+                        </div>
+                        <div class="col-12 col-md-6">
+                          <label class="form-label small fw-semibold mb-1" for="expiry-date-<?= (int)$line['id'] ?>">Expiry date</label>
+                          <input class="form-control form-control-sm" id="expiry-date-<?= (int)$line['id'] ?>" form="receive-po-<?= (int)$po['id'] ?>" name="batch_info[<?= (int)$line['id'] ?>][expiry_date]" type="date">
+                        </div>
+                      </div>
+                    <?php endif; ?>
+                  </div>
                   <div class="procurement-order-total"><?= $money((float)$line['subtotal']) ?></div>
                 </div>
               <?php endforeach; ?>
@@ -201,7 +219,7 @@ foreach (($ingredients ?? []) as $ingredient) {
                   <?php if ($po['status'] === 'draft'): ?>
                     <form method="POST" action="<?= BASE_URL ?>/procurement/orders/action"><?= \App\Core\CSRF::formField() ?><input type="hidden" name="purchase_order_id" value="<?= (int)$po['id'] ?>"><input type="hidden" name="status" value="ordered"><button class="btn btn-primary btn-sm" type="submit"><i class="bi bi-send me-1"></i> Mark Ordered</button></form>
                   <?php else: ?>
-                    <form method="POST" action="<?= BASE_URL ?>/procurement/orders/receive" onsubmit="return confirm('Receive this entire delivery? This will increase ingredient stock and update the inventory ledger. The purchase order cannot be received again.')"><?= \App\Core\CSRF::formField() ?><input type="hidden" name="purchase_order_id" value="<?= (int)$po['id'] ?>"><button class="btn btn-success btn-sm" type="submit"><i class="bi bi-box-arrow-in-down me-1"></i> Receive Delivery</button></form>
+                    <form id="receive-po-<?= (int)$po['id'] ?>" method="POST" action="<?= BASE_URL ?>/procurement/orders/receive" onsubmit="return confirm('Receive this entire delivery? Ingredient stock and the inventory ledger will update once. The order cannot be received again.')"><?= \App\Core\CSRF::formField() ?><input type="hidden" name="purchase_order_id" value="<?= (int)$po['id'] ?>"><button class="btn btn-success btn-sm" type="submit"><i class="bi bi-box-arrow-in-down me-1"></i> Receive Delivery</button></form>
                   <?php endif; ?>
                   <form method="POST" action="<?= BASE_URL ?>/procurement/orders/action" onsubmit="return confirm('Cancel this purchase order? No stock will be changed.')"><?= \App\Core\CSRF::formField() ?><input type="hidden" name="purchase_order_id" value="<?= (int)$po['id'] ?>"><input type="hidden" name="status" value="cancelled"><button class="btn btn-outline-danger btn-sm" type="submit">Cancel PO</button></form>
                 </div>
