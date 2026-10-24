@@ -53,6 +53,7 @@ class MenuController
         }
 
         $restaurantId = (int)$restaurant['id'];
+        $this->ensureKitchenStationColumn();
         $categories = MenuService::getCategories($restaurantId, true);
         $addonGroups = Database::fetchAll(
             "SELECT * FROM product_addon_groups WHERE restaurant_id = ? ORDER BY name ASC",
@@ -82,6 +83,7 @@ class MenuController
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) { Response::redirect('/dashboard'); return; }
         $restaurantId = (int)$restaurant['id'];
+        $this->ensureKitchenStationColumn();
         $productId = (int)($params['id'] ?? 0);
         $product = MenuService::getProduct($restaurantId, $productId);
         if (!$product) { Response::notFound('Menu item not found.'); return; }
@@ -122,6 +124,7 @@ class MenuController
             return;
         }
         $restaurantId = (int)$restaurant['id'];
+        $this->ensureKitchenStationColumn();
         $imageColumnReady = $this->hasProductImageColumn();
         $imageUpload = $_FILES['product_image'] ?? null;
         $hasImageUpload = is_array($imageUpload) && (int)($imageUpload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
@@ -138,6 +141,8 @@ class MenuController
         $taxRateRaw = $request->post('tax_rate', '12');
         $productType = (string)$request->post('product_type', 'recipe');
         $directStockIngredientId = (int)$request->post('direct_stock_ingredient_id', 0);
+        $kitchenStation = trim((string)$request->post('kitchen_station', 'Hot Kitchen'));
+        if ($kitchenStation === '' || mb_strlen($kitchenStation) > 80) $kitchenStation = 'Hot Kitchen';
 
         if ($name === '' || mb_strlen($name) > 150 || $categoryId <= 0 ||
             !is_numeric($basePriceRaw) || !is_numeric($costPriceRaw) || !is_numeric($taxRateRaw)) {
@@ -261,25 +266,25 @@ class MenuController
                 $stmt = $pdo->prepare(
                     "INSERT INTO products
                         (restaurant_id, category_id, name, sku, base_price, cost_price, tax_rate,
-                         product_type, direct_stock_ingredient_id, has_variants, is_active, image_path)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)"
+                         product_type, direct_stock_ingredient_id, has_variants, is_active, image_path, kitchen_station)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)"
                 );
                 $stmt->execute([
                     $restaurantId, $categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                     $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                    $variants ? 1 : 0, $productImagePath
+                    $variants ? 1 : 0, $productImagePath, $kitchenStation
                 ]);
             } else {
                 $stmt = $pdo->prepare(
                     "INSERT INTO products
                         (restaurant_id, category_id, name, sku, base_price, cost_price, tax_rate,
-                         product_type, direct_stock_ingredient_id, has_variants, is_active)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
+                         product_type, direct_stock_ingredient_id, has_variants, is_active, kitchen_station)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)"
                 );
                 $stmt->execute([
                     $restaurantId, $categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                     $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                    $variants ? 1 : 0
+                    $variants ? 1 : 0, $kitchenStation
                 ]);
             }
             $productId = (int)$pdo->lastInsertId();
@@ -336,6 +341,7 @@ class MenuController
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) { Response::redirect('/dashboard'); return; }
         $restaurantId = (int)$restaurant['id'];
+        $this->ensureKitchenStationColumn();
         $current = MenuService::getProduct($restaurantId, $productId);
         if (!$current) { Response::redirect('/menu?error=Menu+item+not+found'); return; }
 
@@ -357,6 +363,8 @@ class MenuController
         $taxRateRaw = $request->post('tax_rate', '12');
         $productType = (string)$request->post('product_type', 'recipe');
         $directStockIngredientId = (int)$request->post('direct_stock_ingredient_id', 0);
+        $kitchenStation = trim((string)$request->post('kitchen_station', 'Hot Kitchen'));
+        if ($kitchenStation === '' || mb_strlen($kitchenStation) > 80) $kitchenStation = 'Hot Kitchen';
 
         if ($name === '' || mb_strlen($name) > 150 || $categoryId <= 0 ||
             !is_numeric($basePriceRaw) || !is_numeric($costPriceRaw) || !is_numeric($taxRateRaw)) {
@@ -461,20 +469,20 @@ class MenuController
             if ($imageColumnReady) {
                 Database::query(
                     "UPDATE products SET category_id = ?, name = ?, sku = ?, base_price = ?, cost_price = ?, tax_rate = ?,
-                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?, image_path = ?
+                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?, image_path = ?, kitchen_station = ?
                      WHERE restaurant_id = ? AND id = ?",
                     [$categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                      $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                     $variants ? 1 : 0, $newPath, $restaurantId, $productId]
+                     $variants ? 1 : 0, $newPath, $kitchenStation, $restaurantId, $productId]
                 );
             } else {
                 Database::query(
                     "UPDATE products SET category_id = ?, name = ?, sku = ?, base_price = ?, cost_price = ?, tax_rate = ?,
-                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?
+                     product_type = ?, direct_stock_ingredient_id = ?, has_variants = ?, kitchen_station = ?
                      WHERE restaurant_id = ? AND id = ?",
                     [$categoryId, $name, $sku, $basePrice, $costPrice, $taxRate,
                      $productType, $productType === 'direct' ? $directStockIngredientId : null,
-                     $variants ? 1 : 0, $restaurantId, $productId]
+                     $variants ? 1 : 0, $kitchenStation, $restaurantId, $productId]
                 );
             }
 
@@ -767,6 +775,15 @@ class MenuController
         $catalog = MenuService::getPosCatalog((int)$restaurant['id']);
         Response::json($catalog);
     }
+    private function ensureKitchenStationColumn(): void
+    {
+        $pdo = Database::getConnection();
+        $columns = $pdo->query("SHOW COLUMNS FROM products LIKE 'kitchen_station'")->fetchAll(\PDO::FETCH_ASSOC);
+        if (!$columns) {
+            $pdo->exec("ALTER TABLE products ADD COLUMN kitchen_station VARCHAR(80) NOT NULL DEFAULT 'Hot Kitchen'");
+        }
+    }
+
     private function hasProductImageColumn(): bool
     {
         try {

@@ -9,6 +9,14 @@ $statusLabels = [
   'served' => ['Served', 'status-served', 'bi-bag-check']
 ];
 $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Preparing', 'ready' => 'Ready', 'served' => 'Served'];
+$kitchenStations = [];
+foreach ($tickets as $stationTicket) {
+  foreach (($stationTicket['items'] ?? []) as $stationItem) {
+    $stationName = trim((string)($stationItem['kitchen_station'] ?? 'Hot Kitchen')) ?: 'Hot Kitchen';
+    $kitchenStations[$stationName] = $stationName;
+  }
+}
+ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
 ?>
 <style>
   .kitchen-wrap { padding:24px; }
@@ -56,6 +64,13 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   .kitchen-filter { border:1px solid transparent; background:transparent; padding:8px 11px; color:#64748b; border-radius:9px; font-size:.77rem; font-weight:750; }
   .kitchen-filter:hover { background:#f4f7fb; color:#172033; }
   .kitchen-filter.active { color:#1d4ed8; border-color:#d9e7ff; background:#edf4ff; }
+  .kitchen-station-filters { width:100%; display:flex; align-items:center; flex-wrap:wrap; gap:7px; padding:10px 12px; margin-top:10px; border:1px solid #e5eaf2; border-radius:12px; background:#f8fafc; }
+  .kitchen-station-filter-label { margin-right:4px; color:#8491a5; font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .kitchen-filter.kitchen-station-filter { padding:7px 11px; border:1px solid #e0e7f0; border-radius:8px; background:#fff; color:#52627a; font-size:.75rem; font-weight:700; line-height:1.2; }
+  .kitchen-filter.kitchen-station-filter:hover { border-color:#b8c9e2; background:#f1f6fc; color:#24344d; }
+  .kitchen-filter.kitchen-station-filter.active { border-color:#2563eb; background:#2563eb; color:#fff; }
+  @media (max-width:575px) { .kitchen-station-filters { gap:6px; padding:9px; } .kitchen-station-filter-label { width:100%; margin:0 0 2px; } .kitchen-filter.kitchen-station-filter { padding:7px 9px; } }
+
   .kitchen-refresh-note { font-size:.72rem; color:#8793a5; display:flex; align-items:center; gap:7px; }
   .kitchen-board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; align-items:start; }
   .kitchen-ticket { min-width:0; overflow:hidden; border:1px solid #dfe6ef; border-radius:16px; background:#fff; box-shadow:0 4px 16px rgba(15,23,42,.035); }
@@ -82,6 +97,12 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   .kitchen-item-name { color:#243047; font-size:.84rem; font-weight:800; line-height:1.35; overflow-wrap:anywhere; }
   .kitchen-item-variant { color:#728096; font-weight:650; font-size:.74rem; margin-top:3px; }
   .kitchen-item-addon { font-size:.72rem; color:#5c6f8b; margin-top:5px; }
+  .kitchen-item-status-row { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin:8px 0 0 38px; }
+  .kitchen-item-status { display:inline-flex; align-items:center; border-radius:7px; padding:4px 7px; font-size:.65rem; font-weight:800; background:#f1f5f9; color:#64748b; }
+  .kitchen-item-status.preparing { background:#eaf2ff; color:#1d4ed8; }
+  .kitchen-item-status.ready { background:#dff9ed; color:#047857; }
+  .kitchen-item-status.served { background:#eef1f5; color:#5b6474; }
+  .kitchen-item-status-row .btn { font-size:.67rem; padding:4px 7px; }
   .kitchen-item-note { margin:7px 0 0 38px; color:#8a4b07; font-size:.75rem; background:#fff8e8; border-radius:8px; border:1px solid #fae3b0; padding:7px 9px; overflow-wrap:anywhere; }
   .kitchen-ticket-note { margin:0 16px 14px; border-left:3px solid #d8e3f1; padding:3px 0 3px 10px; color:#68768a; font-size:.76rem; overflow-wrap:anywhere; }
   .kitchen-ticket-actions { display:flex; flex-wrap:wrap; gap:8px; padding:13px 16px 16px; border-top:1px solid #edf1f6; background:#fbfcfe; }
@@ -153,6 +174,13 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
         <button type="button" class="kitchen-filter <?= $filter === 'all' ? 'active' : '' ?>" data-kitchen-filter="<?= htmlspecialchars($filter, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></button>
       <?php endforeach; ?>
     </div>
+    <div class="kitchen-filter-group kitchen-station-filters" role="group" aria-label="Filter kitchen station">
+      <span class="kitchen-station-filter-label">Station:</span>
+      <button type="button" class="kitchen-filter kitchen-station-filter active" data-station-filter="all">All Stations</button>
+      <?php foreach ($kitchenStations as $stationName): ?>
+        <button type="button" class="kitchen-filter kitchen-station-filter" data-station-filter="<?= htmlspecialchars($stationName, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stationName, ENT_QUOTES, 'UTF-8') ?></button>
+      <?php endforeach; ?>
+    </div>
     <div class="kitchen-refresh-note"><i class="bi bi-arrow-repeat"></i> Checks for new tickets every 12 seconds <span aria-hidden="true">·</span> Last checked <span id="kitchenLastChecked">just now</span></div>
   </section>
 
@@ -197,11 +225,18 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
             <?php foreach ($ticket['items'] as $item):
               $quantityLabel = rtrim(rtrim(number_format((float)$item['quantity'], 2, '.', ''), '0'), '.');
             ?>
+              <?php
+                $itemStatus = (string)($item['kitchen_status'] ?? 'pending');
+                $itemStatusLabels = ['pending' => 'Not started', 'preparing' => 'Preparing', 'ready' => 'Ready', 'served' => 'Served'];
+                $itemNextStatus = ['pending' => 'preparing', 'preparing' => 'ready', 'ready' => 'served'][$itemStatus] ?? '';
+                $itemNextLabel = ['preparing' => 'Start', 'ready' => 'Mark ready', 'served' => 'Mark served'][$itemNextStatus] ?? '';
+              ?>
               <div class="kitchen-item">
                 <div class="kitchen-item-line">
                   <span class="kitchen-qty"><?= htmlspecialchars($quantityLabel === '' ? '0' : $quantityLabel, ENT_QUOTES, 'UTF-8') ?>×</span>
                   <div class="flex-grow-1 min-w-0">
                     <div class="kitchen-item-name"><?= htmlspecialchars((string)$item['product_name'], ENT_QUOTES, 'UTF-8') ?></div>
+                    <div class="kitchen-item-variant"><strong>Station:</strong> <?= htmlspecialchars(trim((string)($item['kitchen_station'] ?? 'Hot Kitchen')) !== '' ? (string)$item['kitchen_station'] : 'Hot Kitchen', ENT_QUOTES, 'UTF-8') ?></div>
                     <?php if (!empty($item['variant_name'])): ?>
                       <div class="kitchen-item-variant"><?= htmlspecialchars((string)$item['variant_name'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
@@ -209,6 +244,18 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
                       <div class="kitchen-item-addon"><i class="bi bi-plus-circle me-1"></i><?= htmlspecialchars((string)$item['addons'], ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
                   </div>
+                </div>
+                <div class="kitchen-item-status-row" data-item-station="<?= htmlspecialchars(trim((string)($item['kitchen_station'] ?? 'Hot Kitchen')) ?: 'Hot Kitchen', ENT_QUOTES, 'UTF-8') ?>">
+                  <span class="kitchen-item-status <?= htmlspecialchars($itemStatus, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($itemStatusLabels[$itemStatus] ?? 'Not started', ENT_QUOTES, 'UTF-8') ?></span>
+                  <?php if ($itemNextStatus !== ''): ?>
+                    <form method="POST" action="<?= BASE_URL ?>/kitchen/item-status" class="d-inline-flex">
+                      <?= \App\Core\CSRF::formField() ?>
+                      <input type="hidden" name="order_id" value="<?= (int)$ticket['id'] ?>">
+                      <input type="hidden" name="item_id" value="<?= (int)$item['id'] ?>">
+                      <input type="hidden" name="status" value="<?= htmlspecialchars($itemNextStatus, ENT_QUOTES, 'UTF-8') ?>">
+                      <button type="submit" class="btn btn-outline-primary"><?= htmlspecialchars($itemNextLabel, ENT_QUOTES, 'UTF-8') ?></button>
+                    </form>
+                  <?php endif; ?>
                 </div>
                 <?php if (!empty($item['special_instructions'])): ?>
                   <div class="kitchen-item-note"><i class="bi bi-chat-left-text me-1"></i><?= htmlspecialchars((string)$item['special_instructions'], ENT_QUOTES, 'UTF-8') ?></div>
@@ -251,6 +298,7 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   const liveState = document.getElementById('kitchenLiveState');
   const cards = () => Array.from(document.querySelectorAll('.kitchen-ticket'));
   let activeFilter = 'all';
+  let activeStation = 'all';
   let polling = false;
 
   const formatElapsed = seconds => {
@@ -276,7 +324,16 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   const applyFilter = () => {
     let visible = 0;
     cards().forEach(card => {
-      const shown = activeFilter === 'all' || card.dataset.status === activeFilter;
+      const statusMatches = activeFilter === 'all' || card.dataset.status === activeFilter;
+      let stationMatches = activeStation === 'all';
+      let visibleItems = 0;
+      card.querySelectorAll('.kitchen-item-status-row').forEach(row => {
+        const matches = activeStation === 'all' || (row.dataset.itemStation || 'Hot Kitchen') === activeStation;
+        row.closest('.kitchen-item')?.toggleAttribute('hidden', !matches);
+        if (matches) visibleItems++;
+        stationMatches = stationMatches || matches;
+      });
+      const shown = statusMatches && stationMatches;
       card.hidden = !shown;
       if (shown) visible++;
     });
@@ -288,6 +345,14 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
     button.addEventListener('click', () => {
       activeFilter = button.dataset.kitchenFilter || 'all';
       document.querySelectorAll('[data-kitchen-filter]').forEach(item => item.classList.toggle('active', item === button));
+      applyFilter();
+    });
+  });
+
+  document.querySelectorAll('[data-station-filter]').forEach(button => {
+    button.addEventListener('click', () => {
+      activeStation = button.dataset.stationFilter || 'all';
+      document.querySelectorAll('[data-station-filter]').forEach(item => item.classList.toggle('active', item === button));
       applyFilter();
     });
   });

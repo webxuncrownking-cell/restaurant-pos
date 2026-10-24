@@ -242,6 +242,25 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     .pos-ticket-summary { padding:15px!important; }
     .pos-ticket-summary #ticketTotal { font-size:1.55rem!important; }
   }
+
+  /* Cash settlement modal: keep the tender symbol and amounts readable in the light modal theme. */
+  #checkoutModal .modal-content { background:#fff!important; color:#202b3b!important; border:1px solid #dce4ee!important; border-radius:22px!important; overflow:hidden; box-shadow:0 24px 70px rgba(15,23,42,.22); }
+  #checkoutModal .modal-header { background:#e2f2e9!important; border-bottom:1px solid #dce7e0!important; }
+  #checkoutModal .modal-header .modal-title { color:#202b3b!important; }
+  #checkoutModal .modal-header .btn-close { filter:none!important; opacity:.55; }
+  #checkoutModal .modal-body .text-white-50 { color:#758399!important; }
+  #checkoutModal #checkoutTotalDisplay { color:#202b3b!important; }
+  #checkoutModal .form-label { color:#344054!important; }
+  #checkoutModal #quickTenderRow .btn { color:#344054!important; background:#fff!important; border:1px solid #d8e1ed!important; border-radius:12px!important; min-height:54px; }
+  #checkoutModal #quickTenderRow .btn:hover { color:#145bd7!important; background:#f3f7ff!important; border-color:#a9c5ff!important; }
+  #checkoutModal .input-group-text { display:flex!important; align-items:center!important; justify-content:center!important; min-width:64px!important; background:#20252c!important; color:#fff!important; border:1px solid #cfd8e5!important; font-size:1.35rem!important; }
+  #checkoutModal #tenderInput { background:#fff!important; color:#202b3b!important; border:1px solid #d8e1ed!important; caret-color:#202b3b!important; }
+  #checkoutModal #tenderInput:focus { border-color:#7aa7ff!important; box-shadow:0 0 0 .2rem rgba(37,99,235,.13)!important; }
+  #checkoutModal .card.bg-black { background:#f4f7fb!important; }
+  #checkoutModal .card .text-muted { color:#758399!important; }
+  #checkoutModal .modal-footer { border-top:1px solid #e4eaf2!important; }
+  #checkoutModal .modal-footer .btn-outline-secondary { color:#344054!important; border-color:#aab4c2!important; }
+
 </style>
 
 <!-- Modern POS Header Bar -->

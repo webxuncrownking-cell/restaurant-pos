@@ -168,6 +168,7 @@ $router->post('/shifts/close', [ShiftController::class, 'close']);
 $router->get('/kitchen', [KitchenController::class, 'index']);
 $router->get('/kitchen/orders.json', [KitchenController::class, 'ordersJson']);
 $router->post('/kitchen/status', [KitchenController::class, 'updateStatus']);
+$router->post('/kitchen/item-status', [KitchenController::class, 'updateItemStatus']);
 $router->get('/pos', [PosController::class, 'showTerminal']);
 $router->get('/api/pos/bootstrap', [PosController::class, 'bootstrapApi']);
 $router->post('/api/pos/sync', [PosController::class, 'syncApi']);
