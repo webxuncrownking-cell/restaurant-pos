@@ -35,7 +35,7 @@ class KitchenController
             }
         }
 
-        Response::render('kitchen/index', [
+        Response::render('kitchen/index', 200, [
             'tickets' => $tickets,
             'counts' => $counts,
             'delayed_count' => $delayedCount,
