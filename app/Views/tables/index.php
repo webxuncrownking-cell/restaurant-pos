@@ -34,7 +34,7 @@
           <div><h2 class="h6 fw-bold mb-1">Enable QR Code Table Ordering</h2><p class="small text-muted mb-0">Add a unique QR menu link to every table. This safe setup preserves existing tables, orders, and sales.</p></div>
         </div>
         <form method="POST" action="<?= BASE_URL ?>/tables/qr/migrate">
-          <input type="hidden" name="_csrf_token" value="<?= \\App\\Core\\CSRF::getToken() ?>">
+          <input type="hidden" name="_csrf_token" value="<?= \App\Core\CSRF::getToken() ?>">
           <button type="submit" class="btn btn-primary"><i class="bi bi-qr-code me-1"></i> Enable QR Ordering</button>
         </form>
       </div>
