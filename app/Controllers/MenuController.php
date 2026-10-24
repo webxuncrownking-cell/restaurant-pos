@@ -778,7 +778,7 @@ class MenuController
     private function ensureKitchenStationColumn(): void
     {
         $pdo = Database::getConnection();
-        $columns = $pdo->query("SHOW COLUMNS FROM products LIKE 'kitchen_station'")->fetchAll(\\PDO::FETCH_ASSOC);
+        $columns = $pdo->query("SHOW COLUMNS FROM products LIKE 'kitchen_station'")->fetchAll(\PDO::FETCH_ASSOC);
         if (!$columns) {
             $pdo->exec("ALTER TABLE products ADD COLUMN kitchen_station VARCHAR(80) NOT NULL DEFAULT 'Hot Kitchen'");
         }
