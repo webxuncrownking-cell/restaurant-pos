@@ -744,6 +744,22 @@ assertTest("Offline Order Synced Successfully", $syncRes['status'] === 'synced' 
 // Retry exact same order payload -> must be idempotent (already_synced, zero duplicate rows)
 $retryRes = \App\Services\PosSyncService::processOrderSync(1, $orderPayload);
 assertTest("Idempotency: Duplicate Sync Acknowledged Without Duplication", $retryRes['status'] === 'already_synced' && $retryRes['server_order_id'] === $syncRes['server_order_id']);
+$batchRetryResult = \App\Services\PosSyncService::processOrderSyncBatch(1, [
+    $orderPayload,
+    ['client_uuid' => 'invalid-order-payload'],
+    $orderPayload
+]);
+$batchResults = $batchRetryResult['results'] ?? [];
+assertTest(
+    "Batch Sync Continues After a Single Invalid Order",
+    ($batchRetryResult['status'] ?? '') === 'partial'
+        && count($batchResults) === 3
+        && ($batchResults[0]['status'] ?? '') === 'already_synced'
+        && ($batchResults[1]['status'] ?? '') === 'failed'
+        && ($batchResults[2]['status'] ?? '') === 'already_synced'
+        && (int)($batchResults[0]['server_order_id'] ?? 0) === (int)$syncRes['server_order_id']
+        && (int)($batchResults[2]['server_order_id'] ?? 0) === (int)$syncRes['server_order_id']
+);
 
 // 19a. Kitchen Display System: ticket queue, workflow transitions, and audit history.
 echo PHP_EOL . "19a. Testing Kitchen Display System:" . PHP_EOL;
@@ -1401,6 +1417,13 @@ $shiftReconciliation = \App\Services\ReportService::getShiftReconciliation(1, da
 assertTest("Cashier Shift Reconciliation Report Query Executed", is_array($shiftReconciliation));
 
 echo PHP_EOL . "20a. Testing QR Table Ordering Tokens:" . PHP_EOL;
+assertTest(
+    "Customer QR Menu Uses Local Frontend Assets",
+    is_file(APP_ROOT . '/public/assets/css/bootstrap.min.css')
+        && is_file(APP_ROOT . '/public/assets/js/bootstrap.bundle.min.js')
+        && is_file(APP_ROOT . '/public/assets/css/qr-icons.css')
+        && !str_contains((string)file_get_contents(APP_ROOT . '/app/Views/qr_order/menu.php'), 'cdn.jsdelivr.net')
+);
 \App\Services\TableQrService::ensureSchema();
 $qrTestTableId = \App\Services\TableService::createTable(1, [
     'table_number' => 'QRTEST-' . date('His'),
