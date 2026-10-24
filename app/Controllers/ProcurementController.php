@@ -14,6 +14,7 @@ use App\Core\Response;
 use App\Core\TenantContext;
 use App\Core\Session;
 use App\Services\SupplierPurchaseService;
+use App\Services\ExpiryWasteService;
 use InvalidArgumentException;
 use Throwable;
 
@@ -38,6 +39,7 @@ class ProcurementController
             'ingredients' => $ready ? SupplierPurchaseService::getIngredientsForPurchase($restaurantId) : [],
             'purchaseOrders' => $ready ? SupplierPurchaseService::getPurchaseOrders($restaurantId) : [],
             'canManage' => Auth::can('inventory.stock_in'),
+            'expiry_tracking_ready' => ExpiryWasteService::schemaReady(),
             'csrf_token' => CSRF::generate(),
             'flashes' => Session::getFlashes()
         ]);
@@ -183,7 +185,9 @@ class ProcurementController
         $orderId = filter_var($request->post('purchase_order_id'), FILTER_VALIDATE_INT);
         try {
             if (!$orderId || $orderId <= 0) throw new InvalidArgumentException('Choose a valid purchase order.');
-            SupplierPurchaseService::receivePurchaseOrder($restaurantId, (int)$orderId, $userId);
+            $batchInfo = $request->post('batch_info', []);
+            if (!is_array($batchInfo)) $batchInfo = [];
+            SupplierPurchaseService::receivePurchaseOrder($restaurantId, (int)$orderId, $userId, $batchInfo);
             Session::setFlash('success', 'Delivery received. Stock balances and inventory ledger were updated once for every purchase-order line.');
         } catch (InvalidArgumentException $e) {
             Session::setFlash('warning', $e->getMessage());
