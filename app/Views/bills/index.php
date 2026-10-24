@@ -73,7 +73,7 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a href="<?= BASE_URL ?>/pos" class="btn btn-primary"><i class="bi bi-display me-1"></i> POS Terminal</a>
-      <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary bg-white"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
+      <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
     </div>
   </section>
 
