@@ -84,7 +84,28 @@
     .card, .modal-content { border-radius: 16px; }
     .card { border-color: #e8edf5; box-shadow: 0 3px 12px rgba(15,23,42,.035); }
     .card-header { border-bottom-color: #edf0f5; border-top-left-radius: 16px !important; border-top-right-radius: 16px !important; }
-    .btn { border-radius: 10px; font-weight: 600; }
+    .btn:not(.btn-close) {
+      border-radius: 10px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      line-height: 1.25;
+      gap: .35rem;
+      transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .btn:not(.btn-close) > .bi,
+    .btn:not(.btn-close) > i {
+      display: inline-block;
+      flex: 0 0 auto;
+      line-height: 1;
+      vertical-align: middle;
+    }
+    .btn:not(.btn-close):focus-visible {
+      outline: 0;
+      box-shadow: 0 0 0 .2rem rgba(37,99,235,.2);
+    }
     .form-control, .form-select { border-color: #dbe2ec; border-radius: 10px; min-height: 42px; }
     .form-control:focus, .form-select:focus { border-color: var(--pos-primary); box-shadow: 0 0 0 .2rem rgba(37,99,235,.13); }
     .table > :not(caption) > * > * { padding: .85rem .9rem; }
