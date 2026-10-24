@@ -29,7 +29,7 @@ class BillsController
         }
 
         $schemaReady = BillService::schemaReady();
-        Response::render('bills/index', [
+        Response::render('bills/index', 200, [
             'schema_ready' => $schemaReady,
             'bills' => $schemaReady ? BillService::getOpenBills($restaurantId) : [],
             'flashes' => Session::getFlashes(),
