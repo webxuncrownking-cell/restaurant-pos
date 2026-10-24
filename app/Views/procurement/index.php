@@ -23,7 +23,13 @@ foreach (($ingredients ?? []) as $ingredient) {
   .procurement-help { margin:0; font-size:.74rem; color:#8794a7; }
   .procurement-metric { display:flex; align-items:center; gap:12px; border:1px solid #e3eaf2; border-radius:14px; background:#fff; padding:14px 16px; height:100%; }
   .procurement-metric strong { display:block; color:#172033; font-size:1.45rem; line-height:1; }
-  .procurement-metric span { display:block; margin-top:6px; color:#718096; font-size:.74rem; }
+  .procurement-metric > div > span { display:block; margin-top:6px; color:#718096; font-size:.74rem; }
+  .procurement-metric > .procurement-icon {
+    display:grid; place-items:center; margin:0; padding:0;
+    width:40px; height:40px; flex:0 0 40px; line-height:1;
+    color:#2563eb; background:#eff6ff; font-size:1.05rem;
+  }
+  .procurement-metric > .procurement-icon > .bi { display:block; line-height:1; font-size:1.05rem; }
   .procurement-badge { display:inline-flex; align-items:center; padding:5px 9px; border-radius:999px; font-size:.68rem; font-weight:850; white-space:nowrap; }
   .procurement-badge.draft { background:#f1f5f9; color:#475569; }
   .procurement-badge.ordered { background:#eaf2ff; color:#1d4ed8; }
@@ -73,8 +79,8 @@ foreach (($ingredients ?? []) as $ingredient) {
       <p class="procurement-subtitle">Manage vendors, prepare purchase orders, and receive deliveries directly into ingredient stock.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="<?= BASE_URL ?>/inventory" class="btn btn-outline-secondary bg-white"><i class="bi bi-boxes me-1"></i> Inventory</a>
-      <a href="<?= BASE_URL ?>/inventory/ledger?type=purchase_receipt" class="btn btn-outline-secondary bg-white"><i class="bi bi-journal-text me-1"></i> Purchase Receipts</a>
+      <a href="<?= BASE_URL ?>/inventory" class="btn btn-outline-secondary"><i class="bi bi-boxes me-1"></i> Inventory</a>
+      <a href="<?= BASE_URL ?>/inventory/ledger?type=purchase_receipt" class="btn btn-outline-secondary"><i class="bi bi-journal-text me-1"></i> Purchase Receipts</a>
     </div>
   </section>
 
