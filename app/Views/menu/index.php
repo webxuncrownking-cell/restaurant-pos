@@ -6,19 +6,43 @@
   .menu-product-photo img { height:100%; width:100%; object-fit:cover; display:block; }
   .menu-product-photo .menu-photo-empty { font-size:2rem; color:#b2bdcd; }
   .menu-photo-form { background:#f8fafc; border:1px solid #e7ecf3; border-radius:12px; padding:10px; }
-  .menu-photo-form .d-flex { align-items:stretch !important; gap:.5rem !important; }
-  .menu-photo-form .form-control[type="file"] {
-    display:block; flex:1 1 0%; width:1%; min-width:0;
-    height:42px; min-height:42px; padding:.3rem .5rem;
-    line-height:1.4; overflow:hidden;
+  .menu-photo-form .menu-photo-picker-row { display:flex; align-items:stretch; gap:.5rem; min-width:0; }
+  .menu-photo-form .menu-photo-picker {
+    display:flex; flex:1 1 0%; min-width:0; position:relative;
+    height:42px; min-height:42px; border:1px solid #d7e0eb;
+    border-radius:10px; overflow:hidden; background:#fff;
   }
-  .menu-photo-form .form-control[type="file"]::file-selector-button {
-    height:100%; margin:-.3rem .65rem -.3rem -.5rem;
-    padding:.3rem .75rem; border-width:0 1px 0 0;
-    border-style:solid; border-color:#dbe2ec; background:#f1f5f9;
+  .menu-photo-form .menu-photo-input {
+    position:absolute !important; width:1px !important; height:1px !important;
+    padding:0 !important; margin:-1px !important; overflow:hidden !important;
+    clip:rect(0,0,0,0) !important; white-space:nowrap !important;
+    border:0 !important;
+  }
+  .menu-photo-form .menu-photo-input:focus-visible + .menu-photo-trigger {
+    outline:2px solid var(--pos-primary); outline-offset:-3px;
+  }
+  .menu-photo-form .menu-photo-trigger {
+    display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
+    flex:0 0 auto; height:100%; min-width:116px; margin:0; padding:0 .8rem;
+    border:0; border-right:1px solid #d7e0eb; border-radius:0;
+    color:#263248; background:#f1f5f9; font-size:.82rem; font-weight:650;
+    line-height:1; cursor:pointer; white-space:nowrap;
+    transition:background-color .15s ease,color .15s ease;
+  }
+  .menu-photo-form .menu-photo-trigger:hover { background:#e2eaf4; color:#172033; }
+  .menu-photo-form .menu-photo-trigger .bi { line-height:1; }
+  .menu-photo-form .menu-photo-filename {
+    display:flex; align-items:center; min-width:0; flex:1 1 auto;
+    padding:0 .7rem; color:#64748b; font-size:.82rem;
+    line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   }
   .menu-photo-form .btn { flex:0 0 auto; min-height:42px; }
   .menu-photo-form .form-text { margin-top:.45rem; line-height:1.35; }
+  @media(max-width:420px) {
+    .menu-photo-form .menu-photo-picker-row { flex-wrap:wrap; }
+    .menu-photo-form .menu-photo-picker { flex-basis:100%; }
+    .menu-photo-form .btn { width:100%; }
+  }
 </style>
 
 <div class="container py-4">
@@ -140,9 +164,13 @@
                   <label class="form-label small fw-semibold mb-1" for="productImage<?= (int)$prod['id'] ?>">
                     <?= !empty($prod['image_path']) ? 'Change photo' : 'Add menu photo' ?>
                   </label>
-                  <div class="d-flex gap-2 align-items-center">
-                    <input type="file" class="form-control form-control-sm" id="productImage<?= (int)$prod['id'] ?>" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" aria-label="Choose photo for <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" class="btn btn-sm btn-outline-primary flex-shrink-0">Save</button>
+                  <div class="menu-photo-picker-row">
+                    <div class="menu-photo-picker">
+                      <input type="file" class="menu-photo-input" id="productImage<?= (int)$prod['id'] ?>" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" aria-label="Choose photo for <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
+                      <label class="menu-photo-trigger" for="productImage<?= (int)$prod['id'] ?>"><i class="bi bi-upload" aria-hidden="true"></i> Choose File</label>
+                      <span class="menu-photo-filename" data-file-name>No file chosen</span>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
                   </div>
                   <?php if (!empty($prod['image_path'])): ?>
                     <div class="form-check mt-2">
@@ -205,5 +233,19 @@
     </div>
   <?php endif; ?>
 </div>
+
+<script>
+(() => {
+  document.querySelectorAll('.menu-photo-form .menu-photo-input').forEach(input => {
+    input.addEventListener('change', () => {
+      const label = input.closest('.menu-photo-picker')?.querySelector('[data-file-name]');
+      if (!label) return;
+      const file = input.files && input.files.length ? input.files[0] : null;
+      label.textContent = file ? file.name : 'No file chosen';
+      label.title = file ? file.name : '';
+    });
+  });
+})();
+</script>
 
 <?php include APP_ROOT . '/app/Views/layouts/footer.php'; ?>
