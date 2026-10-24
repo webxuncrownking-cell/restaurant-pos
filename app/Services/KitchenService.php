@@ -15,6 +15,42 @@ use RuntimeException;
 
 class KitchenService
 {
+    private const ITEM_TRANSITIONS = [
+        'pending' => 'preparing',
+        'preparing' => 'ready',
+        'ready' => 'served',
+    ];
+
+    public static function ensureItemStatusSchema(): void
+    {
+        $pdo = Database::getInstance();
+        $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        if ($driver === 'sqlite') {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS kitchen_item_status (
+                restaurant_id INTEGER NOT NULL,
+                order_item_id INTEGER NOT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                changed_by_user_id INTEGER NULL,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (restaurant_id, order_item_id)
+            )");
+            return;
+        }
+        $pdo->exec("CREATE TABLE IF NOT EXISTS kitchen_item_status (
+            restaurant_id INT UNSIGNED NOT NULL,
+            order_item_id INT UNSIGNED NOT NULL,
+            status ENUM('pending','preparing','ready','served') NOT NULL DEFAULT 'pending',
+            changed_by_user_id INT UNSIGNED NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (restaurant_id, order_item_id),
+            KEY idx_kitchen_item_status_queue (restaurant_id, status),
+            CONSTRAINT fk_kitchen_item_status_item FOREIGN KEY (restaurant_id, order_item_id)
+              REFERENCES order_items (restaurant_id, id) ON DELETE CASCADE,
+            CONSTRAINT fk_kitchen_item_status_user FOREIGN KEY (restaurant_id, changed_by_user_id)
+              REFERENCES users (restaurant_id, id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    }
+
     private const TRANSITIONS = [
         'pending' => 'preparing',
         'preparing' => 'ready',
@@ -108,6 +144,64 @@ class KitchenService
     /**
      * Advance a ticket by exactly one step and write an audit event atomically.
      */
+    /**
+     * Update one item without changing the order-level ticket workflow.
+     */
+    public static function updateItemStatus(int $restaurantId, int $orderId, int $itemId, string $targetStatus, int $changedByUserId): array
+    {
+        if ($restaurantId <= 0 || $orderId <= 0 || $itemId <= 0 || $changedByUserId <= 0) {
+            throw new InvalidArgumentException('A valid restaurant, order, item, and signed-in staff account are required.');
+        }
+        self::ensureItemStatusSchema();
+        $pdo = Database::getInstance();
+        $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+        try {
+            $pdo->beginTransaction();
+            $lockSuffix = $driver === 'sqlite' ? '' : ' FOR UPDATE';
+            $stmt = $pdo->prepare(
+                "SELECT oi.id, o.order_status
+                 FROM order_items oi
+                 INNER JOIN orders o ON o.id = oi.order_id AND o.restaurant_id = oi.restaurant_id
+                 WHERE oi.restaurant_id = ? AND oi.order_id = ? AND oi.id = ?" . $lockSuffix
+            );
+            $stmt->execute([$restaurantId, $orderId, $itemId]);
+            $item = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$item) throw new RuntimeException('The kitchen item could not be found for this restaurant and order.');
+            if (!in_array((string)$item['order_status'], ['pending', 'preparing', 'ready', 'served'], true)) {
+                throw new InvalidArgumentException('Items can only be updated while the order is active in the kitchen.');
+            }
+            $currentStmt = $pdo->prepare(
+                "SELECT status FROM kitchen_item_status WHERE restaurant_id = ? AND order_item_id = ?" . $lockSuffix
+            );
+            $currentStmt->execute([$restaurantId, $itemId]);
+            $currentStatus = (string)($currentStmt->fetchColumn() ?: 'pending');
+            $expectedNext = self::ITEM_TRANSITIONS[$currentStatus] ?? null;
+            if ($expectedNext === null || $targetStatus !== $expectedNext) {
+                throw new InvalidArgumentException('That item status change is not allowed. Refresh the kitchen display and use the next available action.');
+            }
+            if ($driver === 'sqlite') {
+                $upsert = $pdo->prepare(
+                    "INSERT INTO kitchen_item_status (restaurant_id, order_item_id, status, changed_by_user_id, updated_at)
+                     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                     ON CONFLICT(restaurant_id, order_item_id) DO UPDATE SET
+                       status = excluded.status, changed_by_user_id = excluded.changed_by_user_id, updated_at = CURRENT_TIMESTAMP"
+                );
+            } else {
+                $upsert = $pdo->prepare(
+                    "INSERT INTO kitchen_item_status (restaurant_id, order_item_id, status, changed_by_user_id)
+                     VALUES (?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE status = VALUES(status), changed_by_user_id = VALUES(changed_by_user_id)"
+                );
+            }
+            $upsert->execute([$restaurantId, $itemId, $targetStatus, $changedByUserId]);
+            $pdo->commit();
+            return ['order_id' => $orderId, 'item_id' => $itemId, 'from_status' => $currentStatus, 'to_status' => $targetStatus];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public static function updateTicketStatus(int $restaurantId, int $orderId, string $targetStatus, int $changedByUserId): array
     {
         if ($restaurantId <= 0 || $orderId <= 0 || $changedByUserId <= 0) {
