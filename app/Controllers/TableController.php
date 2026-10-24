@@ -14,6 +14,7 @@ use App\Core\TenantContext;
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Services\TableService;
+use App\Services\TableQrService;
 use Exception;
 
 class TableController
@@ -49,6 +50,7 @@ class TableController
         Response::render('tables/index', [
             'tables' => $tables,
             'allTables' => $allTables,
+            'qrSchemaReady' => TableQrService::schemaReady(),
             'activeOrders' => $activeOrders,
             'floorZones' => $floorZones,
             'currentZone' => $zone ?: 'all',
@@ -59,6 +61,62 @@ class TableController
                 'reserved' => $reservedCount,
                 'cleaning' => $cleaningCount,
             ]
+        ]);
+    }
+
+    /**
+     * Enable QR token storage for existing and future tables.
+     */
+    public function migrateQr(Request $request): void
+    {
+        Auth::requireAuth();
+        CSRF::validateToken($request->post('_csrf_token'));
+        if (!Auth::isPlatformAdmin() && !in_array(Auth::roleSlug(), ['owner', 'manager'], true)) {
+            Response::forbidden('Only a restaurant owner or manager can enable table QR ordering.');
+            return;
+        }
+
+        try {
+            TableQrService::ensureSchema();
+            $_SESSION['flash_success'] = 'Table QR ordering is enabled. Every active table now has its own secure QR link.';
+        } catch (Exception $e) {
+            error_log('[Table QR Setup] ' . $e);
+            $_SESSION['flash_error'] = 'Unable to enable table QR ordering. Check the PHP error log and database permissions.';
+        }
+        Response::redirect('/tables');
+    }
+
+    /**
+     * Display a table-specific QR code for printing and sharing.
+     */
+    public function qrPage(Request $request, array $params): void
+    {
+        Auth::requireAuth();
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $tableId = filter_var($params['id'] ?? null, FILTER_VALIDATE_INT);
+        if ($restaurantId <= 0 || !$tableId || $tableId < 1) {
+            Response::notFound('Dining table not found.');
+            return;
+        }
+        if (!TableQrService::schemaReady()) {
+            $_SESSION['flash_warning'] = 'Enable table QR ordering before opening a table QR code.';
+            Response::redirect('/tables');
+            return;
+        }
+
+        $table = TableQrService::getTableForManagement($restaurantId, (int)$tableId);
+        if (!$table) {
+            Response::notFound('Dining table not found or inactive.');
+            return;
+        }
+        $restaurant = TenantContext::getRestaurant();
+        $baseUrl = rtrim((string)BASE_URL, '/');
+        $defaultUrl = $baseUrl . '/order/' . rawurlencode((string)$table['qr_token']);
+        Response::render('tables/qr', [
+            'table' => $table,
+            'restaurant' => $restaurant ?? [],
+            'baseUrl' => $baseUrl,
+            'defaultUrl' => $defaultUrl
         ]);
     }
 
