@@ -103,6 +103,37 @@ class KitchenController
         Response::redirect('/kitchen');
     }
 
+    public function updateItemStatus(Request $request): void
+    {
+        $restaurantId = $this->authorizeKitchen(true);
+        if (!CSRF::validate($request->csrfToken())) {
+            Session::setFlash('danger', 'Your security token expired. Refresh the kitchen display and try again.');
+            Response::redirect('/kitchen');
+        }
+        $orderId = filter_var($request->post('order_id'), FILTER_VALIDATE_INT);
+        $itemId = filter_var($request->post('item_id'), FILTER_VALIDATE_INT);
+        $targetStatus = trim((string)$request->post('status', ''));
+        if (!$orderId || $orderId <= 0 || !$itemId || $itemId <= 0) {
+            Session::setFlash('danger', 'Select a valid kitchen item.');
+            Response::redirect('/kitchen');
+        }
+        try {
+            KitchenService::updateItemStatus($restaurantId, (int)$orderId, (int)$itemId, $targetStatus, (int)Auth::id());
+            $messages = [
+                'preparing' => 'Item moved to preparing.',
+                'ready' => 'Item marked ready.',
+                'served' => 'Item marked served.',
+            ];
+            Session::setFlash('success', $messages[$targetStatus] ?? 'Kitchen item updated.');
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            Session::setFlash('warning', $e->getMessage());
+        } catch (Throwable $e) {
+            error_log('[Kitchen Item Status] ' . $e->getMessage());
+            Session::setFlash('danger', 'Unable to update this kitchen item. Check the application log and try again.');
+        }
+        Response::redirect('/kitchen');
+    }
+
     private function authorizeKitchen(bool $forUpdate = false): int
     {
         Auth::requireLogin();
