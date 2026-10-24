@@ -79,7 +79,6 @@
   .menu-product-grid.is-list .menu-product-secondary {
     grid-area:secondary; display:flex; flex-direction:column; justify-content:center; min-width:0;
   }
-  .menu-product-grid.is-list .menu-photo-form { margin-bottom:.65rem !important; }
   .menu-product-grid.is-list .menu-product-details { margin-top:0 !important; margin-bottom:0 !important; }
   .menu-product-grid.is-list .menu-product-actions {
     grid-area:actions; display:flex; flex-direction:column; min-width:110px;
@@ -107,44 +106,6 @@
     .menu-product-grid.is-list .menu-product-title-row h5 { font-size:.92rem; }
     .menu-product-grid.is-list .menu-product-price-row .badge { white-space:normal; }
     .menu-product-grid.is-list .menu-product-actions { flex-wrap:wrap; }
-  }
-  .menu-photo-form { background:#f8fafc; border:1px solid #e7ecf3; border-radius:12px; padding:10px; }
-  .menu-photo-form .menu-photo-picker-row { display:flex; align-items:stretch; gap:.5rem; min-width:0; }
-  .menu-photo-form .menu-photo-picker {
-    display:flex; flex:1 1 0%; min-width:0; position:relative;
-    height:42px; min-height:42px; border:1px solid #d7e0eb;
-    border-radius:10px; overflow:hidden; background:#fff;
-  }
-  .menu-photo-form .menu-photo-input {
-    position:absolute !important; width:1px !important; height:1px !important;
-    padding:0 !important; margin:-1px !important; overflow:hidden !important;
-    clip:rect(0,0,0,0) !important; white-space:nowrap !important;
-    border:0 !important;
-  }
-  .menu-photo-form .menu-photo-input:focus-visible + .menu-photo-trigger {
-    outline:2px solid var(--pos-primary); outline-offset:-3px;
-  }
-  .menu-photo-form .menu-photo-trigger {
-    display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
-    flex:0 0 auto; height:100%; min-width:116px; margin:0; padding:0 .8rem;
-    border:0; border-right:1px solid #d7e0eb; border-radius:0;
-    color:#263248; background:#f1f5f9; font-size:.82rem; font-weight:650;
-    line-height:1; cursor:pointer; white-space:nowrap;
-    transition:background-color .15s ease,color .15s ease;
-  }
-  .menu-photo-form .menu-photo-trigger:hover { background:#e2eaf4; color:#172033; }
-  .menu-photo-form .menu-photo-trigger .bi { line-height:1; }
-  .menu-photo-form .menu-photo-filename {
-    display:flex; align-items:center; min-width:0; flex:1 1 auto;
-    padding:0 .7rem; color:#64748b; font-size:.82rem;
-    line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  }
-  .menu-photo-form .btn { flex:0 0 auto; min-height:42px; }
-  .menu-photo-form .form-text { margin-top:.45rem; line-height:1.35; }
-  @media(max-width:420px) {
-    .menu-photo-form .menu-photo-picker-row { flex-wrap:wrap; }
-    .menu-photo-form .menu-photo-picker { flex-basis:100%; }
-    .menu-photo-form .btn { width:100%; }
   }
 </style>
 
@@ -270,30 +231,7 @@
 
               </div>
               <div class="menu-product-secondary">
-              <?php if (!empty($product_image_column_ready)): ?>
-                <form method="POST" action="<?= BASE_URL ?>/menu/products/image" enctype="multipart/form-data" class="menu-photo-form mb-3">
-                  <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-                  <input type="hidden" name="product_id" value="<?= (int)$prod['id'] ?>">
-                  <label class="form-label small fw-semibold mb-1" for="productImage<?= (int)$prod['id'] ?>">
-                    <?= !empty($prod['image_path']) ? 'Change photo' : 'Add menu photo' ?>
-                  </label>
-                  <div class="menu-photo-picker-row">
-                    <div class="menu-photo-picker">
-                      <input type="file" class="menu-photo-input" id="productImage<?= (int)$prod['id'] ?>" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" aria-label="Choose photo for <?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
-                      <label class="menu-photo-trigger" for="productImage<?= (int)$prod['id'] ?>"><i class="bi bi-upload" aria-hidden="true"></i> Choose File</label>
-                      <span class="menu-photo-filename" data-file-name>No file chosen</span>
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
-                  </div>
-                  <?php if (!empty($prod['image_path'])): ?>
-                    <div class="form-check mt-2">
-                      <input class="form-check-input" type="checkbox" name="remove_image" value="1" id="removeProductImage<?= (int)$prod['id'] ?>">
-                      <label class="form-check-label small text-danger" for="removeProductImage<?= (int)$prod['id'] ?>">Remove photo</label>
-                    </div>
-                  <?php endif; ?>
-                  <div class="form-text">JPG, PNG, WebP · max 3 MB</div>
-                </form>
-              <?php endif; ?>
+
 
               <div class="menu-product-details mb-3 mt-auto">
                 <?php if (!empty($prod['variants'])): ?>
@@ -371,15 +309,6 @@
   applyMenuView(initialView);
   viewButtons.forEach(button => button.addEventListener('click', () => applyMenuView(button.dataset.menuView)));
 
-  document.querySelectorAll('.menu-photo-form .menu-photo-input').forEach(input => {
-    input.addEventListener('change', () => {
-      const label = input.closest('.menu-photo-picker')?.querySelector('[data-file-name]');
-      if (!label) return;
-      const file = input.files && input.files.length ? input.files[0] : null;
-      label.textContent = file ? file.name : 'No file chosen';
-      label.title = file ? file.name : '';
-    });
-  });
 })();
 </script>
 
