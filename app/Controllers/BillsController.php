@@ -29,12 +29,19 @@ class BillsController
         }
 
         $schemaReady = BillService::schemaReady();
-        Response::render('bills/index', 200, [
+        // Render directly because some existing XAMPP installations use a legacy
+        // Response::render() signature. This view includes its own header/navbar/footer.
+        $viewData = [
             'schema_ready' => $schemaReady,
             'bills' => $schemaReady ? BillService::getOpenBills($restaurantId) : [],
             'flashes' => Session::getFlashes(),
-            'title' => 'Open Bills & Split Payments - Restaurant POS'
-        ]);
+            'title' => 'Open Bills & Split Payments - Restaurant POS',
+        ];
+        http_response_code(200);
+        if (!headers_sent()) header('Content-Type: text/html; charset=utf-8');
+        extract($viewData, EXTR_SKIP);
+        require APP_ROOT . '/app/Views/bills/index.php';
+        return;
     }
 
     public function migrate(Request $request): void
