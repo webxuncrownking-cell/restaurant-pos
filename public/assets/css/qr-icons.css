@@ -1,0 +1,34 @@
+/* Lightweight offline icon fallbacks for the public QR ordering pages.
+ * Keep these symbols self-contained so the customer menu never needs a font CDN.
+ */
+.bi {
+  display:inline-block;
+  font-style:normal;
+  font-weight:700;
+  line-height:1;
+  vertical-align:-.08em;
+  min-width:1em;
+  text-align:center;
+}
+.bi::before { display:inline-block; }
+.bi-shop::before { content:"⌂"; }
+.bi-geo-alt-fill::before { content:"●"; font-size:.78em; }
+.bi-check-circle-fill::before { content:"✓"; border:2px solid currentColor; border-radius:50%; width:1.15em; height:1.15em; line-height:1em; }
+.bi-search::before { content:"⌕"; font-size:1.35em; }
+.bi-image::before { content:"▧"; font-size:1.6em; }
+.bi-plus-circle::before { content:"⊕"; font-size:1.15em; }
+.bi-basket2::before { content:"▱"; font-size:1.6em; }
+.bi-send-fill::before { content:"➤"; }
+.bi-info-circle::before { content:"ⓘ"; }
+.bi-plus-lg::before { content:"+"; font-size:1.25em; }
+.bi-chat-left-text::before { content:"▤"; }
+.bi-dash::before { content:"−"; font-size:1.2em; }
+.bi-plus::before { content:"+"; font-size:1.15em; }
+.bi-trash3::before { content:"⌫"; }
+.bi-upload::before { content:"↑"; }
+.bi-qr-code::before { content:"▦"; font-size:1.2em; }
+.bi-arrow-left::before { content:"←"; }
+.bi-copy::before { content:"▣"; }
+.bi-box-arrow-up-right::before { content:"↗"; }
+.bi-printer::before { content:"▤"; }
+.bi-shield-check::before { content:"✓"; border:1.5px solid currentColor; border-radius:45% 45% 50% 50%; width:1em; height:1.1em; }
