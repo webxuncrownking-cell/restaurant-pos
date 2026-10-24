@@ -131,6 +131,8 @@ $router->get('/tables/qr/{id}', [TableController::class, 'qrPage']);
 // Public customer ordering pages opened from unique table QR codes.
 $router->get('/order/{token}', [QROrderController::class, 'menu']);
 $router->post('/order/{token}/submit', [QROrderController::class, 'submit']);
+$router->get('/order/{token}/track/{trackingToken}', [QROrderController::class, 'trackStatus']);
+$router->get('/order/{token}/track/{trackingToken}/status.json', [QROrderController::class, 'trackStatusJson']);
 
 // Front-of-house reservations and waiting-list routes
 $router->get('/reservations', [ReservationsController::class, 'index']);
