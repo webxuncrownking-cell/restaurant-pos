@@ -12,6 +12,7 @@ $navGroups = [
     ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
     ['label' => 'Menu Management', 'route' => '/menu', 'icon' => 'bi-journal-richtext'],
     ['label' => 'Inventory', 'route' => '/inventory', 'icon' => 'bi-box-seam'],
+    ['label' => 'Suppliers & Purchase Orders', 'route' => '/procurement', 'icon' => 'bi-truck'],
     ['label' => 'Tables & Floor Plan', 'route' => '/tables', 'icon' => 'bi-grid-3x3-gap'],
     ['label' => 'Reservations & Waitlist', 'route' => '/reservations', 'icon' => 'bi-calendar2-check'],
   ],
