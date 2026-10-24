@@ -74,7 +74,7 @@ $h = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES, '
   </div>
 </div>
 
-<script src="<?= htmlspecialchars(BASE_URL . '/assets/js/qrcode.min.js?v=1', ENT_QUOTES, 'UTF-8') ?>"></script>
+<script src="<?= htmlspecialchars(BASE_URL . '/public/assets/js/qrcode.min.js?v=1', ENT_QUOTES, 'UTF-8') ?>"></script>
 <script>
 (() => {
   const baseInput = document.getElementById('qrBaseUrl');
@@ -101,7 +101,7 @@ $h = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES, '
     const target = document.getElementById('tableQrCanvas');
     target.innerHTML = '';
     if (!window.QRCode || typeof window.QRCode !== 'function') {
-      status.textContent = 'The local QR generator could not be loaded. Confirm that /assets/js/qrcode.min.js exists and refresh this page.';
+      status.textContent = 'The local QR generator could not be loaded. Confirm that /public/assets/js/qrcode.min.js exists and refresh this page.';
       return;
     }
     try {
