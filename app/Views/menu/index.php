@@ -39,6 +39,75 @@
     color:#b2bdcd;
   }
   .menu-product-photo .menu-photo-empty { font-size:2rem; color:#b2bdcd; }
+  .menu-product-grid { --bs-gutter-y: 1rem; }
+  .menu-view-toggle { border-color:#dbe3ed !important; }
+  .menu-view-toggle-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:38px; min-width:38px; height:36px; padding:.35rem !important;
+    border-radius:8px !important; line-height:1;
+  }
+  .menu-view-toggle-btn .bi { display:block; line-height:1; font-size:1rem; }
+  .menu-view-toggle-btn.active {
+    color:#fff !important; background:#2563eb !important; border-color:#2563eb !important;
+    box-shadow:0 1px 3px rgba(37,99,235,.2);
+  }
+  .menu-view-toggle-btn:not(.active):hover { color:#1d4ed8 !important; background:#eff6ff !important; border-color:#93c5fd !important; }
+  .menu-product-identity, .menu-product-secondary { display:contents; }
+  .menu-product-grid.is-list {
+    display:flex; flex-direction:column;
+    --bs-gutter-x:0; --bs-gutter-y:.85rem;
+  }
+  .menu-product-grid.is-list > .menu-product-col { width:100%; max-width:100%; flex:0 0 100%; padding-left:0; padding-right:0; }
+  .menu-product-grid.is-list .menu-product-card-body {
+    display:grid !important;
+    grid-template-columns:140px minmax(220px,1fr) minmax(260px,1.05fr) auto;
+    grid-template-areas:"photo identity secondary actions";
+    align-items:center; gap:16px;
+  }
+  .menu-product-grid.is-list .menu-product-photo {
+    grid-area:photo; width:140px; height:120px; min-height:120px; max-height:120px;
+    margin:0 !important; align-self:center;
+  }
+  .menu-product-grid.is-list .menu-product-identity {
+    grid-area:identity; display:flex; flex-direction:column; min-width:0;
+  }
+  .menu-product-grid.is-list .menu-product-price-row { gap:8px; margin-bottom:.5rem !important; }
+  .menu-product-grid.is-list .menu-product-price-row .fs-5 { font-size:1.05rem !important; }
+  .menu-product-grid.is-list .menu-product-title-row { align-items:flex-start !important; }
+  .menu-product-grid.is-list .menu-product-title-row h5 { font-size:1rem; overflow-wrap:anywhere; }
+  .menu-product-grid.is-list .menu-product-sku { margin-bottom:0 !important; overflow-wrap:anywhere; }
+  .menu-product-grid.is-list .menu-product-secondary {
+    grid-area:secondary; display:flex; flex-direction:column; justify-content:center; min-width:0;
+  }
+  .menu-product-grid.is-list .menu-photo-form { margin-bottom:.65rem !important; }
+  .menu-product-grid.is-list .menu-product-details { margin-top:0 !important; margin-bottom:0 !important; }
+  .menu-product-grid.is-list .menu-product-actions {
+    grid-area:actions; display:flex; flex-direction:column; min-width:110px;
+    border-top:0 !important; padding-top:0 !important; align-self:center;
+  }
+  .menu-product-grid.is-list .menu-product-actions > a,
+  .menu-product-grid.is-list .menu-product-actions > form,
+  .menu-product-grid.is-list .menu-product-actions > form .btn { width:100%; }
+  @media(max-width:1100px) {
+    .menu-product-grid.is-list .menu-product-card-body {
+      grid-template-columns:120px minmax(0,1fr);
+      grid-template-areas:"photo identity" "secondary secondary" "actions actions";
+      align-items:start; gap:12px;
+    }
+    .menu-product-grid.is-list .menu-product-photo { width:120px; height:110px; min-height:110px; max-height:110px; }
+    .menu-product-grid.is-list .menu-product-actions { flex-direction:row; align-self:stretch; min-width:0; border-top:1px solid #e2e8f0 !important; padding-top:.75rem !important; }
+    .menu-product-grid.is-list .menu-product-actions > a { width:auto; }
+    .menu-product-grid.is-list .menu-product-actions > a:first-child { flex:1 1 auto; }
+    .menu-product-grid.is-list .menu-product-actions > form { width:auto; }
+    .menu-product-grid.is-list .menu-product-actions > form .btn { width:auto; }
+  }
+  @media(max-width:560px) {
+    .menu-product-grid.is-list .menu-product-card-body { grid-template-columns:88px minmax(0,1fr); gap:10px; padding:.75rem !important; }
+    .menu-product-grid.is-list .menu-product-photo { width:88px; height:88px; min-height:88px; max-height:88px; }
+    .menu-product-grid.is-list .menu-product-title-row h5 { font-size:.92rem; }
+    .menu-product-grid.is-list .menu-product-price-row .badge { white-space:normal; }
+    .menu-product-grid.is-list .menu-product-actions { flex-wrap:wrap; }
+  }
   .menu-photo-form { background:#f8fafc; border:1px solid #e7ecf3; border-radius:12px; padding:10px; }
   .menu-photo-form .menu-photo-picker-row { display:flex; align-items:stretch; gap:.5rem; min-width:0; }
   .menu-photo-form .menu-photo-picker {
@@ -281,6 +350,27 @@
 
 <script>
 (() => {
+  const productGrid = document.getElementById('menuProductGrid');
+  const viewButtons = Array.from(document.querySelectorAll('[data-menu-view]'));
+  const viewStorageKey = 'restaurantPosMenuView';
+  const applyMenuView = mode => {
+    const selectedMode = mode === 'list' ? 'list' : 'grid';
+    if (productGrid) productGrid.classList.toggle('is-list', selectedMode === 'list');
+    viewButtons.forEach(button => {
+      const active = button.dataset.menuView === selectedMode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    try { localStorage.setItem(viewStorageKey, selectedMode); } catch (error) { /* Storage may be disabled. */ }
+  };
+  let initialView = 'grid';
+  try {
+    const savedView = localStorage.getItem(viewStorageKey);
+    if (savedView === 'list' || savedView === 'grid') initialView = savedView;
+  } catch (error) { /* Default to grid when storage is unavailable. */ }
+  applyMenuView(initialView);
+  viewButtons.forEach(button => button.addEventListener('click', () => applyMenuView(button.dataset.menuView)));
+
   document.querySelectorAll('.menu-photo-form .menu-photo-input').forEach(input => {
     input.addEventListener('change', () => {
       const label = input.closest('.menu-photo-picker')?.querySelector('[data-file-name]');
