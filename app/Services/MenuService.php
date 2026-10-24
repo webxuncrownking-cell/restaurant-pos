@@ -57,7 +57,10 @@ class MenuService
 
         // Enrich with variants and estimated food cost
         foreach ($products as &$prod) {
-            $prod['variants'] = self::getProductVariants($restaurantId, (int)$prod['id']);
+            $prod['variants'] = array_values(array_filter(
+                self::getProductVariants($restaurantId, (int)$prod['id']),
+                static fn(array $variant): bool => !empty($variant['is_active'])
+            ));
             $prod['addon_groups'] = self::getProductAddonGroups($restaurantId, (int)$prod['id']);
             $costInfo = self::calculateProductCost($restaurantId, (int)$prod['id'], null);
             $prod['base_cost'] = $costInfo['total_cost'];
