@@ -52,7 +52,7 @@ class Response
     /**
      * Backwards-compatible alias for controllers using Response::view().
      */
-    public static function view(string $viewPath, array|int $data = [], string|array $layout = 'app', int|string|array $status = 200): void
+    public static function view(string $viewPath, array|int $data = [], string|array|int $layout = 'app', int|string|array $status = 200): void
     {
         self::render($viewPath, $data, $layout, $status);
     }
@@ -68,7 +68,7 @@ class Response
     public static function render(
         string $viewPath,
         array|int $data = [],
-        string|array $layout = 'app',
+        string|array|int $layout = 'app',
         int|string|array $status = 200
     ): void {
         if (is_int($data)) {
@@ -79,11 +79,13 @@ class Response
             $data = $legacyData;
             $layout = $legacyLayout;
             $status = $legacyStatus;
-        } elseif (is_array($layout)) {
+        } elseif (is_int($layout)) {
             // Also accept render($viewPath, $data, $legacyStatus).
-            $legacyStatus = is_int($status) ? $status : 200;
+            $status = $layout;
             $layout = 'app';
-            $status = $legacyStatus;
+        } elseif (is_array($layout)) {
+            // Invalid layout values fall back safely without affecting the data.
+            $layout = 'app';
         }
 
         if (!is_array($data)) $data = [];
