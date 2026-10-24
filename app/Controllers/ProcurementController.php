@@ -39,9 +39,7 @@ class ProcurementController
             'purchaseOrders' => $ready ? SupplierPurchaseService::getPurchaseOrders($restaurantId) : [],
             'canManage' => Auth::can('inventory.stock_in'),
             'csrf_token' => CSRF::generate(),
-            'flash_success' => Session::getFlash('success'),
-            'flash_error' => Session::getFlash('danger'),
-            'flash_warning' => Session::getFlash('warning')
+            'flashes' => Session::getFlashes()
         ]);
     }
 
