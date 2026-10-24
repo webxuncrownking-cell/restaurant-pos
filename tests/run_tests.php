@@ -1424,6 +1424,11 @@ assertTest(
         && is_file(APP_ROOT . '/public/assets/css/qr-icons.css')
         && !str_contains((string)file_get_contents(APP_ROOT . '/app/Views/qr_order/menu.php'), 'cdn.jsdelivr.net')
 );
+assertTest(
+    "POS UUID Generation Works on Plain HTTP LAN Browsers",
+    str_contains((string)file_get_contents(APP_ROOT . '/app/Views/pos/terminal.php'), 'function generateClientUuid()')
+        && str_contains((string)file_get_contents(APP_ROOT . '/app/Views/pos/terminal.php'), 'window.crypto.getRandomValues(bytes)')
+);
 \App\Services\TableQrService::ensureSchema();
 $qrTestTableId = \App\Services\TableService::createTable(1, [
     'table_number' => 'QRTEST-' . date('His'),
