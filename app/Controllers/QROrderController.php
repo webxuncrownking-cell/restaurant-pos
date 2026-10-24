@@ -175,6 +175,64 @@ class QROrderController
         }
     }
 
+    /**
+     * Customer-facing order progress page. The tracking token is separate from
+     * the table QR token and only grants access to one order.
+     */
+    public function trackStatus(Request $request, array $params): void
+    {
+        $tableToken = strtolower(trim((string)($params['token'] ?? '')));
+        $trackingToken = strtolower(trim((string)($params['trackingToken'] ?? '')));
+        $table = TableQrService::getTableByToken($tableToken);
+        if (!$table) {
+            Response::notFound('This table QR link is invalid or no longer active.');
+            return;
+        }
+        $order = QROrderTrackingService::getTrackedOrder(
+            (int)$table['restaurant_id'],
+            (int)$table['table_id'],
+            $trackingToken
+        );
+        if (!$order) {
+            Response::notFound('This customer tracking link is invalid or has expired.');
+            return;
+        }
+
+        Response::render('qr_order/status', [
+            'table' => $table,
+            'order' => $order,
+            'statusSnapshot' => QROrderTrackingService::publicStatusSnapshot($order),
+            'trackingToken' => $trackingToken,
+            'statusJsonUrl' => BASE_URL . '/order/' . rawurlencode($tableToken) . '/track/' . rawurlencode($trackingToken) . '/status.json',
+            'menuUrl' => BASE_URL . '/order/' . rawurlencode($tableToken)
+        ], 'none');
+    }
+
+    /**
+     * Read-only status endpoint polled by the guest's status page.
+     */
+    public function trackStatusJson(Request $request, array $params): void
+    {
+        $tableToken = strtolower(trim((string)($params['token'] ?? '')));
+        $trackingToken = strtolower(trim((string)($params['trackingToken'] ?? '')));
+        $table = TableQrService::getTableByToken($tableToken);
+        if (!$table) {
+            Response::json(['ok' => false, 'message' => 'Table link is no longer active.'], 404);
+        }
+        $order = QROrderTrackingService::getTrackedOrder(
+            (int)$table['restaurant_id'],
+            (int)$table['table_id'],
+            $trackingToken
+        );
+        if (!$order) {
+            Response::json(['ok' => false, 'message' => 'Tracking link is invalid.'], 404);
+        }
+        Response::json([
+            'ok' => true,
+            'status' => QROrderTrackingService::publicStatusSnapshot($order)
+        ]);
+    }
+
     private function renderMenuPage(Request $request, string $token, array $table): void
     {
         $restaurantId = (int)$table['restaurant_id'];
