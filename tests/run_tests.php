@@ -1177,6 +1177,12 @@ $poTestId = \App\Services\SupplierPurchaseService::createPurchaseOrder(
     ]],
     'Automated purchase order receipt test'
 );
+$poTestLine = Database::fetchOne(
+    "SELECT id FROM purchase_order_items WHERE restaurant_id = 1 AND purchase_order_id = ? ORDER BY id ASC LIMIT 1",
+    [$poTestId]
+);
+$poTestBatchCode = 'EXP-TEST-' . date('His');
+$poTestExpiryDate = date('Y-m-d', strtotime('+10 days'));
 $poDraft = Database::fetchOne(
     "SELECT status, total_amount FROM purchase_orders WHERE restaurant_id = 1 AND id = ?",
     [$poTestId]
@@ -1194,7 +1200,12 @@ assertTest(
 );
 
 \App\Services\SupplierPurchaseService::updateOrderStatus(1, $poTestId, 'ordered');
-\App\Services\SupplierPurchaseService::receivePurchaseOrder(1, $poTestId, 1);
+\App\Services\SupplierPurchaseService::receivePurchaseOrder(
+    1,
+    $poTestId,
+    1,
+    [(string)$poTestLine['id'] => ['batch_code' => $poTestBatchCode, 'expiry_date' => $poTestExpiryDate]]
+);
 $poReceived = Database::fetchOne(
     "SELECT status, received_at FROM purchase_orders WHERE restaurant_id = 1 AND id = ?",
     [$poTestId]
@@ -1202,6 +1213,12 @@ $poReceived = Database::fetchOne(
 $poStockAfterReceipt = Database::fetchOne(
     "SELECT current_stock, cost_per_base_unit FROM ingredients WHERE restaurant_id = 1 AND id = ?",
     [(int)$poTestIngredient['id']]
+);
+$poReceivedBatch = Database::fetchOne(
+    "SELECT id, batch_code, expiry_date, remaining_quantity
+     FROM ingredient_batches
+     WHERE restaurant_id = 1 AND purchase_order_id = ? AND purchase_order_item_id = ?",
+    [$poTestId, (int)$poTestLine['id']]
 );
 $poReceiptMovements = Database::fetchOne(
     "SELECT COUNT(*) AS total, COALESCE(SUM(quantity_change), 0) AS quantity_added
@@ -1219,6 +1236,10 @@ assertTest(
         && abs((float)$poStockAfterReceipt['cost_per_base_unit'] - $poUnitCost) < 0.0001
         && (int)$poReceiptMovements['total'] === 1
         && abs((float)$poReceiptMovements['quantity_added'] - $poQuantity) < 0.0001
+        && $poReceivedBatch !== null
+        && $poReceivedBatch['batch_code'] === $poTestBatchCode
+        && $poReceivedBatch['expiry_date'] === $poTestExpiryDate
+        && abs((float)$poReceivedBatch['remaining_quantity'] - $poQuantity) < 0.0001
 );
 
 $duplicateReceiveRejected = false;
@@ -1244,15 +1265,76 @@ assertTest(
         && $poMovementCountAfterDuplicate === 1
 );
 
+\App\Services\InventoryService::recordMovement(
+    1,
+    (int)$poTestIngredient['id'],
+    'order_sale',
+    1.0,
+    (string)$poTestIngredient['base_unit'],
+    null,
+    987654321,
+    'Test expiry batch FEFO sale',
+    1
+);
+$batchAfterSale = Database::fetchOne(
+    "SELECT remaining_quantity FROM ingredient_batches WHERE restaurant_id = 1 AND id = ?",
+    [(int)$poReceivedBatch['id']]
+);
+assertTest(
+    "FEFO Sale Deducts Earliest-Expiry Batch Quantity",
+    $batchAfterSale !== null && abs((float)$batchAfterSale['remaining_quantity'] - 2.0) < 0.0001
+);
+
+$wasteResult = \App\Services\ExpiryWasteService::recordWaste(
+    1,
+    (int)$poReceivedBatch['id'],
+    1,
+    0.5,
+    'spoiled',
+    'Automated expiry/waste integration test'
+);
+$batchAfterWaste = Database::fetchOne(
+    "SELECT remaining_quantity FROM ingredient_batches WHERE restaurant_id = 1 AND id = ?",
+    [(int)$poReceivedBatch['id']]
+);
+$stockAfterWaste = Database::fetchOne(
+    "SELECT current_stock FROM ingredients WHERE restaurant_id = 1 AND id = ?",
+    [(int)$poTestIngredient['id']]
+);
+$wasteLedgerRow = Database::fetchOne(
+    "SELECT quantity_base, total_cost FROM ingredient_waste_records WHERE restaurant_id = 1 AND id = ?",
+    [(int)$wasteResult['waste_id']]
+);
+assertTest(
+    "Recording Wastage Reduces Batch and Ingredient Stock and Captures Cost",
+    abs((float)$batchAfterWaste['remaining_quantity'] - 1.5) < 0.0001
+        && abs((float)$stockAfterWaste['current_stock'] - ($poInitialStock + 1.5)) < 0.0001
+        && abs((float)$wasteLedgerRow['quantity_base'] - 0.5) < 0.0001
+        && abs((float)$wasteLedgerRow['total_cost'] - 0.28) < 0.011
+        && $wasteResult['total_cost'] >= 0
+);
+
 // Restore test ingredient values and remove only rows created by this test.
 Database::query(
     "UPDATE ingredients SET current_stock = ?, cost_per_base_unit = ? WHERE restaurant_id = 1 AND id = ?",
     [$poInitialStock, $poInitialCost, (int)$poTestIngredient['id']]
 );
+Database::query("DELETE FROM ingredient_waste_records WHERE restaurant_id = 1 AND batch_id = ?", [(int)$poReceivedBatch['id']]);
+Database::query("DELETE FROM ingredient_batches WHERE restaurant_id = 1 AND id = ?", [(int)$poReceivedBatch['id']]);
+Database::query(
+    "DELETE FROM inventory_movements WHERE restaurant_id = 1 AND ingredient_id = ? AND reference_type = 'order_sale'
+     AND reference_id = ? AND notes = ?",
+    [(int)$poTestIngredient['id'], 987654321, 'Test expiry batch FEFO sale']
+);
 Database::query(
     "DELETE FROM inventory_movements WHERE restaurant_id = 1 AND reference_type = 'purchase_receipt'
      AND reference_id = ? AND notes LIKE ?",
     [$poTestId, 'PO %: % received']
+);
+Database::query(
+    "DELETE FROM inventory_movements WHERE restaurant_id = 1 AND reference_type = 'spoilage_waste'
+     AND reference_id = ? AND notes LIKE ?",
+    [(int)$poReceivedBatch['id'], 'Batch %Automated expiry/waste integration test']
 );
 Database::query("DELETE FROM purchase_order_items WHERE restaurant_id = 1 AND purchase_order_id = ?", [$poTestId]);
 Database::query("DELETE FROM purchase_orders WHERE restaurant_id = 1 AND id = ?", [$poTestId]);
