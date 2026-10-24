@@ -41,6 +41,7 @@ use App\Controllers\InventoryController;
 use App\Controllers\ExpiryWasteController;
 use App\Controllers\ProcurementController;
 use App\Controllers\TableController;
+use App\Controllers\QROrderController;
 use App\Controllers\DeviceController;
 use App\Controllers\ShiftController;
 use App\Controllers\PosController;
@@ -124,6 +125,12 @@ $router->post('/tables/status', [TableController::class, 'updateStatus']);
 $router->post('/tables/transfer', [TableController::class, 'transferOrder']);
 $router->post('/tables/merge', [TableController::class, 'mergeOrders']);
 $router->post('/tables/delete', [TableController::class, 'delete']);
+$router->post('/tables/qr/migrate', [TableController::class, 'migrateQr']);
+$router->get('/tables/qr/{id}', [TableController::class, 'qrPage']);
+
+// Public customer ordering pages opened from unique table QR codes.
+$router->get('/order/{token}', [QROrderController::class, 'menu']);
+$router->post('/order/{token}/submit', [QROrderController::class, 'submit']);
 
 // Front-of-house reservations and waiting-list routes
 $router->get('/reservations', [ReservationsController::class, 'index']);
