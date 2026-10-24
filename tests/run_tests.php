@@ -1387,6 +1387,36 @@ assertTest(
 $shiftReconciliation = \App\Services\ReportService::getShiftReconciliation(1, date('Y-01-01'), date('Y-12-31'));
 assertTest("Cashier Shift Reconciliation Report Query Executed", is_array($shiftReconciliation));
 
+echo PHP_EOL . "20a. Testing QR Table Ordering Tokens:" . PHP_EOL;
+\App\Services\TableQrService::ensureSchema();
+$qrTestTableId = \App\Services\TableService::createTable(1, [
+    'table_number' => 'QRTEST-' . date('His'),
+    'name' => 'QR Test Table',
+    'capacity' => 2,
+    'floor_zone' => 'Test Zone',
+    'status' => 'available'
+]);
+$qrManagementTable = \App\Services\TableQrService::getTableForManagement(1, $qrTestTableId);
+$qrResolvedTable = $qrManagementTable
+    ? \App\Services\TableQrService::getTableByToken((string)$qrManagementTable['qr_token'])
+    : null;
+assertTest(
+    "New Dining Table Receives a 64-Character Secure QR Token",
+    $qrManagementTable !== null
+        && preg_match('/^[a-f0-9]{64}$/', (string)$qrManagementTable['qr_token']) === 1
+);
+assertTest(
+    "Table QR Token Resolves to the Same Restaurant and Table",
+    $qrResolvedTable !== null
+        && (int)$qrResolvedTable['restaurant_id'] === 1
+        && (int)$qrResolvedTable['table_id'] === $qrTestTableId
+);
+assertTest(
+    "Malformed Table QR Tokens Are Rejected",
+    \App\Services\TableQrService::getTableByToken(str_repeat('z', 64)) === null
+);
+Database::query("DELETE FROM restaurant_tables WHERE restaurant_id = 1 AND id = ?", [$qrTestTableId]);
+
 $sub = \App\Services\BillingService::getCurrentSubscription(1);
 assertTest("Active Restaurant Subscription Retrieved", $sub && !empty($sub['plan_name']));
 
