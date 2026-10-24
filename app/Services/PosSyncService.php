@@ -547,11 +547,11 @@ class PosSyncService
                 "INSERT INTO orders (
                     restaurant_id, client_uuid, device_id, shift_id, order_number, order_type, table_id, cashier_id,
                     order_status, payment_status, subtotal, discount_amount, tax_amount, total_amount, paid_amount,
-                    change_amount, is_offline_sync, offline_lease_id, device_sequence_number, catalog_version_id,
+                    change_amount, notes, is_offline_sync, offline_lease_id, device_sequence_number, catalog_version_id,
                     canonical_payload_hash, offline_reconciliation_status, client_reported_at, server_received_at,
                     synced_at, created_at
                  ) VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW()
+                    ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW()
                  )",
                 [
                     $restaurantId,
@@ -569,6 +569,7 @@ class PosSyncService
                     $totalAmount,
                     $paidAmount,
                     $changeAmount,
+                    $orderNotes !== '' ? $orderNotes : null,
                     $isOfflineSync,
                     $offlineLeaseId,
                     $sequenceNumber,
@@ -591,8 +592,8 @@ class PosSyncService
                 Database::query(
                     "INSERT INTO order_items (
                         restaurant_id, order_id, product_id, variant_id, product_name, variant_name, quantity,
-                        unit_price, cost_price, tax_rate, discount_amount, subtotal, recipe_snapshot_json
-                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, ?, ?)",
+                        unit_price, cost_price, tax_rate, discount_amount, subtotal, recipe_snapshot_json, special_instructions
+                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0.00, ?, ?, ?)",
                     [
                         $restaurantId,
                         $orderId,
@@ -605,7 +606,8 @@ class PosSyncService
                         $item['cost_price'],
                         $item['tax_rate'],
                         $item['subtotal'],
-                        $item['recipe_snapshot_json']
+                        $item['recipe_snapshot_json'],
+                        $item['special_instructions']
                     ]
                 );
                 $orderItemId = (int)Database::lastInsertId();
