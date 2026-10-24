@@ -67,7 +67,7 @@ $h = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES, '
             <p class="text-muted text-center small mb-0">Browse the menu and send your order to our kitchen.</p>
             <div class="fw-bold mt-2"><?= $h($table['name']) ?> · Table <?= $h($table['table_number']) ?></div>
           </div>
-          <p class="text-muted small mt-3 mb-0"><i class="bi bi-shield-check me-1"></i>This QR code is unique to this table. If a printed code is shared outside the restaurant, regenerate it by applying a new QR token from your table settings or ask an administrator.</p>
+          <p class="text-muted small mt-3 mb-0"><i class="bi bi-shield-check me-1"></i>This QR code is unique to this table. Display the printed code at the assigned table so guests order to the correct location.</p>
         </div>
       </section>
     </div>
