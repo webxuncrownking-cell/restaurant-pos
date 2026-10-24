@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#2563eb">
   <title>Order at <?= htmlspecialchars((string)$table['restaurant_name'], ENT_QUOTES, 'UTF-8') ?></title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="<?= htmlspecialchars(BASE_URL . '/public/assets/css/bootstrap.min.css', ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+  <link href="<?= htmlspecialchars(BASE_URL . '/public/assets/css/qr-icons.css', ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
   <style>
     :root { --qr-blue:#2563eb; --qr-ink:#172033; --qr-muted:#66758b; --qr-border:#e3eaf3; }
     body { background:#f4f7fb; color:var(--qr-ink); font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
@@ -213,7 +213,7 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?= htmlspecialchars(BASE_URL . '/public/assets/js/bootstrap.bundle.min.js', ENT_QUOTES, 'UTF-8') ?>"></script>
 <script>
 (() => {
   const products = <?= json_encode($products, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
@@ -382,6 +382,14 @@
     })));
   });
 })();
+</script>
+<script>
+  // Cache the local app shell on this phone after the first successful visit.
+  // QR order submissions still require the restaurant's local server to be reachable.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('<?= BASE_URL ?>/sw.js', { scope: '<?= BASE_URL ?>/' })
+      .catch(error => console.warn('[QR Offline] Service worker registration failed:', error));
+  }
 </script>
 </body>
 </html>
