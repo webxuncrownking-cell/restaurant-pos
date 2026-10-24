@@ -38,6 +38,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\InstallController;
 use App\Controllers\MenuController;
 use App\Controllers\InventoryController;
+use App\Controllers\ExpiryWasteController;
 use App\Controllers\ProcurementController;
 use App\Controllers\TableController;
 use App\Controllers\DeviceController;
@@ -102,6 +103,11 @@ $router->get('/inventory/ledger', [InventoryController::class, 'ledger']);
 
 // Supplier and purchase order management
 $router->get('/procurement', [ProcurementController::class, 'index']);
+
+// Ingredient expiry tracking and wastage accounting
+$router->get('/expiry', [ExpiryWasteController::class, 'index']);
+$router->post('/expiry/migrate', [ExpiryWasteController::class, 'migrate']);
+$router->post('/expiry/waste', [ExpiryWasteController::class, 'recordWaste']);
 $router->post('/procurement/migrate', [ProcurementController::class, 'migrate']);
 $router->post('/procurement/suppliers/create', [ProcurementController::class, 'createSupplier']);
 $router->post('/procurement/suppliers/status', [ProcurementController::class, 'toggleSupplier']);
