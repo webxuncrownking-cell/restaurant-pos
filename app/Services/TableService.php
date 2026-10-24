@@ -94,17 +94,31 @@ class TableService
             throw new InvalidArgumentException("Table number '{$tableNumber}' already exists in this restaurant.");
         }
 
-        $sql = "INSERT INTO restaurant_tables (restaurant_id, table_number, name, capacity, floor_zone, status, is_active)
-                VALUES (:restaurant_id, :table_number, :name, :capacity, :floor_zone, :status, 1)";
-        
-        Database::query($sql, [
-            ':restaurant_id' => $restaurantId,
-            ':table_number' => $tableNumber,
-            ':name' => $name,
-            ':capacity' => $capacity,
-            ':floor_zone' => $floorZone,
-            ':status' => in_array($status, ['available', 'occupied', 'reserved', 'cleaning']) ? $status : 'available'
-        ]);
+        $status = in_array($status, ['available', 'occupied', 'reserved', 'cleaning'], true) ? $status : 'available';
+        if (TableQrService::schemaReady()) {
+            $sql = "INSERT INTO restaurant_tables (restaurant_id, table_number, qr_token, name, capacity, floor_zone, status, is_active)
+                    VALUES (:restaurant_id, :table_number, :qr_token, :name, :capacity, :floor_zone, :status, 1)";
+            Database::query($sql, [
+                ':restaurant_id' => $restaurantId,
+                ':table_number' => $tableNumber,
+                ':qr_token' => TableQrService::generateToken(),
+                ':name' => $name,
+                ':capacity' => $capacity,
+                ':floor_zone' => $floorZone,
+                ':status' => $status
+            ]);
+        } else {
+            $sql = "INSERT INTO restaurant_tables (restaurant_id, table_number, name, capacity, floor_zone, status, is_active)
+                    VALUES (:restaurant_id, :table_number, :name, :capacity, :floor_zone, :status, 1)";
+            Database::query($sql, [
+                ':restaurant_id' => $restaurantId,
+                ':table_number' => $tableNumber,
+                ':name' => $name,
+                ':capacity' => $capacity,
+                ':floor_zone' => $floorZone,
+                ':status' => $status
+            ]);
+        }
 
         return (int)Database::lastInsertId();
     }
