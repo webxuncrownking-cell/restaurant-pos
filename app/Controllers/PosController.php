@@ -18,6 +18,7 @@ use App\Services\ShiftService;
 use App\Services\DeviceService;
 use App\Services\TableService;
 use App\Services\MenuService;
+use Exception;
 
 class PosController
 {
