@@ -324,22 +324,42 @@ class ExpiryWasteService
      * Consume the tracked part of a stock-sale movement, earliest expiry first.
      * Legacy/unbatched stock remains consumable; only lot balances are adjusted.
      */
-    public static function consumeTrackedBatchesForSale(int $restaurantId, int $ingredientId, float $quantityBase): void
-    {
+    public static function consumeTrackedBatchesForSale(
+        int $restaurantId,
+        int $ingredientId,
+        float $quantityBase,
+        float $stockBefore
+    ): void {
         if ($quantityBase <= 0 || !self::schemaReady()) return;
         $pdo = Database::getConnection();
         $suffix = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite' ? '' : ' FOR UPDATE';
         $stmt = $pdo->prepare(
-            "SELECT id, remaining_quantity FROM ingredient_batches
+            "SELECT id, remaining_quantity, expiry_date FROM ingredient_batches
              WHERE restaurant_id = ? AND ingredient_id = ? AND remaining_quantity > 0
              ORDER BY CASE WHEN expiry_date IS NULL THEN 1 ELSE 0 END, expiry_date ASC, received_at ASC, id ASC" . $suffix
         );
         $stmt->execute([$restaurantId, $ingredientId]);
         $batches = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $remainingToConsume = round($quantityBase, 4);
+        $totalTracked = 0.0;
+        $eligible = [];
+        $today = date('Y-m-d');
         foreach ($batches as $batch) {
+            $available = max(0.0, round((float)$batch['remaining_quantity'], 4));
+            $totalTracked += $available;
+            // Never issue stock from an expired lot into a new order.
+            if (empty($batch['expiry_date']) || (string)$batch['expiry_date'] >= $today) {
+                $eligible[] = $batch;
+            }
+        }
+
+        // Stock predating lot tracking (or added by a manual adjustment) remains
+        // usable as unbatched stock. Once that cushion is exhausted, sales must
+        // not consume expired lots; record them as wastage first.
+        $untrackedAvailable = max(0.0, round($stockBefore - $totalTracked, 4));
+        $remainingToConsume = round($quantityBase, 4);
+        foreach ($eligible as $batch) {
             if ($remainingToConsume <= 0.00009) break;
-            $available = round((float)$batch['remaining_quantity'], 4);
+            $available = max(0.0, round((float)$batch['remaining_quantity'], 4));
             $deduct = min($available, $remainingToConsume);
             if ($deduct <= 0) continue;
             Database::query(
@@ -348,6 +368,12 @@ class ExpiryWasteService
                 [$deduct, $restaurantId, (int)$batch['id'], $deduct]
             );
             $remainingToConsume = round($remainingToConsume - $deduct, 4);
+        }
+
+        if ($remainingToConsume - $untrackedAvailable > 0.00009) {
+            throw new InvalidArgumentException(
+                'This ingredient only has expired tracked batches remaining. Record the expired stock as wastage before selling more.'
+            );
         }
     }
 }
