@@ -18,7 +18,6 @@ use App\Services\ShiftService;
 use App\Services\DeviceService;
 use App\Services\TableService;
 use App\Services\MenuService;
-use Exception;
 
 class PosController
 {
@@ -87,19 +86,22 @@ class PosController
         }
 
         try {
-            // Check if batch of orders or single order
+            // Process queued orders independently. A single invalid order must not
+            // prevent later orders from syncing successfully.
             if (isset($payload['orders']) && is_array($payload['orders'])) {
-                $results = [];
-                foreach ($payload['orders'] as $orderData) {
-                    $results[] = PosSyncService::processOrderSync($restaurantId, $orderData);
+                if (count($payload['orders']) > 100) {
+                    Response::json(['error' => 'Sync batches may contain at most 100 orders.'], 413);
+                    return;
                 }
-                Response::json(['status' => 'success', 'results' => $results]);
-            } else {
-                $res = PosSyncService::processOrderSync($restaurantId, $payload);
-                Response::json(['status' => 'success', 'result' => $res]);
+                Response::json(PosSyncService::processOrderSyncBatch($restaurantId, array_values($payload['orders'])));
+                return;
             }
-        } catch (Exception $e) {
-            Response::json(['error' => $e->getMessage()], 500);
+
+            $res = PosSyncService::processOrderSync($restaurantId, $payload);
+            Response::json(['status' => 'success', 'result' => $res]);
+        } catch (\Throwable $e) {
+            error_log('[POS Sync API] Request failed: ' . $e);
+            Response::json(['error' => 'Unable to process this sync request. Check the server log and retry.'], 500);
         }
     }
 }
