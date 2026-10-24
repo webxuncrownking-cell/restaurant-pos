@@ -19,25 +19,37 @@ const BOOTSTRAP_JS_URL = appUrl('/public/assets/js/bootstrap.bundle.min.js');
 const QR_ICONS_URL = appUrl('/public/assets/css/qr-icons.css');
 const QR_CODE_URL = appUrl('/public/assets/js/qrcode.min.js');
 
-const PRECACHE_URLS = [
+const LOCAL_PRECACHE_URLS = [
   POS_URL,
   POS_DB_URL,
   FAVICON_URL,
   BOOTSTRAP_CSS_URL,
   BOOTSTRAP_JS_URL,
   QR_ICONS_URL,
-  QR_CODE_URL,
-  // Keep the shared management icon font cached for the existing admin screens.
-  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
+  QR_CODE_URL
+];
+const OPTIONAL_REMOTE_ASSETS = [
+  // Used only by the authenticated management chrome; the public QR menu is fully local.
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/fonts/bootstrap-icons.woff2'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(async (cache) => {
+        // Required app assets are same-origin. A missing CDN must not abort core offline setup.
+        await cache.addAll(LOCAL_PRECACHE_URLS);
+        await Promise.all(OPTIONAL_REMOTE_ASSETS.map(async (url) => {
+          try {
+            await cache.add(url);
+          } catch (error) {
+            console.warn('[ServiceWorker] Optional icon asset was not cached:', url, error);
+          }
+        }));
+      })
       .catch((error) => {
-        // Keep installation possible when a CDN is temporarily unavailable.
-        console.warn('[ServiceWorker] Some assets could not be pre-cached:', error);
+        console.warn('[ServiceWorker] Local app shell pre-cache failed:', error);
       })
       .then(() => self.skipWaiting())
   );
