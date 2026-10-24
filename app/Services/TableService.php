@@ -18,6 +18,8 @@ class TableService
      */
     public static function getTables(int $restaurantId, ?string $floorZone = null, bool $includeDeleted = false): array
     {
+        self::synchronizeOccupancy($restaurantId);
+
         $sql = "SELECT id, restaurant_id, table_number, name, capacity, floor_zone, status, is_active, deleted_at 
                 FROM restaurant_tables 
                 WHERE restaurant_id = :restaurant_id";
@@ -63,6 +65,7 @@ class TableService
      */
     public static function getTableById(int $restaurantId, int $tableId): ?array
     {
+        self::synchronizeOccupancy($restaurantId);
         $sql = "SELECT * FROM restaurant_tables WHERE restaurant_id = :restaurant_id AND id = :id AND deleted_at IS NULL";
         return Database::fetchOne($sql, [':restaurant_id' => $restaurantId, ':id' => $tableId]);
     }
@@ -158,6 +161,21 @@ class TableService
     {
         if (!in_array($status, ['available', 'occupied', 'reserved', 'cleaning'])) {
             throw new InvalidArgumentException('Invalid table status.');
+        }
+
+        self::synchronizeOccupancy($restaurantId);
+        if ($status !== 'occupied') {
+            $activeOrder = Database::fetchOne(
+                "SELECT id FROM orders
+                 WHERE restaurant_id = ? AND table_id = ?
+                   AND order_type = 'dine_in'
+                   AND order_status IN ('pending','preparing','ready','served')
+                 LIMIT 1",
+                [$restaurantId, $tableId]
+            );
+            if ($activeOrder) {
+                throw new InvalidArgumentException('This table has an active dine-in order and must remain occupied until the kitchen completes it.');
+            }
         }
 
         $sql = "UPDATE restaurant_tables SET status = :status WHERE restaurant_id = :restaurant_id AND id = :id AND deleted_at IS NULL";
@@ -445,6 +463,34 @@ class TableService
             if ($pdo->inTransaction()) $pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Reconcile persisted table state with active dine-in tickets.
+     *
+     * This fixes legacy orders that were saved before table occupancy was
+     * synchronized. Active tickets are authoritative; table reads and
+     * floor-plan views must never advertise those tables as available.
+     */
+    private static function synchronizeOccupancy(int $restaurantId): void
+    {
+        if ($restaurantId <= 0) return;
+
+        Database::query(
+            "UPDATE restaurant_tables
+             SET status = 'occupied'
+             WHERE restaurant_id = ?
+               AND deleted_at IS NULL
+               AND status <> 'occupied'
+               AND id IN (
+                   SELECT table_id FROM orders
+                   WHERE restaurant_id = ?
+                     AND order_type = 'dine_in'
+                     AND table_id IS NOT NULL
+                     AND order_status IN ('pending','preparing','ready','served')
+               )",
+            [$restaurantId, $restaurantId]
+        );
     }
 
 }
