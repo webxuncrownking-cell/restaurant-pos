@@ -47,7 +47,7 @@ class KitchenService
             CONSTRAINT fk_kitchen_item_status_item FOREIGN KEY (restaurant_id, order_item_id)
               REFERENCES order_items (restaurant_id, id) ON DELETE CASCADE,
             CONSTRAINT fk_kitchen_item_status_user FOREIGN KEY (restaurant_id, changed_by_user_id)
-              REFERENCES users (restaurant_id, id) ON DELETE SET NULL
+              REFERENCES users (restaurant_id, id) ON DELETE RESTRICT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
@@ -97,6 +97,7 @@ class KitchenService
         $items = Database::fetchAll(
             "SELECT oi.id, oi.order_id, oi.product_name, oi.variant_name, oi.quantity,
                     oi.special_instructions,
+                    COALESCE(kis.status, 'pending') AS kitchen_status,
                     GROUP_CONCAT(
                       CONCAT(a.addon_name, CASE WHEN a.quantity > 1 THEN CONCAT(' ×', a.quantity) ELSE '' END)
                       ORDER BY a.id SEPARATOR ', '
@@ -104,9 +105,11 @@ class KitchenService
              FROM order_items oi
              LEFT JOIN order_item_addons a
                ON a.order_item_id = oi.id AND a.restaurant_id = oi.restaurant_id
+             LEFT JOIN kitchen_item_status kis
+               ON kis.order_item_id = oi.id AND kis.restaurant_id = oi.restaurant_id
              WHERE oi.restaurant_id = ? AND oi.order_id IN ($placeholders)
              GROUP BY oi.id, oi.order_id, oi.product_name, oi.variant_name,
-                      oi.quantity, oi.special_instructions
+                      oi.quantity, oi.special_instructions, kis.status
              ORDER BY oi.id ASC",
             array_merge([$restaurantId], $orderIds)
         );
