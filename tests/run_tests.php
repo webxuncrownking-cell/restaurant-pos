@@ -1360,6 +1360,33 @@ assertTest(
                 && array_key_exists('total_revenue', $topProducts[0])))
 );
 
+$rangeTrend = \App\Services\ReportService::getDailySalesTrendForRange(1, date('Y-01-01'), date('Y-12-31'));
+assertTest("Daily Sales Trend Respects Selected Date Range", is_array($rangeTrend));
+
+$profitability = \App\Services\ReportService::getProductProfitability(1, date('Y-01-01'), date('Y-12-31'));
+assertTest(
+    "Product Profitability Includes Historical Revenue and Cost Snapshots",
+    is_array($profitability)
+        && (empty($profitability)
+            || (array_key_exists('estimated_food_cost', $profitability[0])
+                && array_key_exists('estimated_gross_profit', $profitability[0])
+                && array_key_exists('food_cost_pct', $profitability[0])
+                && array_key_exists('gross_margin_pct', $profitability[0])))
+);
+
+$financialAdjustments = \App\Services\ReportService::getFinancialAdjustments(1, date('Y-01-01'), date('Y-12-31'));
+assertTest(
+    "Financial Adjustments Include Voids Refunds Wastage and Cash Variance",
+    is_array($financialAdjustments)
+        && array_key_exists('void_count', $financialAdjustments)
+        && array_key_exists('refund_amount', $financialAdjustments)
+        && array_key_exists('waste_cost', $financialAdjustments)
+        && array_key_exists('total_cash_variance', $financialAdjustments)
+);
+
+$shiftReconciliation = \App\Services\ReportService::getShiftReconciliation(1, date('Y-01-01'), date('Y-12-31'));
+assertTest("Cashier Shift Reconciliation Report Query Executed", is_array($shiftReconciliation));
+
 $sub = \App\Services\BillingService::getCurrentSubscription(1);
 assertTest("Active Restaurant Subscription Retrieved", $sub && !empty($sub['plan_name']));
 
