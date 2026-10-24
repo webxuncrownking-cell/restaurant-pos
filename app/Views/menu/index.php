@@ -37,6 +37,12 @@
     </div>
   </div>
 
+  <?php if (isset($_GET['product_updated'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">Menu item updated successfully.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endif; ?>
+
   <?php if (isset($_GET['image_updated'])): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">Menu item image saved successfully.
       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
