@@ -38,6 +38,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\InstallController;
 use App\Controllers\MenuController;
 use App\Controllers\InventoryController;
+use App\Controllers\ProcurementController;
 use App\Controllers\TableController;
 use App\Controllers\DeviceController;
 use App\Controllers\ShiftController;
@@ -98,6 +99,15 @@ $router->post('/inventory/stock-in', [InventoryController::class, 'processStockI
 $router->get('/inventory/adjustment', [InventoryController::class, 'showAdjustment']);
 $router->post('/inventory/adjustment', [InventoryController::class, 'processAdjustment']);
 $router->get('/inventory/ledger', [InventoryController::class, 'ledger']);
+
+// Supplier and purchase order management
+$router->get('/procurement', [ProcurementController::class, 'index']);
+$router->post('/procurement/migrate', [ProcurementController::class, 'migrate']);
+$router->post('/procurement/suppliers/create', [ProcurementController::class, 'createSupplier']);
+$router->post('/procurement/suppliers/status', [ProcurementController::class, 'toggleSupplier']);
+$router->post('/procurement/orders/create', [ProcurementController::class, 'createOrder']);
+$router->post('/procurement/orders/action', [ProcurementController::class, 'orderAction']);
+$router->post('/procurement/orders/receive', [ProcurementController::class, 'receive']);
 
 // Phase 3: Tables & Floor Plan Routes
 $router->get('/tables', [TableController::class, 'index']);
