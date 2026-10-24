@@ -1148,6 +1148,116 @@ Database::query("DELETE FROM inventory_movements WHERE restaurant_id = 1 AND ref
 Database::query("DELETE FROM order_items WHERE restaurant_id = 1 AND order_id = ?", [$itemBillId]);
 Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id = ?", [$itemBillId]);
 
+// 19f. Supplier & purchase orders: a draft must not move stock; receiving is atomic and idempotent.
+echo PHP_EOL . "19f. Testing Supplier & Purchase Order Workflow:" . PHP_EOL;
+$poTestIngredient = Database::fetchOne(
+    "SELECT id, name, base_unit, current_stock, cost_per_base_unit
+     FROM ingredients WHERE restaurant_id = 1 AND is_active = 1 ORDER BY id ASC LIMIT 1"
+);
+$poTestSupplierId = \App\Services\SupplierPurchaseService::createSupplier(1, [
+    'name' => 'Integration Test Supplier ' . date('His'),
+    'contact_person' => 'Test Contact',
+    'phone' => '555-PO-TEST',
+    'email' => '',
+    'address' => 'Test address'
+]);
+$poInitialStock = (float)$poTestIngredient['current_stock'];
+$poInitialCost = (float)$poTestIngredient['cost_per_base_unit'];
+$poQuantity = 3.0;
+$poUnitCost = 0.55;
+$poTestId = \App\Services\SupplierPurchaseService::createPurchaseOrder(
+    1,
+    1,
+    $poTestSupplierId,
+    [[
+        'ingredient_id' => (int)$poTestIngredient['id'],
+        'quantity' => $poQuantity,
+        'purchase_unit' => (string)$poTestIngredient['base_unit'],
+        'unit_cost' => $poUnitCost
+    ]],
+    'Automated purchase order receipt test'
+);
+$poDraft = Database::fetchOne(
+    "SELECT status, total_amount FROM purchase_orders WHERE restaurant_id = 1 AND id = ?",
+    [$poTestId]
+);
+$poStockAfterDraft = Database::fetchOne(
+    "SELECT current_stock FROM ingredients WHERE restaurant_id = 1 AND id = ?",
+    [(int)$poTestIngredient['id']]
+);
+assertTest(
+    "Draft Purchase Order Does Not Change Stock",
+    $poDraft !== null
+        && $poDraft['status'] === 'draft'
+        && abs((float)$poDraft['total_amount'] - round($poQuantity * $poUnitCost, 2)) < 0.01
+        && abs((float)$poStockAfterDraft['current_stock'] - $poInitialStock) < 0.0001
+);
+
+\App\Services\SupplierPurchaseService::updateOrderStatus(1, $poTestId, 'ordered');
+\App\Services\SupplierPurchaseService::receivePurchaseOrder(1, $poTestId, 1);
+$poReceived = Database::fetchOne(
+    "SELECT status, received_at FROM purchase_orders WHERE restaurant_id = 1 AND id = ?",
+    [$poTestId]
+);
+$poStockAfterReceipt = Database::fetchOne(
+    "SELECT current_stock, cost_per_base_unit FROM ingredients WHERE restaurant_id = 1 AND id = ?",
+    [(int)$poTestIngredient['id']]
+);
+$poReceiptMovements = Database::fetchOne(
+    "SELECT COUNT(*) AS total, COALESCE(SUM(quantity_change), 0) AS quantity_added
+     FROM inventory_movements
+     WHERE restaurant_id = 1 AND reference_type = 'purchase_receipt' AND reference_id = ?
+       AND notes LIKE ?",
+    [$poTestId, 'PO %: % received']
+);
+assertTest(
+    "Purchase Order Receipt Updates Stock and Ledger",
+    $poReceived !== null
+        && $poReceived['status'] === 'received'
+        && !empty($poReceived['received_at'])
+        && abs((float)$poStockAfterReceipt['current_stock'] - ($poInitialStock + $poQuantity)) < 0.0001
+        && abs((float)$poStockAfterReceipt['cost_per_base_unit'] - $poUnitCost) < 0.0001
+        && (int)$poReceiptMovements['total'] === 1
+        && abs((float)$poReceiptMovements['quantity_added'] - $poQuantity) < 0.0001
+);
+
+$duplicateReceiveRejected = false;
+try {
+    \App\Services\SupplierPurchaseService::receivePurchaseOrder(1, $poTestId, 1);
+} catch (\InvalidArgumentException $e) {
+    $duplicateReceiveRejected = str_contains(strtolower($e->getMessage()), 'received');
+}
+$poStockAfterDuplicate = Database::fetchOne(
+    "SELECT current_stock FROM ingredients WHERE restaurant_id = 1 AND id = ?",
+    [(int)$poTestIngredient['id']]
+);
+$poMovementCountAfterDuplicate = (int)(Database::fetchOne(
+    "SELECT COUNT(*) AS total FROM inventory_movements
+     WHERE restaurant_id = 1 AND reference_type = 'purchase_receipt' AND reference_id = ?
+       AND notes LIKE ?",
+    [$poTestId, 'PO %: % received']
+)['total'] ?? 0);
+assertTest(
+    "Purchase Order Cannot Be Received Twice",
+    $duplicateReceiveRejected
+        && abs((float)$poStockAfterDuplicate['current_stock'] - ($poInitialStock + $poQuantity)) < 0.0001
+        && $poMovementCountAfterDuplicate === 1
+);
+
+// Restore test ingredient values and remove only rows created by this test.
+Database::query(
+    "UPDATE ingredients SET current_stock = ?, cost_per_base_unit = ? WHERE restaurant_id = 1 AND id = ?",
+    [$poInitialStock, $poInitialCost, (int)$poTestIngredient['id']]
+);
+Database::query(
+    "DELETE FROM inventory_movements WHERE restaurant_id = 1 AND reference_type = 'purchase_receipt'
+     AND reference_id = ? AND notes LIKE ?",
+    [$poTestId, 'PO %: % received']
+);
+Database::query("DELETE FROM purchase_order_items WHERE restaurant_id = 1 AND purchase_order_id = ?", [$poTestId]);
+Database::query("DELETE FROM purchase_orders WHERE restaurant_id = 1 AND id = ?", [$poTestId]);
+Database::query("DELETE FROM suppliers WHERE restaurant_id = 1 AND id = ?", [$poTestSupplierId]);
+
 // 20. Phase 7: Analytics Reports & SaaS Subscription Billing
 echo PHP_EOL . "20. Testing BI Reports & SaaS Billing Subscriptions:" . PHP_EOL;
 $reportKpis = \App\Services\ReportService::getKpiSummary(1, date('Y-01-01'), date('Y-12-31'));
