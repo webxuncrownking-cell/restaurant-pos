@@ -85,6 +85,7 @@
     .card { border-color: #e8edf5; box-shadow: 0 3px 12px rgba(15,23,42,.035); }
     .card-header { border-bottom-color: #edf0f5; border-top-left-radius: 16px !important; border-top-right-radius: 16px !important; }
     .btn:not(.btn-close) {
+      --bs-btn-padding-y: 0.7rem;
       border-radius: 10px;
       font-weight: 600;
       display: inline-flex;
