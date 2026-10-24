@@ -64,6 +64,13 @@ ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
   .kitchen-filter { border:1px solid transparent; background:transparent; padding:8px 11px; color:#64748b; border-radius:9px; font-size:.77rem; font-weight:750; }
   .kitchen-filter:hover { background:#f4f7fb; color:#172033; }
   .kitchen-filter.active { color:#1d4ed8; border-color:#d9e7ff; background:#edf4ff; }
+  .kitchen-station-filters { width:100%; display:flex; align-items:center; flex-wrap:wrap; gap:7px; padding:10px 12px; margin-top:10px; border:1px solid #e5eaf2; border-radius:12px; background:#f8fafc; }
+  .kitchen-station-filter-label { margin-right:4px; color:#8491a5; font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .kitchen-filter.kitchen-station-filter { padding:7px 11px; border:1px solid #e0e7f0; border-radius:8px; background:#fff; color:#52627a; font-size:.75rem; font-weight:700; line-height:1.2; }
+  .kitchen-filter.kitchen-station-filter:hover { border-color:#b8c9e2; background:#f1f6fc; color:#24344d; }
+  .kitchen-filter.kitchen-station-filter.active { border-color:#2563eb; background:#2563eb; color:#fff; }
+  @media (max-width:575px) { .kitchen-station-filters { gap:6px; padding:9px; } .kitchen-station-filter-label { width:100%; margin:0 0 2px; } .kitchen-filter.kitchen-station-filter { padding:7px 9px; } }
+
   .kitchen-refresh-note { font-size:.72rem; color:#8793a5; display:flex; align-items:center; gap:7px; }
   .kitchen-board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; align-items:start; }
   .kitchen-ticket { min-width:0; overflow:hidden; border:1px solid #dfe6ef; border-radius:16px; background:#fff; box-shadow:0 4px 16px rgba(15,23,42,.035); }
