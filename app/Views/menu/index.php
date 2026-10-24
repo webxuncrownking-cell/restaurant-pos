@@ -2,8 +2,42 @@
 <?php include APP_ROOT . '/app/Views/layouts/navbar.php'; ?>
 
 <style>
-  .menu-product-photo { height:148px; width:100%; overflow:hidden; border-radius:13px; background:linear-gradient(145deg,#f7f9fc,#edf2f8); border:1px solid #e8edf4; display:grid; place-items:center; }
-  .menu-product-photo img { height:100%; width:100%; object-fit:cover; object-position:center center; display:block; }
+  /* Fixed photo frame: absolutely constrain the image box, not just its crop mode. */
+  .menu-product-photo {
+    position:relative;
+    display:block;
+    width:100%;
+    height:180px;
+    min-height:180px;
+    max-height:180px;
+    overflow:hidden;
+    border-radius:13px;
+    background:linear-gradient(145deg,#f7f9fc,#edf2f8);
+    border:1px solid #e8edf4;
+    isolation:isolate;
+  }
+  .menu-product-photo > img {
+    position:absolute !important;
+    inset:0 !important;
+    display:block !important;
+    width:100% !important;
+    height:100% !important;
+    min-width:0 !important;
+    min-height:0 !important;
+    max-width:none !important;
+    max-height:none !important;
+    margin:0 !important;
+    object-fit:cover !important;
+    object-position:50% 50% !important;
+  }
+  .menu-product-photo .menu-photo-empty {
+    position:absolute;
+    inset:0;
+    display:grid;
+    place-items:center;
+    font-size:2rem;
+    color:#b2bdcd;
+  }
   .menu-product-photo .menu-photo-empty { font-size:2rem; color:#b2bdcd; }
   .menu-photo-form { background:#f8fafc; border:1px solid #e7ecf3; border-radius:12px; padding:10px; }
   .menu-photo-form .menu-photo-picker-row { display:flex; align-items:stretch; gap:.5rem; min-width:0; }
