@@ -82,7 +82,7 @@ class QROrderController
             $productId = filter_var($itemInput['product_id'] ?? null, FILTER_VALIDATE_INT);
             $quantityRaw = $itemInput['quantity'] ?? null;
             if (!$productId || $productId < 1 || !is_numeric($quantityRaw) || !is_finite((float)$quantityRaw)
-                || (float)$quantityRaw < 1 || (float)$quantityRaw > 50) {
+                || (float)$quantityRaw < 1 || (float)$quantityRaw > 50 || floor((float)$quantityRaw) !== (float)$quantityRaw) {
                 Response::redirect('/order/' . rawurlencode($token) . '?error=' . rawurlencode('Check the selected items and quantities.'));
                 return;
             }
@@ -150,6 +150,7 @@ class QROrderController
                 'order_type' => 'dine_in',
                 'table_id' => (int)$table['table_id'],
                 'save_as_open' => true,
+                'require_addon_groups' => true,
                 'discount_amount' => 0,
                 'notes' => $notes,
                 'items' => $items,
