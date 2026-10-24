@@ -979,13 +979,29 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       notice.textContent = '';
     },
 
+    updateOpenOrderButton() {
+      const button = document.getElementById('saveOpenOrderBtn');
+      if (!button) return;
+
+      const dineIn = this.orderType === 'dine_in';
+      const hasItems = Array.isArray(this.ticket) && this.ticket.length > 0;
+      button.classList.toggle('d-none', !dineIn);
+      // Keep the action clickable for a non-empty Dine In ticket even if the
+      // cashier has not chosen a table yet; saveOpenOrder() then explains what
+      // is missing instead of leaving a permanently disabled button.
+      button.disabled = !dineIn || !hasItems || this.isProcessingSale;
+      button.title = !dineIn
+        ? 'Available for dine-in orders only'
+        : !hasItems
+          ? 'Add at least one item to the ticket first'
+          : !this.currentTableId
+            ? 'Select a dining table before saving this open bill'
+            : 'Send this dine-in ticket to the kitchen and leave the bill unpaid';
+    },
+
     setOrderType(type) {
       this.orderType = type;
-      const openOrderButton = document.getElementById('saveOpenOrderBtn');
-      if (openOrderButton) {
-        openOrderButton.classList.toggle('d-none', type !== 'dine_in');
-        openOrderButton.disabled = type !== 'dine_in' || !this.currentTableId;
-      }
+      this.updateOpenOrderButton();
       ['dine_in', 'takeout', 'delivery'].forEach(t => {
         const btn = document.getElementById(t === 'dine_in' ? 'typeDineIn' : (t === 'takeout' ? 'typeTakeout' : 'typeDelivery'));
         if (t === type) {
@@ -998,11 +1014,9 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     },
 
     setTable(tableId) {
-      this.currentTableId = tableId ? parseInt(tableId, 10) : null;
-      const openOrderButton = document.getElementById('saveOpenOrderBtn');
-      if (openOrderButton) {
-        openOrderButton.disabled = this.orderType !== 'dine_in' || !this.currentTableId;
-      }
+      const parsedTableId = tableId ? Number.parseInt(tableId, 10) : null;
+      this.currentTableId = Number.isInteger(parsedTableId) && parsedTableId > 0 ? parsedTableId : null;
+      this.updateOpenOrderButton();
       void this.persistDraftTicket();
     },
 
@@ -1288,6 +1302,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         document.getElementById('ticketVat').textContent = '₱0.00';
         document.getElementById('ticketTotal').textContent = '₱0.00';
         document.getElementById('checkoutBtn').disabled = true;
+        this.updateOpenOrderButton();
         return;
       }
 
@@ -1327,6 +1342,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       document.getElementById('ticketVat').textContent = `₱${calcs.vat.toFixed(2)}`;
       document.getElementById('ticketTotal').textContent = `₱${calcs.total.toFixed(2)}`;
       document.getElementById('checkoutBtn').disabled = false;
+      this.updateOpenOrderButton();
     },
 
     async openCheckoutModal() {
@@ -1470,10 +1486,8 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         }
       } finally {
         this.isProcessingSale = false;
-        if (button) {
-          button.innerHTML = originalHtml;
-          button.disabled = false;
-        }
+        if (button) button.innerHTML = originalHtml;
+        this.updateOpenOrderButton();
       }
     },
 
