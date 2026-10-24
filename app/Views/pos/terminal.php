@@ -74,7 +74,25 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   .pos-header .dropdown-item { border-radius:8px; padding:9px 10px; font-size:.82rem; }
   #posBackToSaaS:not(.d-none) { color:#5c6678!important; border:1px solid #e0e5ed!important; background:#fff!important; }
 
-  #posOfflineGuardNotice, #posSyncNotice { margin:10px 18px 0!important; border-radius:11px; border:1px solid #f6d78f; box-shadow:0 2px 8px rgba(16,24,40,.025); }
+  #posOfflineGuardNotice, #posSyncNotice {
+    margin:10px 18px 0!important;
+    border-radius:11px;
+    border:1px solid transparent;
+    box-shadow:0 2px 8px rgba(16,24,40,.025);
+    font-size:.82rem;
+  }
+  /* A restored local draft is informational, not an error: use the POS neutral palette. */
+  #posOfflineGuardNotice.alert-info {
+    color:#475569!important;
+    background:#f1f5f9!important;
+    border-color:#dbe3ec!important;
+  }
+  /* Keep actual offline/sync warnings amber so they're distinct from draft recovery. */
+  #posOfflineGuardNotice.alert-warning, #posSyncNotice.alert-warning {
+    color:#805b12!important;
+    background:#fff8e8!important;
+    border-color:#f2d99b!important;
+  }
   .pos-workspace { background:var(--terminal-page); }
   .pos-workspace-row { align-items:stretch; }
   .pos-catalog-panel { height:calc(100vh - 76px); min-height:470px; overflow-y:auto; padding:22px 24px!important; background:var(--terminal-page); }
