@@ -75,22 +75,6 @@ class BillService
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (restaurant_id, order_id, order_item_id)
             )");
-            $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_items (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            restaurant_id INT UNSIGNED NOT NULL,
-            order_id INT UNSIGNED NOT NULL,
-            split_id INT UNSIGNED NOT NULL,
-            order_item_id INT UNSIGNED NOT NULL,
-            allocated_quantity DECIMAL(8,2) NOT NULL,
-            allocated_amount DECIMAL(10,2) NOT NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY uk_bill_split_item_once (restaurant_id, order_id, order_item_id),
-            KEY idx_bill_split_items_share (restaurant_id, order_id, split_id),
-            CONSTRAINT fk_bill_split_item_share FOREIGN KEY (restaurant_id, order_id, split_id) REFERENCES order_bill_splits (restaurant_id, order_id, id) ON DELETE RESTRICT,
-            CONSTRAINT fk_bill_split_item_order_item FOREIGN KEY (restaurant_id, order_id, order_item_id) REFERENCES order_items (restaurant_id, order_id, id) ON DELETE RESTRICT
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
         $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_payment_allocations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 restaurant_id INTEGER NOT NULL,
@@ -134,6 +118,25 @@ class BillService
             UNIQUE KEY uk_bill_split_order_number (restaurant_id, order_id, split_number),
             CONSTRAINT fk_bill_split_order FOREIGN KEY (restaurant_id, order_id) REFERENCES orders (restaurant_id, id) ON DELETE RESTRICT,
             CONSTRAINT fk_bill_split_creator FOREIGN KEY (restaurant_id, created_by_user_id) REFERENCES users (restaurant_id, id) ON DELETE RESTRICT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // This table must be created by the MySQL path (not inside the SQLite branch).
+        $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_items (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            restaurant_id INT UNSIGNED NOT NULL,
+            order_id INT UNSIGNED NOT NULL,
+            split_id INT UNSIGNED NOT NULL,
+            order_item_id INT UNSIGNED NOT NULL,
+            allocated_quantity DECIMAL(8,2) NOT NULL,
+            allocated_amount DECIMAL(10,2) NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uk_bill_split_item_once (restaurant_id, order_id, order_item_id),
+            KEY idx_bill_split_items_share (restaurant_id, order_id, split_id),
+            CONSTRAINT fk_bill_split_item_share FOREIGN KEY (restaurant_id, order_id, split_id)
+                REFERENCES order_bill_splits (restaurant_id, order_id, id) ON DELETE RESTRICT,
+            CONSTRAINT fk_bill_split_item_order_item FOREIGN KEY (restaurant_id, order_id, order_item_id)
+                REFERENCES order_items (restaurant_id, order_id, id) ON DELETE RESTRICT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS bill_split_payment_allocations (
