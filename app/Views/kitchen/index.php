@@ -9,6 +9,14 @@ $statusLabels = [
   'served' => ['Served', 'status-served', 'bi-bag-check']
 ];
 $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Preparing', 'ready' => 'Ready', 'served' => 'Served'];
+$kitchenStations = [];
+foreach ($tickets as $stationTicket) {
+  foreach (($stationTicket['items'] ?? []) as $stationItem) {
+    $stationName = trim((string)($stationItem['kitchen_station'] ?? 'Hot Kitchen')) ?: 'Hot Kitchen';
+    $kitchenStations[$stationName] = $stationName;
+  }
+}
+ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
 ?>
 <style>
   .kitchen-wrap { padding:24px; }
@@ -159,6 +167,13 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
         <button type="button" class="kitchen-filter <?= $filter === 'all' ? 'active' : '' ?>" data-kitchen-filter="<?= htmlspecialchars($filter, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></button>
       <?php endforeach; ?>
     </div>
+    <div class="kitchen-filter-group kitchen-station-filters" role="group" aria-label="Filter kitchen station">
+      <span class="kitchen-station-filter-label">Station:</span>
+      <button type="button" class="kitchen-filter kitchen-station-filter active" data-station-filter="all">All Stations</button>
+      <?php foreach ($kitchenStations as $stationName): ?>
+        <button type="button" class="kitchen-filter kitchen-station-filter" data-station-filter="<?= htmlspecialchars($stationName, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stationName, ENT_QUOTES, 'UTF-8') ?></button>
+      <?php endforeach; ?>
+    </div>
     <div class="kitchen-refresh-note"><i class="bi bi-arrow-repeat"></i> Checks for new tickets every 12 seconds <span aria-hidden="true">·</span> Last checked <span id="kitchenLastChecked">just now</span></div>
   </section>
 
@@ -223,7 +238,7 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
                     <?php endif; ?>
                   </div>
                 </div>
-                <div class="kitchen-item-status-row">
+                <div class="kitchen-item-status-row" data-item-station="<?= htmlspecialchars(trim((string)($item['kitchen_station'] ?? 'Hot Kitchen')) ?: 'Hot Kitchen', ENT_QUOTES, 'UTF-8') ?>">
                   <span class="kitchen-item-status <?= htmlspecialchars($itemStatus, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($itemStatusLabels[$itemStatus] ?? 'Not started', ENT_QUOTES, 'UTF-8') ?></span>
                   <?php if ($itemNextStatus !== ''): ?>
                     <form method="POST" action="<?= BASE_URL ?>/kitchen/item-status" class="d-inline-flex">
@@ -276,6 +291,7 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   const liveState = document.getElementById('kitchenLiveState');
   const cards = () => Array.from(document.querySelectorAll('.kitchen-ticket'));
   let activeFilter = 'all';
+  let activeStation = 'all';
   let polling = false;
 
   const formatElapsed = seconds => {
@@ -301,7 +317,16 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
   const applyFilter = () => {
     let visible = 0;
     cards().forEach(card => {
-      const shown = activeFilter === 'all' || card.dataset.status === activeFilter;
+      const statusMatches = activeFilter === 'all' || card.dataset.status === activeFilter;
+      let stationMatches = activeStation === 'all';
+      let visibleItems = 0;
+      card.querySelectorAll('.kitchen-item-status-row').forEach(row => {
+        const matches = activeStation === 'all' || (row.dataset.itemStation || 'Hot Kitchen') === activeStation;
+        row.closest('.kitchen-item')?.toggleAttribute('hidden', !matches);
+        if (matches) visibleItems++;
+        stationMatches = stationMatches || matches;
+      });
+      const shown = statusMatches && stationMatches;
       card.hidden = !shown;
       if (shown) visible++;
     });
@@ -313,6 +338,14 @@ $filterLabels = ['all' => 'All tickets', 'pending' => 'New', 'preparing' => 'Pre
     button.addEventListener('click', () => {
       activeFilter = button.dataset.kitchenFilter || 'all';
       document.querySelectorAll('[data-kitchen-filter]').forEach(item => item.classList.toggle('active', item === button));
+      applyFilter();
+    });
+  });
+
+  document.querySelectorAll('[data-station-filter]').forEach(button => {
+    button.addEventListener('click', () => {
+      activeStation = button.dataset.stationFilter || 'all';
+      document.querySelectorAll('[data-station-filter]').forEach(item => item.classList.toggle('active', item === button));
       applyFilter();
     });
   });
