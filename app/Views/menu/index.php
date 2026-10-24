@@ -107,9 +107,36 @@
     .menu-product-grid.is-list .menu-product-price-row .badge { white-space:normal; }
     .menu-product-grid.is-list .menu-product-actions { flex-wrap:wrap; }
   }
+  .menu-management-page .btn-pos-primary {
+    background-color:#2563eb !important;
+    border-color:#2563eb !important;
+    color:#fff !important;
+    filter:none !important;
+    transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease;
+    box-shadow:0 2px 5px rgba(37,99,235,.16);
+  }
+  .menu-management-page .btn-pos-primary:not(:disabled):not(.disabled):hover {
+    background-color:#1d4ed8 !important;
+    border-color:#1d4ed8 !important;
+    color:#fff !important;
+    filter:none !important;
+    box-shadow:0 4px 10px rgba(37,99,235,.22);
+    transform:translateY(-1px);
+  }
+  .menu-management-page .btn-pos-primary:not(:disabled):not(.disabled):active {
+    background-color:#1e40af !important;
+    border-color:#1e40af !important;
+    color:#fff !important;
+    transform:translateY(0);
+    box-shadow:0 1px 3px rgba(37,99,235,.2);
+  }
+  .menu-management-page .btn-pos-primary:focus-visible {
+    outline:0;
+    box-shadow:0 0 0 .2rem rgba(37,99,235,.24);
+  }
 </style>
 
-<div class="container py-4">
+<div class="container py-4 menu-management-page">
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
       <h2 class="fw-bold mb-1"><i class="bi bi-journal-text text-warning me-2"></i>Menu & Catalog Management</h2>
