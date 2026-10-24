@@ -50,7 +50,7 @@ $restaurantName = (string)($restaurant['name'] ?? 'Your Restaurant');
       </div>
       <p class="text-secondary mb-0">Give <?= htmlspecialchars($restaurantName, ENT_QUOTES, 'UTF-8') ?> its own identity in the management app with a restaurant logo and brand colors.</p>
     </div>
-    <a class="btn btn-outline-secondary bg-white" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
+    <a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-arrow-left me-1"></i> Back to Dashboard</a>
   </div>
 
   <?php if (empty($logo_column_ready)): ?>
