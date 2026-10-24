@@ -17,6 +17,30 @@
     </div>
   </div>
 
+  <?php if (!empty($_SESSION['flash_success'])): ?>
+    <div class="alert alert-success alert-dismissible fade show" role="alert"><?= htmlspecialchars((string)$_SESSION['flash_success'], ENT_QUOTES, 'UTF-8') ?><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+    <?php unset($_SESSION['flash_success']); ?>
+  <?php endif; ?>
+  <?php if (!empty($_SESSION['flash_error'])): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert"><?= htmlspecialchars((string)$_SESSION['flash_error'], ENT_QUOTES, 'UTF-8') ?><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+    <?php unset($_SESSION['flash_error']); ?>
+  <?php endif; ?>
+
+  <?php if (empty($qrSchemaReady)): ?>
+    <section class="card border-0 shadow-sm border-start border-4 border-primary mb-4">
+      <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex gap-3 align-items-start">
+          <span class="rounded-3 p-2 bg-primary bg-opacity-10 text-primary"><i class="bi bi-qr-code-scan fs-4"></i></span>
+          <div><h2 class="h6 fw-bold mb-1">Enable QR Code Table Ordering</h2><p class="small text-muted mb-0">Add a unique QR menu link to every table. This safe setup preserves existing tables, orders, and sales.</p></div>
+        </div>
+        <form method="POST" action="<?= BASE_URL ?>/tables/qr/migrate">
+          <input type="hidden" name="_csrf_token" value="<?= \\App\\Core\\CSRF::getToken() ?>">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-qr-code me-1"></i> Enable QR Ordering</button>
+        </form>
+      </div>
+    </section>
+  <?php endif; ?>
+
   <!-- KPI Badges -->
   <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -171,6 +195,13 @@
               <div class="small text-muted mb-3">
                 <i class="bi bi-geo-alt me-1"></i><?= htmlspecialchars($tbl['floor_zone'] ?? 'Main Dining') ?>
               </div>
+              <?php if (!empty($qrSchemaReady)): ?>
+                <div class="mb-3">
+                  <a class="btn btn-sm btn-outline-primary w-100" href="<?= BASE_URL ?>/tables/qr/<?= (int)$tbl['id'] ?>">
+                    <i class="bi bi-qr-code me-1"></i> QR Ordering
+                  </a>
+                </div>
+              <?php endif; ?>
 
               <!-- Quick Status Update Form -->
               <div class="d-flex gap-2 align-items-center pt-2 border-top">
