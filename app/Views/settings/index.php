@@ -62,7 +62,7 @@ $restaurantNameEsc = htmlspecialchars($restaurantName, ENT_QUOTES, 'UTF-8');
       </div>
       <p class="text-secondary mb-0">Manage your restaurant identity, logo, tagline, brand colors, and browser favicon all in one place.</p>
     </div>
-    <a class="btn btn-outline-secondary bg-white" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
+    <a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-arrow-left me-1"></i> Dashboard</a>
   </div>
 
   <?php if (empty($tagline_column_ready) || empty($logo_column_ready) || empty($favicon_column_ready)): ?>
