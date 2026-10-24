@@ -52,16 +52,43 @@ class Response
     /**
      * Backwards-compatible alias for controllers using Response::view().
      */
-    public static function view(string $viewPath, array $data = [], string $layout = 'app', int $status = 200): void
+    public static function view(string $viewPath, array|int $data = [], string|array $layout = 'app', int|string|array $status = 200): void
     {
         self::render($viewPath, $data, $layout, $status);
     }
 
     /**
      * Render a view file with layout wrapping.
+     *
+     * Supports the current signature render($path, $data, $layout, $status)
+     * and the legacy positional signature render($path, $status, $data, $layout).
+     * The compatibility handling prevents a view-data array from ever reaching
+     * html() as its integer HTTP status argument.
      */
-    public static function render(string $viewPath, array $data = [], string $layout = 'app', int $status = 200): void
-    {
+    public static function render(
+        string $viewPath,
+        array|int $data = [],
+        string|array $layout = 'app',
+        int|string|array $status = 200
+    ): void {
+        if (is_int($data)) {
+            // Legacy order: render($viewPath, $status, $data, $layout).
+            $legacyStatus = $data;
+            $legacyData = is_array($layout) ? $layout : [];
+            $legacyLayout = is_string($status) ? $status : 'app';
+            $data = $legacyData;
+            $layout = $legacyLayout;
+            $status = $legacyStatus;
+        } elseif (is_array($layout)) {
+            // Also accept render($viewPath, $data, $legacyStatus).
+            $legacyStatus = is_int($status) ? $status : 200;
+            $layout = 'app';
+            $status = $legacyStatus;
+        }
+
+        if (!is_array($data)) $data = [];
+        if (!is_string($layout)) $layout = 'app';
+        if (!is_int($status) || $status < 100 || $status > 599) $status = 200;
         $viewFile = APP_ROOT . '/app/Views/' . ltrim($viewPath, '/') . '.php';
         if (!file_exists($viewFile)) {
             self::html("<h1>View Not Found</h1><p>Missing view file: {$viewPath}.php</p>", 500);
