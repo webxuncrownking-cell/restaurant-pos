@@ -1428,6 +1428,40 @@ assertTest(
     "Malformed Table QR Tokens Are Rejected",
     \App\Services\TableQrService::getTableByToken(str_repeat('z', 64)) === null
 );
+$trackingTestUuid = \App\Services\DeviceService::generateUuidV4();
+$trackingTestOrderNumber = 'QRTRACK-' . date('His') . '-' . random_int(100, 999);
+Database::query(
+    "INSERT INTO orders
+        (restaurant_id, client_uuid, device_id, order_number, order_type, table_id, cashier_id,
+         order_status, payment_status, subtotal, total_amount, paid_amount, client_reported_at, server_received_at)
+     VALUES (?, ?, 1, ?, 'dine_in', ?, 1, 'pending', 'unpaid', 125.00, 125.00, 0.00, NOW(), NOW())",
+    [1, $trackingTestUuid, $trackingTestOrderNumber, $qrTestTableId]
+);
+$trackingTestOrderId = (int)Database::lastInsertId();
+$customerTrackingToken = \App\Services\QROrderTrackingService::createTrackingToken(1, $trackingTestOrderId, $qrTestTableId);
+$trackedOrder = \App\Services\QROrderTrackingService::getTrackedOrder(1, $qrTestTableId, $customerTrackingToken);
+$trackedStatus = $trackedOrder
+    ? \App\Services\QROrderTrackingService::publicStatusSnapshot($trackedOrder)
+    : [];
+assertTest(
+    "Customer Tracking Token Only Resolves Its Own Table Order",
+    $trackedOrder !== null
+        && (int)$trackedOrder['id'] === $trackingTestOrderId
+        && $trackedOrder['order_number'] === $trackingTestOrderNumber
+);
+assertTest(
+    "Customer Status Shows Kitchen Progress and Unpaid Payment Separately",
+    ($trackedStatus['order_status'] ?? '') === 'pending'
+        && ($trackedStatus['payment_status'] ?? '') === 'unpaid'
+        && ($trackedStatus['payment_label'] ?? '') === 'Unpaid — pay at the cashier'
+);
+assertTest(
+    "Invalid Customer Tracking Tokens Are Rejected",
+    \App\Services\QROrderTrackingService::getTrackedOrder(1, $qrTestTableId, str_repeat('f', 64)) === null
+        && \App\Services\QROrderTrackingService::getTrackedOrder(1, $qrTestTableId + 99999, $customerTrackingToken) === null
+);
+Database::query("DELETE FROM qr_order_tracking WHERE restaurant_id = 1 AND order_id = ?", [$trackingTestOrderId]);
+Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id = ?", [$trackingTestOrderId]);
 Database::query("DELETE FROM restaurant_tables WHERE restaurant_id = 1 AND id = ?", [$qrTestTableId]);
 
 $sub = \App\Services\BillingService::getCurrentSubscription(1);
