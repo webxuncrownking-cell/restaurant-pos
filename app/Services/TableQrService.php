@@ -23,13 +23,21 @@ class TableQrService
             $pdo = Database::getConnection();
             if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
                 $columns = Database::fetchAll("PRAGMA table_info('restaurant_tables')");
-                self::$readyCache = in_array('qr_token', array_column($columns, 'name'), true);
+                $indexes = Database::fetchAll("PRAGMA index_list('restaurant_tables')");
+                $hasColumn = in_array('qr_token', array_column($columns, 'name'), true);
+                $hasIndex = in_array('uq_restaurant_tables_qr_token', array_column($indexes, 'name'), true);
+                self::$readyCache = $hasColumn && $hasIndex;
             } else {
-                $row = Database::fetchOne(
+                $column = Database::fetchOne(
                     "SELECT COUNT(*) AS total FROM information_schema.columns
                      WHERE table_schema = DATABASE() AND table_name = 'restaurant_tables' AND column_name = 'qr_token'"
                 );
-                self::$readyCache = (int)($row['total'] ?? 0) > 0;
+                $index = Database::fetchOne(
+                    "SELECT COUNT(*) AS total FROM information_schema.statistics
+                     WHERE table_schema = DATABASE() AND table_name = 'restaurant_tables'
+                       AND index_name = 'uq_restaurant_tables_qr_token'"
+                );
+                self::$readyCache = (int)($column['total'] ?? 0) > 0 && (int)($index['total'] ?? 0) > 0;
             }
             return self::$readyCache;
         } catch (Throwable $e) {
