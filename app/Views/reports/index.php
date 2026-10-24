@@ -11,15 +11,21 @@
       <h1 class="h3 fw-bold mb-1">
         <i class="bi bi-graph-up-arrow text-primary me-2"></i>Sales & Business Reports
       </h1>
-      <p class="text-muted small mb-0">Monitor revenue trends, payment breakdowns, product velocities, and cashier performance.</p>
+      <p class="text-muted small mb-0">Track sales, food cost, item-level profit, refunds, wastage, and cashier cash variances.</p>
     </div>
-    <div>
-      <form method="GET" action="<?= BASE_URL ?>/reports" class="d-flex align-items-center gap-2">
-        <input type="date" name="start_date" class="form-control form-control-sm" value="<?= htmlspecialchars($startDate) ?>">
+    <div class="d-flex flex-column align-items-end gap-2">
+      <form method="GET" action="<?= BASE_URL ?>/reports" class="d-flex flex-wrap align-items-center gap-2">
+        <input type="date" name="start_date" class="form-control" style="width:155px" value="<?= htmlspecialchars($startDate, ENT_QUOTES, 'UTF-8') ?>" aria-label="Start date">
         <span class="text-muted small">to</span>
-        <input type="date" name="end_date" class="form-control form-control-sm" value="<?= htmlspecialchars($endDate) ?>">
-        <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+        <input type="date" name="end_date" class="form-control" style="width:155px" value="<?= htmlspecialchars($endDate, ENT_QUOTES, 'UTF-8') ?>" aria-label="End date">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i> Apply</button>
       </form>
+      <div class="d-flex flex-wrap justify-content-end gap-2" aria-label="Export reports">
+        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=sales&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Sales CSV</a>
+        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=profitability&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Profitability CSV</a>
+        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=cashiers&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Cashiers CSV</a>
+        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=reconciliation&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Shifts CSV</a>
+      </div>
     </div>
   </div>
 
@@ -55,13 +61,45 @@
     </div>
   </div>
 
+  <!-- Operational adjustments and cash control -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase mb-1">Refunds</div>
+        <div class="h3 fw-bold text-danger font-monospace mb-0">₱<?= number_format((float)$adjustments['refund_amount'], 2) ?></div>
+        <div class="small text-muted mt-2"><?= (int)$adjustments['refund_count'] ?> refund record(s) in this period</div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase mb-1">Voids</div>
+        <div class="h3 fw-bold text-dark font-monospace mb-0"><?= number_format((int)$adjustments['void_count']) ?></div>
+        <div class="small text-muted mt-2">Void audit records in this period</div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase mb-1">Recorded Wastage</div>
+        <div class="h3 fw-bold text-warning font-monospace mb-0">₱<?= number_format((float)$adjustments['waste_cost'], 2) ?></div>
+        <div class="small text-muted mt-2"><?= number_format((int)$adjustments['waste_count']) ?> waste record(s)</div>
+      </div>
+    </div>
+    <div class="col-6 col-xl-3">
+      <div class="card border-0 shadow-sm h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase mb-1">Cash Variance</div>
+        <div class="h3 fw-bold <?= (float)$adjustments['total_cash_variance'] > 0 ? 'text-danger' : 'text-success' ?> font-monospace mb-0">₱<?= number_format((float)$adjustments['total_cash_variance'], 2) ?></div>
+        <div class="small text-muted mt-2"><?= number_format((int)$adjustments['closed_shifts']) ?> shifts · over ₱<?= number_format((float)$adjustments['cash_over'], 2) ?> / short ₱<?= number_format((float)$adjustments['cash_short'], 2) ?></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Visual Charts Section -->
   <div class="row g-4 mb-4">
     <!-- Daily Revenue Trend (Line Chart) -->
     <div class="col-12 col-lg-8">
       <div class="card border-0 shadow-sm h-100">
         <div class="card-header bg-transparent py-3 border-0">
-          <h5 class="fw-bold mb-0">Revenue Trend (Last 30 Days)</h5>
+          <h5 class="fw-bold mb-0">Revenue Trend (Selected Period)</h5>
         </div>
         <div class="card-body pt-0">
           <canvas id="revenueTrendChart" style="max-height: 280px;"></canvas>
@@ -79,6 +117,39 @@
           <canvas id="paymentDonutChart" style="max-height: 250px;"></canvas>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Item-level profitability -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent py-3 border-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h5 class="fw-bold mb-1">Menu Profitability</h5>
+        <p class="text-muted small mb-0">Estimated from historical order-line cost snapshots and add-on costs, with order-level discounts allocated by line subtotal.</p>
+      </div>
+      <a class="btn btn-outline-primary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=profitability&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-download me-1"></i> Export CSV</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Menu Item</th><th>Category</th><th class="text-center">Units</th><th class="text-end">Net Revenue</th><th class="text-end">Food Cost</th><th class="text-end">Gross Profit</th><th class="text-end">Food Cost %</th><th class="text-end">Margin %</th></tr></thead>
+        <tbody>
+          <?php if (empty($profitability)): ?>
+            <tr><td colspan="8" class="text-center py-4 text-muted">No paid item sales in this date range.</td></tr>
+          <?php else: foreach ($profitability as $item): ?>
+            <?php $profit = (float)$item['estimated_gross_profit']; $margin = (float)$item['gross_margin_pct']; ?>
+            <tr>
+              <td class="fw-semibold"><?= htmlspecialchars((string)$item['item_name'], ENT_QUOTES, 'UTF-8') ?></td>
+              <td><span class="badge bg-light text-dark border"><?= htmlspecialchars((string)$item['category_name'], ENT_QUOTES, 'UTF-8') ?></span></td>
+              <td class="text-center font-monospace"><?= number_format((float)$item['total_quantity_sold'], 2) ?></td>
+              <td class="text-end font-monospace">₱<?= number_format((float)$item['total_revenue'], 2) ?></td>
+              <td class="text-end font-monospace">₱<?= number_format((float)$item['estimated_food_cost'], 2) ?></td>
+              <td class="text-end font-monospace fw-bold <?= $profit < 0 ? 'text-danger' : 'text-success' ?>">₱<?= number_format($profit, 2) ?></td>
+              <td class="text-end"><span class="badge <?= (float)$item['food_cost_pct'] > 40 ? 'bg-warning text-dark' : 'bg-light text-dark border' ?>"><?= number_format((float)$item['food_cost_pct'], 1) ?>%</span></td>
+              <td class="text-end"><span class="badge <?= $margin < 0 ? 'bg-danger' : ($margin < 30 ? 'bg-warning text-dark' : 'bg-success') ?>"><?= number_format($margin, 1) ?>%</span></td>
+            </tr>
+          <?php endforeach; endif; ?>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -157,6 +228,36 @@
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Closed cashier shift reconciliation -->
+  <div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-transparent py-3 border-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h5 class="fw-bold mb-1">Cashier Shift Reconciliation</h5>
+        <p class="text-muted small mb-0">Closed shifts and declared cash differences for the selected period.</p>
+      </div>
+      <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=reconciliation&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-download me-1"></i> Export CSV</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th>Shift</th><th>Cashier</th><th>Closed At</th><th class="text-end">Expected</th><th class="text-end">Counted</th><th class="text-end">Difference</th></tr></thead>
+        <tbody>
+          <?php if (empty($shiftReconciliation)): ?>
+            <tr><td colspan="6" class="text-center py-4 text-muted">No closed cashier shifts in this date range.</td></tr>
+          <?php else: foreach ($shiftReconciliation as $shift): $diff = (float)($shift['cash_difference'] ?? 0); ?>
+            <tr>
+              <td class="font-monospace">#<?= (int)$shift['shift_id'] ?></td>
+              <td><?= htmlspecialchars((string)$shift['cashier_name'], ENT_QUOTES, 'UTF-8') ?></td>
+              <td><?= htmlspecialchars((string)$shift['closed_at'], ENT_QUOTES, 'UTF-8') ?></td>
+              <td class="text-end font-monospace">₱<?= number_format((float)$shift['expected_cash'], 2) ?></td>
+              <td class="text-end font-monospace">₱<?= number_format((float)$shift['closing_cash'], 2) ?></td>
+              <td class="text-end font-monospace fw-bold <?= $diff < 0 ? 'text-danger' : ($diff > 0 ? 'text-warning' : 'text-success') ?>">₱<?= number_format($diff, 2) ?></td>
+            </tr>
+          <?php endforeach; endif; ?>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
