@@ -132,7 +132,7 @@ class InventoryService
             // For batches created after expiry tracking is enabled, sales consume
             // tracked lots by earliest expiry. Legacy/unbatched stock still works.
             if ($referenceType === 'order_sale' && class_exists(ExpiryWasteService::class)) {
-                ExpiryWasteService::consumeTrackedBatchesForSale($restaurantId, $ingredientId, $baseQty);
+                ExpiryWasteService::consumeTrackedBatchesForSale($restaurantId, $ingredientId, $baseQty, $stockBefore);
             }
 
             // 6. Insert double-entry ledger entry into inventory_movements
