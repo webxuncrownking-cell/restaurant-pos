@@ -945,6 +945,12 @@ Database::query("DELETE FROM restaurant_tables WHERE restaurant_id = 1 AND id = 
 
 // 19d. Open bill checkout and partial/split payment allocation.
 echo PHP_EOL . "19d. Testing Open Bills & Split Payments:" . PHP_EOL;
+\App\Services\BillService::ensureSchema();
+assertTest(
+    "Open Bills Setup Creates All Required Split Tables",
+    \App\Services\BillService::schemaReady()
+);
+
 $openBillPayload = $orderPayload;
 $openBillPayload['client_uuid'] = \App\Services\DeviceService::generateUuidV4();
 $openBillPayload['order_number'] = 'OPEN-' . substr(str_replace('-', '', $openBillPayload['client_uuid']), 0, 12);
@@ -954,6 +960,13 @@ $openBillPayload['change_amount'] = 0;
 unset($openBillPayload['payment']);
 $openBillSync = \App\Services\PosSyncService::processOrderSync(1, $openBillPayload);
 $openBillId = (int)$openBillSync['server_order_id'];
+$visibleOpenBills = \App\Services\BillService::getOpenBills(1);
+$visibleOpenBillIds = array_map(static fn(array $bill): int => (int)$bill['id'], $visibleOpenBills);
+assertTest(
+    "New unpaid dine-in orders appear in Open Bills",
+    in_array($openBillId, $visibleOpenBillIds, true)
+);
+
 // Simulate a legacy/dirty table row: an active ticket exists, but its stored status says available.
 $openBillTableId = (int)($openBillPayload['table_id'] ?? 0);
 if ($openBillTableId > 0) {
