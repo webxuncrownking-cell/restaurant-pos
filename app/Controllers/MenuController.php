@@ -76,6 +76,38 @@ class MenuController
         ]);
     }
 
+    public function showEditProduct(Request $request, array $params): void
+    {
+        Auth::requirePermission('menu.manage_catalog');
+        $restaurant = TenantContext::getRestaurant();
+        if (!$restaurant) { Response::redirect('/dashboard'); return; }
+        $restaurantId = (int)$restaurant['id'];
+        $productId = (int)($params['id'] ?? 0);
+        $product = MenuService::getProduct($restaurantId, $productId);
+        if (!$product) { Response::notFound('Menu item not found.'); return; }
+
+        $categories = MenuService::getCategories($restaurantId, false);
+        $addonGroups = Database::fetchAll(
+            "SELECT * FROM product_addon_groups WHERE restaurant_id = ? ORDER BY name ASC",
+            [$restaurantId]
+        );
+        $directStockIngredients = Database::fetchAll(
+            "SELECT id, name, base_unit, current_stock, cost_per_base_unit
+             FROM ingredients WHERE restaurant_id = ? AND is_active = 1 ORDER BY name ASC",
+            [$restaurantId]
+        );
+
+        Response::view('menu/product_form', [
+            'pageTitle' => 'Edit Menu Item: ' . $product['name'],
+            'restaurant' => $restaurant,
+            'categories' => $categories,
+            'addonGroups' => $addonGroups,
+            'directStockIngredients' => $directStockIngredients,
+            'product' => $product,
+            'product_image_column_ready' => $this->hasProductImageColumn(),
+            'csrf_token' => CSRF::generate()
+        ]);
+    }
     public function createProduct(Request $request): void
     {
         Auth::requirePermission('menu.manage_catalog');
