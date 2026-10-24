@@ -57,9 +57,12 @@ foreach (($ingredients ?? []) as $ingredient) {
 </style>
 
 <div class="procurement-page">
-  <?php if (!empty($flash_success)): ?><div class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert"><?= $h($flash_success) ?><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div><?php endif; ?>
-  <?php if (!empty($flash_warning)): ?><div class="alert alert-warning alert-dismissible fade show border-0 shadow-sm" role="alert"><?= $h($flash_warning) ?><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div><?php endif; ?>
-  <?php if (!empty($flash_error)): ?><div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert"><?= $h($flash_error) ?><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div><?php endif; ?>
+  <?php if (!empty($flashes)): foreach ($flashes as $flash): ?>
+    <div class="alert alert-<?= $h(in_array(($flash['type'] ?? 'info'), ['success','warning','danger','info'], true) ? $flash['type'] : 'info') ?> alert-dismissible fade show border-0 shadow-sm" role="alert">
+      <?= $h($flash['message'] ?? '') ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <?php endforeach; endif; ?>
   <?php if (isset($_GET['success'])): ?><div class="alert alert-success"><?= $h($_GET['success']) ?></div><?php endif; ?>
   <?php if (isset($_GET['error'])): ?><div class="alert alert-danger"><?= $h($_GET['error']) ?></div><?php endif; ?>
 
