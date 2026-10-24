@@ -1,3 +1,8 @@
+<?php
+$isEdit = is_array($product ?? null) && !empty($product['id']);
+$editVariants = $isEdit ? array_values(array_filter(($product['variants'] ?? []), static fn(array $v): bool => !empty($v['is_active']))) : [];
+$selectedAddonGroupIds = $isEdit ? array_map(static fn(array $g): int => (int)$g['id'], ($product['addon_groups'] ?? [])) : [];
+?>
 <?php include APP_ROOT . '/app/Views/layouts/header.php'; ?>
 <?php include APP_ROOT . '/app/Views/layouts/navbar.php'; ?>
 
@@ -7,7 +12,7 @@
       <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb small">
           <li class="breadcrumb-item"><a href="<?= BASE_URL ?>/menu">Menu</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Add Menu Item</li>
+          <li class="breadcrumb-item active" aria-current="page"><?= $isEdit ? 'Edit Menu Item' : 'Add Menu Item' ?></li>
         </ol>
       </nav>
 
@@ -34,24 +39,24 @@
 
       <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white border-bottom py-3 px-4">
-          <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-plus-circle text-warning me-2"></i>Create Menu Item</h5>
-          <p class="small text-muted mb-0 mt-1">Create a schema-compatible catalog item for this restaurant.</p>
+          <h5 class="mb-0 fw-bold text-dark"><i class="bi <?= $isEdit ? 'bi-pencil-square' : 'bi-plus-circle' ?> text-warning me-2"></i><?= $isEdit ? 'Edit Menu Item' : 'Create Menu Item' ?></h5>
+          <p class="small text-muted mb-0 mt-1"><?= $isEdit ? 'Update the name, category, SKU, price, tax, inventory type, serving variants, and add-on groups.' : 'Create a schema-compatible catalog item for this restaurant.' ?></p>
         </div>
         <div class="card-body p-4">
-          <form method="POST" action="<?= BASE_URL ?>/menu/products" id="productForm" enctype="multipart/form-data">
+          <form method="POST" action="<?= BASE_URL ?><?= $isEdit ? '/menu/products/' . (int)$product['id'] : '/menu/products' ?>" id="productForm" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="row g-3 mb-3">
               <div class="col-12 col-md-8">
                 <label for="name" class="form-label fw-semibold small">Product Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="name" name="name" maxlength="150" required placeholder="e.g. Pork Adobo Rice Meal">
+                <input type="text" class="form-control" id="name" name="name" maxlength="150" required placeholder="e.g. Pork Adobo Rice Meal" value="<?= htmlspecialchars((string)($product['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
               </div>
               <div class="col-12 col-md-4">
                 <label for="category_id" class="form-label fw-semibold small">Category <span class="text-danger">*</span></label>
                 <select class="form-select" id="category_id" name="category_id" required <?= empty($categories) ? 'disabled' : '' ?>>
                   <option value="">Select Category...</option>
                   <?php foreach ($categories as $cat): ?>
-                    <option value="<?= (int)$cat['id'] ?>"><?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?></option>
+                    <option value="<?= (int)$cat['id'] ?>" <?= (int)($product['category_id'] ?? 0) === (int)$cat['id'] ? 'selected' : '' ?>><?= htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') ?></option>
                   <?php endforeach; ?>
                 </select>
               </div>
@@ -60,13 +65,13 @@
             <div class="row g-3 mb-4">
               <div class="col-12 col-md-6">
                 <label for="sku" class="form-label fw-semibold small">SKU / Code <span class="text-muted">(Optional; generated if blank)</span></label>
-                <input type="text" class="form-control text-uppercase" id="sku" name="sku" maxlength="50" pattern="[A-Za-z0-9._-]+" placeholder="e.g. ADOBO-RICE">
+                <input type="text" class="form-control text-uppercase" id="sku" name="sku" maxlength="50" pattern="[A-Za-z0-9._-]+" placeholder="e.g. ADOBO-RICE" value="<?= htmlspecialchars((string)($product['sku'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
               </div>
               <div class="col-12 col-md-6">
                 <label for="product_type" class="form-label fw-semibold small">Inventory Type <span class="text-danger">*</span></label>
                 <select class="form-select" id="product_type" name="product_type" required>
-                  <option value="recipe" selected>Recipe / Ingredients</option>
-                  <option value="direct">Direct stock item (e.g. bottled drink)</option>
+                  <option value="recipe" <?= ($product['product_type'] ?? 'recipe') === 'recipe' ? 'selected' : '' ?>>Recipe / Ingredients</option>
+                  <option value="direct" <?= ($product['product_type'] ?? 'recipe') === 'direct' ? 'selected' : '' ?>>Direct stock item (e.g. bottled drink)</option>
                 </select>
               </div>
             </div>
@@ -76,32 +81,38 @@
                 <label for="base_price" class="form-label fw-semibold small">Selling Price (PHP) <span class="text-danger">*</span></label>
                 <div class="input-group">
                   <span class="input-group-text">₱</span>
-                  <input type="number" step="0.01" min="0" class="form-control" id="base_price" name="base_price" required placeholder="0.00">
+                  <input type="number" step="0.01" min="0" class="form-control" id="base_price" name="base_price" required placeholder="0.00" value="<?= htmlspecialchars((string)($product['base_price'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                 </div>
               </div>
               <div class="col-12 col-md-4">
                 <label for="cost_price" class="form-label fw-semibold small">Estimated Cost (PHP)</label>
                 <div class="input-group">
                   <span class="input-group-text">₱</span>
-                  <input type="number" step="0.01" min="0" class="form-control" id="cost_price" name="cost_price" value="0.00">
+                  <input type="number" step="0.01" min="0" class="form-control" id="cost_price" name="cost_price" value="<?= htmlspecialchars((string)($product['cost_price'] ?? '0.00'), ENT_QUOTES, 'UTF-8') ?>">
                 </div>
                 <div class="form-text">Used as a fallback cost where no recipe applies.</div>
               </div>
               <div class="col-12 col-md-4">
                 <label for="tax_rate" class="form-label fw-semibold small">Tax Rate (%)</label>
-                <input type="number" step="0.01" min="0" max="100" class="form-control" id="tax_rate" name="tax_rate" value="12.00" required>
+                <input type="number" step="0.01" min="0" max="100" class="form-control" id="tax_rate" name="tax_rate" value="<?= htmlspecialchars((string)($product['tax_rate'] ?? '12.00'), ENT_QUOTES, 'UTF-8') ?>" required>
               </div>
             </div>
 
             <div class="border rounded-3 p-3 mb-4 bg-light">
               <div class="d-flex align-items-start gap-3">
-                <div class="flex-grow-1">
-                  <label for="productImageInput" class="form-label fw-semibold small">Menu Item Photo <span class="text-muted">(Optional)</span></label>
+                <div class="flex-grow-1 min-w-0">
+                  <label for="productImageInput" class="form-label fw-semibold small"><?= $isEdit && !empty($product['image_path']) ? 'Change Menu Item Photo' : 'Menu Item Photo' ?> <span class="text-muted">(Optional)</span></label>
                   <input type="file" class="form-control" id="productImageInput" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" <?= empty($product_image_column_ready) ? 'disabled' : '' ?>>
                   <div class="form-text">JPG, PNG, or WebP · up to 3 MB · square or landscape images work best. The photo will appear on the POS menu.</div>
+                  <?php if ($isEdit && !empty($product['image_path'])): ?>
+                    <div class="form-check mt-2">
+                      <input class="form-check-input" type="checkbox" name="remove_image" value="1" id="removeExistingImage">
+                      <label class="form-check-label small text-danger" for="removeExistingImage">Remove current photo</label>
+                    </div>
+                  <?php endif; ?>
                 </div>
-                <div class="menu-image-preview-frame d-none" id="productImagePreviewFrame" style="width:105px;height:92px;flex:0 0 105px;border-radius:12px;overflow:hidden;border:1px solid #dce3ec;background:#fff">
-                  <img id="productImagePreview" src="" alt="Product image preview" style="width:100%;height:100%;object-fit:cover">
+                <div class="menu-image-preview-frame <?= $isEdit && !empty($product['image_path']) ? '' : 'd-none' ?>" id="productImagePreviewFrame" style="width:105px;height:92px;flex:0 0 105px;border-radius:12px;overflow:hidden;border:1px solid #dce3ec;background:#fff">
+                  <img id="productImagePreview" src="<?= $isEdit && !empty($product['image_path']) ? htmlspecialchars(BASE_URL . '/' . ltrim((string)$product['image_path'], '/'), ENT_QUOTES, 'UTF-8') : '' ?>" alt="Product image preview" style="width:100%;height:100%;object-fit:cover">
                 </div>
               </div>
             </div>
@@ -111,7 +122,7 @@
               <select class="form-select" id="direct_stock_ingredient_id" name="direct_stock_ingredient_id">
                 <option value="">Select the ingredient deducted per unit sold...</option>
                 <?php foreach ($directStockIngredients as $ing): ?>
-                  <option value="<?= (int)$ing['id'] ?>">
+                  <option value="<?= (int)$ing['id'] ?>" <?= (int)($product['direct_stock_ingredient_id'] ?? 0) === (int)$ing['id'] ? 'selected' : '' ?>>
                     <?= htmlspecialchars($ing['name'], ENT_QUOTES, 'UTF-8') ?> — <?= number_format((float)$ing['current_stock'], 2) ?> <?= htmlspecialchars($ing['base_unit'], ENT_QUOTES, 'UTF-8') ?> in stock
                   </option>
                 <?php endforeach; ?>
@@ -124,7 +135,16 @@
                 <label class="form-label fw-semibold small mb-0">Size / Serving Variants <span class="text-muted">(Optional)</span></label>
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="addVariantBtn"><i class="bi bi-plus-lg"></i> Add Variant</button>
               </div>
-              <div id="variantsContainer" class="d-flex flex-column gap-2"></div>
+              <div id="variantsContainer" class="d-flex flex-column gap-2">
+                <?php foreach ($editVariants as $variantIndex => $variant): ?>
+                  <div class="row g-2 align-items-center bg-light p-2 rounded" data-existing-variant>
+                    <input type="hidden" name="variants[<?= (int)$variantIndex ?>][id]" value="<?= (int)$variant['id'] ?>">
+                    <div class="col-6"><input type="text" name="variants[<?= (int)$variantIndex ?>][name]" class="form-control form-control-sm" maxlength="100" required value="<?= htmlspecialchars((string)$variant['name'], ENT_QUOTES, 'UTF-8') ?>" placeholder="Variant name"></div>
+                    <div class="col-4"><div class="input-group input-group-sm"><span class="input-group-text">+₱</span><input type="number" name="variants[<?= (int)$variantIndex ?>][price_adjustment]" class="form-control form-control-sm" step="0.01" value="<?= htmlspecialchars((string)$variant['additional_price'], ENT_QUOTES, 'UTF-8') ?>" required></div></div>
+                    <div class="col-2 text-end"><button type="button" class="btn btn-outline-danger btn-sm" data-remove-variant>Remove</button></div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
               <small class="text-muted">Enter a price adjustment, such as 0 for Solo or 50 for Sharing. Total variant price is the base price plus the adjustment.</small>
             </div>
 
@@ -135,7 +155,7 @@
                   <?php foreach ($addonGroups as $ag): ?>
                     <div class="col-12 col-md-6">
                       <div class="form-check border p-3 rounded">
-                        <input class="form-check-input" type="checkbox" name="addon_group_ids[]" value="<?= (int)$ag['id'] ?>" id="ag_<?= (int)$ag['id'] ?>">
+                        <input class="form-check-input" type="checkbox" name="addon_group_ids[]" value="<?= (int)$ag['id'] ?>" id="ag_<?= (int)$ag['id'] ?>" <?= in_array((int)$ag['id'], $selectedAddonGroupIds, true) ? 'checked' : '' ?>>
                         <label class="form-check-label small fw-medium" for="ag_<?= (int)$ag['id'] ?>">
                           <?= htmlspecialchars($ag['name'], ENT_QUOTES, 'UTF-8') ?>
                           <span class="text-muted">(<?= !empty($ag['is_required']) ? 'Required' : 'Optional' ?>)</span>
@@ -150,7 +170,7 @@
             <div class="d-flex justify-content-end gap-2 pt-3 border-top">
               <a href="<?= BASE_URL ?>/menu" class="btn btn-light px-4">Cancel</a>
               <button type="submit" class="btn btn-pos-primary px-4 fw-semibold" <?= empty($categories) ? 'disabled' : '' ?>>
-                Save & Configure Recipe <i class="bi bi-arrow-right ms-1"></i>
+                <?= $isEdit ? 'Save Changes' : 'Save & Configure Recipe' ?> <i class="bi <?= $isEdit ? 'bi-check2' : 'bi-arrow-right' ?> ms-1"></i>
               </button>
             </div>
           </form>
@@ -184,7 +204,7 @@
     if (productImagePreview) productImagePreview.src = productImagePreviewUrl;
     productImagePreviewFrame?.classList.remove('d-none');
   });
-  let variantCount = 0;
+  let variantCount = <?= (int)count($editVariants) ?>;
 
   function toggleProductType() {
     const isDirect = typeSelect.value === 'direct';
@@ -237,6 +257,9 @@
     variantCount++;
   }
 
+  document.querySelectorAll('[data-remove-variant]').forEach(button => {
+    button.addEventListener('click', () => button.closest('[data-existing-variant]')?.remove());
+  });
   typeSelect.addEventListener('change', toggleProductType);
   document.getElementById('addVariantBtn').addEventListener('click', addVariantRow);
   toggleProductType();
