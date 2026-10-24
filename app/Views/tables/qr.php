@@ -74,7 +74,7 @@ $h = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES, '
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="<?= htmlspecialchars(BASE_URL . '/assets/js/qrcode.min.js?v=1', ENT_QUOTES, 'UTF-8') ?>"></script>
 <script>
 (() => {
   const baseInput = document.getElementById('qrBaseUrl');
@@ -98,13 +98,27 @@ $h = static fn($value): string => htmlspecialchars((string)$value, ENT_QUOTES, '
     urlBox.textContent = url;
     openLink.href = url;
     status.textContent = '';
-    if (!window.QRCode) {
-      status.textContent = 'QR generator did not load. Check your internet connection and refresh this page.';
-      return;
-    }
     const target = document.getElementById('tableQrCanvas');
     target.innerHTML = '';
-    qr = new QRCode(target, { text:url, width:200, height:200, colorDark:'#111827', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M });
+    if (!window.QRCode || typeof window.QRCode !== 'function') {
+      status.textContent = 'The local QR generator could not be loaded. Confirm that /assets/js/qrcode.min.js exists and refresh this page.';
+      return;
+    }
+    try {
+      qr = new QRCode(target, {
+        text:url,
+        width:200,
+        height:200,
+        colorDark:'#111827',
+        colorLight:'#ffffff',
+        correctLevel:QRCode.CorrectLevel.M
+      });
+      status.textContent = '';
+    } catch (error) {
+      target.innerHTML = '';
+      status.textContent = 'QR generation failed. Check the URL and reload the page.';
+      console.error('Table QR generation failed:', error);
+    }
   }
   baseInput.addEventListener('input', updateQr);
   document.getElementById('copyTableQrUrl').addEventListener('click', async () => {
