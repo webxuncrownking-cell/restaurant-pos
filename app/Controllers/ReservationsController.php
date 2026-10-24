@@ -30,15 +30,22 @@ class ReservationsController
         }
 
         $ready = ReservationsService::schemaReady();
-        Response::render('reservations/index', 200, [
+        // Render directly because some existing XAMPP installations use a legacy
+        // Response::render() signature. This view includes its own header/navbar/footer.
+        $viewData = [
             'schema_ready' => $ready,
             'reservations' => $ready ? ReservationsService::getReservations($restaurantId) : [],
             'waitlist' => $ready ? ReservationsService::getWaitlist($restaurantId) : [],
             'tables' => TableService::getTables($restaurantId),
             'flashes' => Session::getFlashes(),
             'csrf_token' => CSRF::getToken(),
-            'title' => 'Reservations & Waiting List - Restaurant POS'
-        ]);
+            'title' => 'Reservations & Waiting List - Restaurant POS',
+        ];
+        http_response_code(200);
+        if (!headers_sent()) header('Content-Type: text/html; charset=utf-8');
+        extract($viewData, EXTR_SKIP);
+        require APP_ROOT . '/app/Views/reservations/index.php';
+        return;
     }
 
     public function migrate(Request $request): void
