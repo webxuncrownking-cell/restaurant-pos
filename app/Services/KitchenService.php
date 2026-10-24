@@ -62,12 +62,22 @@ class KitchenService
      * Return active kitchen tickets, including item notes and add-ons.
      * Every query is restricted to the selected restaurant.
      */
+    private static function ensureKitchenStationSchema(): void
+    {
+        $pdo = Database::getInstance();
+        $columns = $pdo->query("SHOW COLUMNS FROM products LIKE 'kitchen_station'")->fetchAll(PDO::FETCH_ASSOC);
+        if (!$columns) {
+            $pdo->exec("ALTER TABLE products ADD COLUMN kitchen_station VARCHAR(80) NOT NULL DEFAULT 'Hot Kitchen'");
+        }
+    }
+
     public static function getActiveTickets(int $restaurantId): array
     {
         if ($restaurantId <= 0) return [];
 
         // Ensure the additive item-status table exists before the ticket query joins it.
         self::ensureItemStatusSchema();
+        self::ensureKitchenStationSchema();
 
         $orders = Database::fetchAll(
             "SELECT o.id, o.order_number, o.order_type, o.table_id, o.order_status,
