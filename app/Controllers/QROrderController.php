@@ -14,8 +14,10 @@ use App\Core\Response;
 use App\Services\DeviceService;
 use App\Services\MenuService;
 use App\Services\PosSyncService;
+use App\Services\QROrderTrackingService;
 use App\Services\TableQrService;
 use InvalidArgumentException;
+use RuntimeException;
 use Throwable;
 
 class QROrderController
@@ -143,6 +145,7 @@ class QROrderController
         $notes = 'QR table order · Guest: ' . $customerName;
         if ($customerNote !== '') $notes .= ' · Note: ' . $customerNote;
         try {
+            QROrderTrackingService::ensureSchema();
             $result = PosSyncService::processOrderSync($restaurantId, [
                 'client_uuid' => $clientUuid,
                 'device_id' => (int)$device['id'],
@@ -158,7 +161,12 @@ class QROrderController
             ]);
 
             $orderNumber = (string)($result['order_number'] ?? '');
-            Response::redirect('/order/' . rawurlencode($token) . '?submitted=' . rawurlencode($orderNumber));
+            $orderId = (int)($result['server_order_id'] ?? 0);
+            if ($orderId < 1) {
+                throw new RuntimeException('The order was submitted, but its status link could not be prepared.');
+            }
+            $trackingToken = QROrderTrackingService::createTrackingToken($restaurantId, $orderId, (int)$table['table_id']);
+            Response::redirect('/order/' . rawurlencode($token) . '/track/' . rawurlencode($trackingToken));
         } catch (InvalidArgumentException $e) {
             Response::redirect('/order/' . rawurlencode($token) . '?error=' . rawurlencode($e->getMessage()));
         } catch (Throwable $e) {
