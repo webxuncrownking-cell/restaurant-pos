@@ -98,12 +98,30 @@ $selectedAddonGroupIds = $isEdit ? array_map(static fn(array $g): int => (int)$g
               </div>
             </div>
 
-            <div class="border rounded-3 p-3 mb-4 bg-light">
-              <div class="d-flex align-items-start gap-3">
-                <div class="flex-grow-1 min-w-0">
-                  <label for="productImageInput" class="form-label fw-semibold small"><?= $isEdit && !empty($product['image_path']) ? 'Change Menu Item Photo' : 'Menu Item Photo' ?> <span class="text-muted">(Optional)</span></label>
-                  <input type="file" class="form-control" id="productImageInput" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" <?= empty($product_image_column_ready) ? 'disabled' : '' ?>>
-                  <div class="form-text">JPG, PNG, or WebP · up to 3 MB · square or landscape images work best. The photo will appear on the POS menu.</div>
+            <style>
+              .product-image-panel { padding:14px; margin-bottom:1.25rem; }
+              .product-image-layout { display:flex; align-items:flex-start; gap:14px; min-width:0; }
+              .product-image-controls { flex:1 1 auto; min-width:0; }
+              .product-image-picker { position:relative; display:flex; width:100%; min-width:0; height:42px; border:1px solid #d7e0eb; border-radius:10px; overflow:hidden; background:#fff; }
+              .product-image-input { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
+              .product-image-trigger { display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; gap:.4rem; min-width:125px; height:100%; margin:0; padding:0 .8rem; border:0; border-right:1px solid #d7e0eb; color:#263248; background:#f1f5f9; font-size:.82rem; font-weight:650; line-height:1; white-space:nowrap; cursor:pointer; }
+              .product-image-trigger:hover { color:#172033; background:#e2eaf4; }
+              .product-image-input:focus-visible + .product-image-trigger { outline:2px solid #2563eb; outline-offset:-3px; }
+              .product-image-filename { display:flex; align-items:center; min-width:0; flex:1 1 auto; padding:0 .7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#64748b; font-size:.82rem; }
+              .menu-image-preview-frame { width:105px; height:92px; flex:0 0 105px; overflow:hidden; border:1px solid #dce3ec; border-radius:10px; background:#fff; }
+              .menu-image-preview-frame img { display:block; width:100%; height:100%; object-fit:cover; object-position:center; }
+              @media(max-width:600px) { .product-image-layout { flex-wrap:wrap; } .menu-image-preview-frame { width:88px; height:78px; flex-basis:88px; } }
+            </style>
+            <div class="product-image-panel border rounded-3 bg-light">
+              <div class="product-image-layout">
+                <div class="product-image-controls">
+                  <label for="productImageInput" class="form-label fw-semibold small"><?= $isEdit && !empty($product['image_path']) ? 'Change photo' : 'Menu Item Photo' ?> <span class="text-muted">(Optional)</span></label>
+                  <div class="product-image-picker">
+                    <input type="file" class="product-image-input" id="productImageInput" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" <?= empty($product_image_column_ready) ? 'disabled' : '' ?>>
+                    <label class="product-image-trigger" for="productImageInput"><i class="bi bi-upload" aria-hidden="true"></i> Choose File</label>
+                    <span class="product-image-filename" id="productImageFilename">No file chosen</span>
+                  </div>
+                  <div class="form-text">JPG, PNG, or WebP · up to 3 MB. The photo appears on the POS menu.</div>
                   <?php if ($isEdit && !empty($product['image_path'])): ?>
                     <div class="form-check mt-2">
                       <input class="form-check-input" type="checkbox" name="remove_image" value="1" id="removeExistingImage">
@@ -111,8 +129,8 @@ $selectedAddonGroupIds = $isEdit ? array_map(static fn(array $g): int => (int)$g
                     </div>
                   <?php endif; ?>
                 </div>
-                <div class="menu-image-preview-frame <?= $isEdit && !empty($product['image_path']) ? '' : 'd-none' ?>" id="productImagePreviewFrame" style="width:105px;height:92px;flex:0 0 105px;border-radius:12px;overflow:hidden;border:1px solid #dce3ec;background:#fff">
-                  <img id="productImagePreview" src="<?= $isEdit && !empty($product['image_path']) ? htmlspecialchars(BASE_URL . '/' . ltrim((string)$product['image_path'], '/'), ENT_QUOTES, 'UTF-8') : '' ?>" alt="Product image preview" style="width:100%;height:100%;object-fit:cover">
+                <div class="menu-image-preview-frame <?= $isEdit && !empty($product['image_path']) ? '' : 'd-none' ?>" id="productImagePreviewFrame">
+                  <img id="productImagePreview" src="<?= $isEdit && !empty($product['image_path']) ? htmlspecialchars(BASE_URL . '/' . ltrim((string)$product['image_path'], '/'), ENT_QUOTES, 'UTF-8') : '' ?>" alt="Product image preview">
                 </div>
               </div>
             </div>
@@ -189,20 +207,28 @@ $selectedAddonGroupIds = $isEdit ? array_map(static fn(array $g): int => (int)$g
   const productImageInput = document.getElementById('productImageInput');
   const productImagePreviewFrame = document.getElementById('productImagePreviewFrame');
   const productImagePreview = document.getElementById('productImagePreview');
+  const productImageFilename = document.getElementById('productImageFilename');
+  const originalProductImageSrc = productImagePreview?.getAttribute('src') || '';
   let productImagePreviewUrl = null;
   productImageInput?.addEventListener('change', () => {
     const file = productImageInput.files && productImageInput.files[0];
-    if (!file) return;
+    if (!file) {
+      if (productImageFilename) productImageFilename.textContent = 'No file chosen';
+      return;
+    }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 3 * 1024 * 1024) {
       alert('Choose a JPG, PNG, or WebP image up to 3 MB.');
       productImageInput.value = '';
-      productImagePreviewFrame?.classList.add('d-none');
+      if (productImageFilename) productImageFilename.textContent = 'No file chosen';
+      if (productImagePreview) productImagePreview.src = originalProductImageSrc;
+      if (productImagePreviewFrame) productImagePreviewFrame.classList.toggle('d-none', !originalProductImageSrc);
       return;
     }
     if (productImagePreviewUrl) URL.revokeObjectURL(productImagePreviewUrl);
     productImagePreviewUrl = URL.createObjectURL(file);
     if (productImagePreview) productImagePreview.src = productImagePreviewUrl;
-    productImagePreviewFrame?.classList.remove('d-none');
+    if (productImagePreviewFrame) productImagePreviewFrame.classList.remove('d-none');
+    if (productImageFilename) productImageFilename.textContent = file.name;
   });
   let variantCount = <?= (int)count($editVariants) ?>;
 
