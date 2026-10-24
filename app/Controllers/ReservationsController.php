@@ -30,7 +30,7 @@ class ReservationsController
         }
 
         $ready = ReservationsService::schemaReady();
-        Response::render('reservations/index', [
+        Response::render('reservations/index', 200, [
             'schema_ready' => $ready,
             'reservations' => $ready ? ReservationsService::getReservations($restaurantId) : [],
             'waitlist' => $ready ? ReservationsService::getWaitlist($restaurantId) : [],
