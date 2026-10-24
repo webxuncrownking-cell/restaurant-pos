@@ -129,6 +129,12 @@ class InventoryService
             $updateStmt = $pdo->prepare($updateSql);
             $updateStmt->execute($params);
 
+            // For batches created after expiry tracking is enabled, sales consume
+            // tracked lots by earliest expiry. Legacy/unbatched stock still works.
+            if ($referenceType === 'order_sale' && class_exists(ExpiryWasteService::class)) {
+                ExpiryWasteService::consumeTrackedBatchesForSale($restaurantId, $ingredientId, $baseQty);
+            }
+
             // 6. Insert double-entry ledger entry into inventory_movements
             $insertStmt = $pdo->prepare(
                 "INSERT INTO inventory_movements (
