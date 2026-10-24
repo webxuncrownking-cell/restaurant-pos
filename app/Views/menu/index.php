@@ -154,21 +154,28 @@
         <span class="badge bg-light text-dark border ms-1"><?= (int)$cat['product_count'] ?></span>
       </a>
     <?php endforeach; ?>
+    <div class="menu-view-toggle ms-auto d-inline-flex align-items-center gap-1 p-1 rounded-3 border bg-white" role="group" aria-label="Menu view">
+      <button type="button" class="btn btn-sm btn-outline-secondary menu-view-toggle-btn active" data-menu-view="grid" title="Grid view" aria-label="Grid view" aria-pressed="true">
+        <i class="bi bi-grid-3x3-gap-fill" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary menu-view-toggle-btn" data-menu-view="list" title="List view" aria-label="List view" aria-pressed="false">
+        <i class="bi bi-list-ul" aria-hidden="true"></i>
+      </button>
+    </div>
   </div>
 
-  <?php if (empty($products)): ?>
-    <div class="card border-0 shadow-sm p-5 text-center">
+  <?php if (empty($products)): ?>    <div class="card border-0 shadow-sm p-5 text-center">
       <i class="bi bi-cup-hot text-muted fs-1 mb-2"></i>
       <h5 class="fw-semibold text-secondary">No menu items found</h5>
       <p class="text-muted small">Create a product and then configure its recipe or linked stock ingredient.</p>
       <div><a href="<?= BASE_URL ?>/menu/products/create" class="btn btn-pos-primary btn-sm">Add First Product</a></div>
     </div>
   <?php else: ?>
-    <div class="row g-3">
+    <div class="row g-3 menu-product-grid" id="menuProductGrid">
       <?php foreach ($products as $prod): ?>
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="card card-metric h-100 border-0 shadow-sm rounded-3 <?= empty($prod['is_active']) ? 'opacity-75' : '' ?>">
-            <div class="card-body p-3 d-flex flex-column">
+        <div class="menu-product-col col-12 col-md-6 col-lg-4">
+          <div class="menu-product-card card card-metric h-100 border-0 shadow-sm rounded-3 <?= empty($prod['is_active']) ? 'opacity-75' : '' ?>">
+            <div class="menu-product-card-body card-body p-3 d-flex flex-column">
               <div class="menu-product-photo mb-3">
                 <?php if (!empty($prod['image_path'])): ?>
                   <img src="<?= htmlspecialchars(BASE_URL . '/' . ltrim((string)$prod['image_path'], '/'), ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?>">
@@ -176,21 +183,24 @@
                   <i class="bi bi-image menu-photo-empty" aria-hidden="true"></i>
                 <?php endif; ?>
               </div>
-              <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="menu-product-identity">
+              <div class="menu-product-price-row d-flex justify-content-between align-items-start mb-2">
                 <span class="badge bg-light text-muted border small"><?= htmlspecialchars($prod['category_name'], ENT_QUOTES, 'UTF-8') ?></span>
                 <span class="fw-bold fs-5 text-success">₱<?= number_format((float)$prod['base_price'], 2) ?></span>
               </div>
-              <div class="d-flex justify-content-between align-items-start gap-2">
+              <div class="menu-product-title-row d-flex justify-content-between align-items-start gap-2">
                 <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($prod['name'], ENT_QUOTES, 'UTF-8') ?></h5>
                 <span class="badge <?= !empty($prod['is_active']) ? 'bg-success-subtle text-success' : 'bg-secondary' ?>">
                   <?= !empty($prod['is_active']) ? 'Visible' : 'Hidden' ?>
                 </span>
               </div>
-              <div class="small text-muted mb-3">
+              <div class="menu-product-sku small text-muted mb-3">
                 SKU: <?= htmlspecialchars((string)$prod['sku'], ENT_QUOTES, 'UTF-8') ?>
                 · <?= ($prod['product_type'] ?? 'recipe') === 'direct' ? 'Direct stock' : 'Recipe based' ?>
               </div>
 
+              </div>
+              <div class="menu-product-secondary">
               <?php if (!empty($product_image_column_ready)): ?>
                 <form method="POST" action="<?= BASE_URL ?>/menu/products/image" enctype="multipart/form-data" class="menu-photo-form mb-3">
                   <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
@@ -216,7 +226,7 @@
                 </form>
               <?php endif; ?>
 
-              <div class="mb-3 mt-auto">
+              <div class="menu-product-details mb-3 mt-auto">
                 <?php if (!empty($prod['variants'])): ?>
                   <div class="small text-secondary mb-1">
                     <i class="bi bi-tags me-1"></i> <strong>Variants:</strong>
@@ -244,7 +254,8 @@
                 </div>
               </div>
 
-              <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+              </div>
+              <div class="menu-product-actions d-flex flex-wrap gap-2 pt-2 border-top">
                 <a href="<?= BASE_URL ?>/menu/products/<?= (int)$prod['id'] ?>/recipe" class="btn btn-outline-primary btn-sm flex-grow-1">
                   <i class="bi bi-card-checklist me-1"></i> Recipe BOM
                 </a>
