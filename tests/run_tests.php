@@ -954,6 +954,35 @@ $openBillPayload['change_amount'] = 0;
 unset($openBillPayload['payment']);
 $openBillSync = \App\Services\PosSyncService::processOrderSync(1, $openBillPayload);
 $openBillId = (int)$openBillSync['server_order_id'];
+// Simulate a legacy/dirty table row: an active ticket exists, but its stored status says available.
+$openBillTableId = (int)($openBillPayload['table_id'] ?? 0);
+if ($openBillTableId > 0) {
+    Database::query(
+        "UPDATE restaurant_tables SET status = 'available' WHERE restaurant_id = 1 AND id = ?",
+        [$openBillTableId]
+    );
+}
+$floorTablesAfterSync = \App\Services\TableService::getTables(1);
+$reconciledFloorTable = null;
+foreach ($floorTablesAfterSync as $floorTable) {
+    if ((int)$floorTable['id'] === $openBillTableId) {
+        $reconciledFloorTable = $floorTable;
+        break;
+    }
+}
+$persistedFloorTable = Database::fetchOne(
+    "SELECT status FROM restaurant_tables WHERE restaurant_id = 1 AND id = ?",
+    [$openBillTableId]
+);
+assertTest(
+    "Legacy Active Ticket Reconciles Floor Table to Occupied",
+    $openBillTableId > 0
+        && $reconciledFloorTable !== null
+        && $reconciledFloorTable['status'] === 'occupied'
+        && $persistedFloorTable !== null
+        && $persistedFloorTable['status'] === 'occupied'
+);
+
 $openBillRow = Database::fetchOne(
     "SELECT payment_status, paid_amount, total_amount FROM orders WHERE restaurant_id = 1 AND id = ?",
     [$openBillId]
@@ -1055,6 +1084,20 @@ Database::query("DELETE FROM order_item_addons WHERE restaurant_id = 1 AND order
 Database::query("DELETE FROM inventory_movements WHERE restaurant_id = 1 AND reference_id = ?", [$openBillId]);
 Database::query("DELETE FROM order_items WHERE restaurant_id = 1 AND order_id = ?", [$openBillId]);
 Database::query("DELETE FROM orders WHERE restaurant_id = 1 AND id = ?", [$openBillId]);
+// Cleanup open bill table occupancy for subsequent tests.
+if ($openBillTableId > 0) {
+    Database::query(
+        "UPDATE restaurant_tables SET status = 'available'
+         WHERE restaurant_id = 1 AND id = ?
+           AND NOT EXISTS (
+             SELECT 1 FROM orders
+             WHERE restaurant_id = 1 AND table_id = ?
+               AND order_type = 'dine_in'
+               AND order_status IN ('pending','preparing','ready','served')
+           )",
+        [$openBillTableId, $openBillTableId]
+    );
+}
 
 // 19e. Item-based splitting: assign order lines to guest shares with exact cent allocation.
 echo PHP_EOL . "19e. Testing Item-Based Bill Splitting:" . PHP_EOL;
