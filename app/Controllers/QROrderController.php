@@ -176,16 +176,50 @@ class QROrderController
         $products = array_values(array_filter($products, static fn(array $product): bool =>
             in_array((int)$product['category_id'], $activeCategoryIds, true)
         ));
-        foreach ($products as &$product) {
+        $publicProducts = [];
+        foreach ($products as $product) {
             $image = trim((string)($product['image_path'] ?? ''));
-            $product['image_url'] = $image !== '' ? BASE_URL . '/' . ltrim($image, '/') : '';
+            $publicVariants = [];
+            foreach (($product['variants'] ?? []) as $variant) {
+                $publicVariants[] = [
+                    'id' => (int)$variant['id'],
+                    'name' => (string)$variant['name'],
+                    'additional_price' => (float)$variant['additional_price']
+                ];
+            }
+            $publicAddonGroups = [];
+            foreach (($product['addon_groups'] ?? []) as $group) {
+                $publicOptions = [];
+                foreach (($group['options'] ?? []) as $option) {
+                    $publicOptions[] = [
+                        'id' => (int)$option['id'],
+                        'name' => (string)$option['name'],
+                        'price' => (float)$option['price']
+                    ];
+                }
+                $publicAddonGroups[] = [
+                    'id' => (int)$group['id'],
+                    'name' => (string)$group['name'],
+                    'is_required' => (int)($group['is_required'] ?? 0),
+                    'options' => $publicOptions
+                ];
+            }
+            $publicProducts[] = [
+                'id' => (int)$product['id'],
+                'category_id' => (int)$product['category_id'],
+                'category_name' => (string)$product['category_name'],
+                'name' => (string)$product['name'],
+                'base_price' => (float)$product['base_price'],
+                'image_url' => $image !== '' ? BASE_URL . '/' . ltrim($image, '/') : '',
+                'variants' => $publicVariants,
+                'addon_groups' => $publicAddonGroups
+            ];
         }
-        unset($product);
 
         Response::render('qr_order/menu', [
             'table' => $table,
             'categories' => $categories,
-            'products' => $products,
+            'products' => $publicProducts,
             'csrf_token' => CSRF::getToken(),
             'client_uuid' => DeviceService::generateUuidV4(),
             'qr_token' => $token,
