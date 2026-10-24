@@ -323,6 +323,7 @@ CREATE TABLE `restaurant_tables` (
   `id` INT UNSIGNED AUTO_INCREMENT,
   `restaurant_id` INT UNSIGNED NOT NULL,
   `table_number` VARCHAR(20) NOT NULL,
+  `qr_token` CHAR(64) NULL,
   `name` VARCHAR(50) NOT NULL,
   `capacity` SMALLINT UNSIGNED NOT NULL DEFAULT 4,
   `floor_zone` VARCHAR(50) DEFAULT 'Main Dining',
@@ -332,6 +333,7 @@ CREATE TABLE `restaurant_tables` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_tbl_tenant_id` (`restaurant_id`, `id`),
   UNIQUE KEY `uk_tbl_tenant_number` (`restaurant_id`, `table_number`),
+  UNIQUE KEY `uq_restaurant_tables_qr_token` (`qr_token`),
   FOREIGN KEY (`restaurant_id`) REFERENCES `restaurants` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
