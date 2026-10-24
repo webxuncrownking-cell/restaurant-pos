@@ -400,7 +400,7 @@ class PosSyncService
                 }
 
                 $addon = Database::fetchOne(
-                    "SELECT pa.id, pa.name, pa.price, pa.cost_price, pa.ingredient_id, pa.deduction_quantity,
+                    "SELECT pa.id, pa.group_id, pa.name, pa.price, pa.cost_price, pa.ingredient_id, pa.deduction_quantity,
                             i.base_unit AS ingredient_base_unit
                      FROM product_addons pa
                      JOIN product_addon_group_assignments pag
@@ -418,6 +418,7 @@ class PosSyncService
 
                 $addonEntry = [
                     'id' => (int)$addon['id'],
+                    'group_id' => (int)$addon['group_id'],
                     'name' => (string)$addon['name'],
                     'price' => (float)$addon['price'],
                     'cost_price' => (float)$addon['cost_price'],
@@ -428,6 +429,25 @@ class PosSyncService
                 $addons[] = $addonEntry;
                 $addonIds[] = $addonEntry['id'];
                 $addonPriceTotal += $addonEntry['price'];
+            }
+
+            if (($orderPayload['require_addon_groups'] ?? false) === true) {
+                $requiredGroups = Database::fetchAll(
+                    "SELECT g.id, g.name
+                     FROM product_addon_groups g
+                     JOIN product_addon_group_assignments pag
+                       ON pag.restaurant_id = g.restaurant_id AND pag.group_id = g.id
+                     WHERE g.restaurant_id = ? AND pag.product_id = ? AND g.is_required = 1",
+                    [$restaurantId, $productId]
+                );
+                $selectedGroupIds = array_map(static fn(array $addon): int => (int)$addon['group_id'], $addons);
+                foreach ($requiredGroups as $requiredGroup) {
+                    if (!in_array((int)$requiredGroup['id'], $selectedGroupIds, true)) {
+                        throw new InvalidArgumentException(
+                            'Choose an option for the required add-on group: ' . (string)$requiredGroup['name'] . '.'
+                        );
+                    }
+                }
             }
 
             $unitPrice = round(
