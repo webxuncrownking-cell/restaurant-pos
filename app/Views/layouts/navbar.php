@@ -93,7 +93,7 @@ foreach ($navGroups as $items) {
 
 $logoPath = (string)($restaurant['logo_path'] ?? '');
 $logoUrl = $logoPath !== '' ? BASE_URL . '/' . ltrim($logoPath, '/') : '';
-$restaurantName = $restaurant['name'] ?? ($isPlatform ? 'SaaS Platform' : 'Restaurant POS');
+$restaurantName = $restaurant['name'] ?? ($isPlatform ? 'ServeFlow POS' : 'Restaurant POS');
 $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
 $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Admin' : 'Staff');
 ?>
@@ -147,7 +147,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
         <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
       </a>
       <?php endif; ?>
-      <div class="app-sidebar-version">Restaurant POS <span class="mx-1">·</span> Management</div>
+      <div class="app-sidebar-version">ServeFlow POS <span class="mx-1">·</span> Restaurant Management</div>
     </div>
   </aside>
 
