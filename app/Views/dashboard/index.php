@@ -118,14 +118,6 @@
     </div>
 
   <?php else: ?>
-              <tr><td colspan="7" class="text-center text-muted py-4">No tenant restaurants registered yet.</td></tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  <?php else: ?>
     <!-- TENANT STAFF VIEW -->
     <div class="row g-3 mb-4">
       <div class="col-6 col-lg-3">
