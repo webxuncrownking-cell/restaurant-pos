@@ -47,7 +47,7 @@
 
   <?php if ($is_platform && empty($_SESSION['restaurant_id'])): ?>
     <!-- PLATFORM SUPERADMIN VIEW -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" id="platform-analytics">
       <div class="col-12 col-sm-6 col-xl-4">
         <div class="card card-metric p-3 bg-white">
           <div class="d-flex align-items-center gap-3">
@@ -90,7 +90,7 @@
     </div>
 
     <!-- Platform usage and recurring revenue -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" id="platform-usage">
       <div class="col-12 col-sm-6 col-xl-3">
         <div class="card card-metric p-3 bg-white h-100">
           <span class="text-muted small fw-medium">Active Restaurants</span>
@@ -122,7 +122,7 @@
     </div>
 
     <!-- Tenant List Table -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card border-0 shadow-sm rounded-3 mb-4" id="restaurant-accounts">
       <div class="card-header bg-white py-3">
         <h5 class="card-title mb-0 fw-semibold">Restaurant Accounts</h5>
       </div>
