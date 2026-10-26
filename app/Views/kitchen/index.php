@@ -120,6 +120,42 @@ ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
     .kitchen-ticket { box-shadow:none!important; break-inside:avoid; }
     body.printing-ticket .kitchen-ticket:not(.print-active) { display:none!important; }
   }
+
+  /* Kitchen readability pass: make order details and next actions easy to scan at a distance. */
+  .kitchen-subtitle { font-size: .96rem; line-height: 1.5; }
+  .kitchen-live-pill { font-size: .84rem; }
+  .kitchen-stat-label { font-size: .86rem; }
+  .kitchen-stat-value { font-size: 2rem; }
+  .kitchen-stat-note { font-size: .8rem; line-height: 1.4; }
+  .kitchen-filter, .kitchen-station-filter { min-height: 42px; font-size: .92rem; }
+  .kitchen-refresh-note { font-size: .86rem; }
+  .kitchen-ticket-number { font-size: 1.2rem; }
+  .kitchen-ticket-meta, .kitchen-chip, .kitchen-status { font-size: .86rem; }
+  .kitchen-elapsed { font-size: .92rem; font-weight: 800; }
+  .kitchen-delay-badge { font-size: .82rem; }
+  .kitchen-item { padding-top: 13px; padding-bottom: 13px; }
+  .kitchen-qty { font-size: 1.05rem; min-width: 34px; }
+  .kitchen-item-name { font-size: 1.05rem; line-height: 1.4; }
+  .kitchen-item-variant, .kitchen-item-addon, .kitchen-item-note { font-size: .9rem; line-height: 1.5; }
+  .kitchen-item-status { min-height: 42px; font-size: .9rem; }
+  .kitchen-ticket-note { font-size: .92rem; line-height: 1.5; }
+  .kitchen-ticket-actions .btn { min-height: 44px; font-size: .94rem; }
+  .kitchen-filter:focus-visible, .kitchen-station-filter:focus-visible,
+  .kitchen-item-status:focus-visible, .kitchen-ticket-actions .btn:focus-visible {
+    outline: 3px solid rgba(37,99,235,.65); outline-offset: 2px;
+  }
+  @media (max-width: 767.98px) {
+    .kitchen-wrap { padding: 14px; }
+    .kitchen-heading { font-size: 1.55rem; }
+    .kitchen-stats { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+    .kitchen-stat { padding: 13px; }
+    .kitchen-stat-value { font-size: 1.7rem; }
+    .kitchen-board { grid-template-columns: minmax(0,1fr) !important; }
+    .kitchen-ticket { min-width: 0; }
+    .kitchen-ticket-actions { flex-wrap: wrap; }
+    .kitchen-ticket-actions .btn { flex: 1 1 130px; }
+  }
+
 </style>
 
 <div class="kitchen-wrap">
