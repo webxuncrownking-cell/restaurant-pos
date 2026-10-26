@@ -53,6 +53,7 @@ foreach ($navGroups as $group => $items) {
     $route = (string)($item['route'] ?? '');
     if ($route === '/install') return $isPlatform;
     if ($route === '/billing') return $isPlatform || \App\Core\Auth::roleSlug() === 'owner';
+    if ($route === '/reservations') return $isPlatform || in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true);
     if (isset($navPermissionMap[$route])) return \App\Core\Auth::can($navPermissionMap[$route]);
     return true;
   }));
