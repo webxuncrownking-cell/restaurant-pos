@@ -87,6 +87,10 @@ $router->get('/dashboard', [DashboardController::class, 'index']);
 $router->get('/platform-analytics', [DashboardController::class, 'platformAnalytics']);
 $router->get('/platform-analytics/export.csv', [DashboardController::class, 'exportPlatformCsv']);
 $router->get('/restaurant-accounts', [DashboardController::class, 'restaurantAccounts']);
+$router->post('/restaurant-accounts/status', [DashboardController::class, 'updateRestaurantStatus']);
+$router->get('/platform-subscriptions', [DashboardController::class, 'platformSubscriptions']);
+$router->post('/platform-subscriptions/update', [DashboardController::class, 'updatePlatformSubscription']);
+$router->get('/platform-health', [DashboardController::class, 'platformHealth']);
 $router->get('/dashboard/switch-tenant', [DashboardController::class, 'switchTenant']);
 
 // Phase 2: Menu, Variants, Addons & Recipe BOM Routes
