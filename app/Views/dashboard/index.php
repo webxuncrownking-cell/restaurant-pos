@@ -15,14 +15,14 @@
     <div>
       <h2 class="h3 fw-bold text-dark mb-1">
         <?php if ($is_platform): ?>
-          <i class="bi bi-clouds text-primary me-2"></i>SaaS Platform Administration
+          <i class="bi bi-clouds text-primary me-2"></i>Platform Overview
         <?php else: ?>
           <i class="bi bi-shop text-warning me-2"></i><?= htmlspecialchars($restaurant['name'] ?? 'Restaurant Dashboard') ?>
         <?php endif; ?>
       </h2>
       <p class="text-muted small mb-0">
         <?php if ($is_platform): ?>
-          Master control panel for multi-restaurant tenants, billing, and system diagnostics.
+          Manage restaurant accounts, monitor subscriptions, and track platform performance and recurring revenue.
         <?php else: ?>
           Operating Currency: <strong><?= htmlspecialchars($restaurant['currency_symbol'] ?? 'PHP') ?></strong> &bull;
           Timezone: <strong><?= htmlspecialchars($restaurant['timezone'] ?? 'Asia/Manila') ?></strong> &bull;
@@ -55,7 +55,7 @@
               <i class="bi bi-building fs-3"></i>
             </div>
             <div>
-              <span class="text-muted small fw-medium">Active Tenants</span>
+              <span class="text-muted small fw-medium">Registered Restaurants</span>
               <h3 class="fw-bold mb-0 text-dark"><?= $total_restaurants ?? 0 ?></h3>
             </div>
           </div>
@@ -81,7 +81,7 @@
               <i class="bi bi-tablet fs-3"></i>
             </div>
             <div>
-              <span class="text-muted small fw-medium">Registered POS Devices</span>
+              <span class="text-muted small fw-medium">Registered POS Terminals</span>
               <h3 class="fw-bold mb-0 text-dark"><?= $total_devices ?? 0 ?></h3>
             </div>
           </div>
@@ -100,7 +100,7 @@
       </div>
       <div class="col-12 col-sm-6 col-xl-3">
         <div class="card card-metric p-3 bg-white h-100">
-          <span class="text-muted small fw-medium">Estimated Monthly Recurring Revenue</span>
+          <span class="text-muted small fw-medium">Estimated Monthly Subscription Revenue</span>
           <h3 class="fw-bold mb-0 text-dark"><?= htmlspecialchars(number_format((float)($estimated_mrr ?? 0), 2)) ?></h3>
           <small class="text-muted">Based on active subscription plans; not cash collected</small>
         </div>
@@ -114,7 +114,7 @@
       </div>
       <div class="col-12 col-sm-6 col-xl-3">
         <div class="card card-metric p-3 bg-white h-100">
-          <span class="text-muted small fw-medium">Restaurants Using POS This Month</span>
+          <span class="text-muted small fw-medium">Restaurants Active This Month</span>
           <h3 class="fw-bold mb-0 text-dark"><?= number_format((int)($active_restaurants_this_month ?? 0)) ?></h3>
           <small class="text-muted">Tenants with at least one non-cancelled order</small>
         </div>
@@ -124,7 +124,7 @@
     <!-- Tenant List Table -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
       <div class="card-header bg-white py-3">
-        <h5 class="card-title mb-0 fw-semibold">Onboarded Tenant Restaurants</h5>
+        <h5 class="card-title mb-0 fw-semibold">Restaurant Accounts</h5>
       </div>
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
