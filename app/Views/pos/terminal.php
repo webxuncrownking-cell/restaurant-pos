@@ -261,6 +261,42 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   #checkoutModal .modal-footer { border-top:1px solid #e4eaf2!important; }
   #checkoutModal .modal-footer .btn-outline-secondary { color:#344054!important; border-color:#aab4c2!important; }
 
+
+  /* Usability pass: readable product cards, clearer order controls, and touch targets. */
+  .pos-device-badge, .pos-network-status { font-size: .82rem; }
+  .pos-search-group input, .pos-search-group .form-control, .pos-search-group .form-select { min-height: 48px; font-size: 1rem; }
+  .category-pill { min-height: 42px; font-size: .9rem; padding: .6rem .9rem; }
+  .product-card { min-height: 190px; }
+  .product-title { font-size: 1rem; line-height: 1.35; }
+  .product-price { font-size: 1.05rem; font-weight: 800; }
+  .product-category-tag, .product-custom-tag { font-size: .75rem; }
+  .ticket-item-name { font-size: 1rem; line-height: 1.4; }
+  .ticket-item-price { font-size: .98rem; font-weight: 800; }
+  .ticket-item-meta, .ticket-addon-text { font-size: .84rem; line-height: 1.45; }
+  .ticket-qty-btn, .ticket-remove-btn { min-width: 40px; min-height: 40px; }
+  .ticket-qty { min-width: 28px; font-size: 1rem; }
+  .pos-order-type { min-height: 44px; font-size: .92rem; }
+  .pos-clear-ticket, .pos-checkout-btn { min-height: 48px; font-size: 1rem; }
+  .pos-ticket-summary { font-size: .98rem; }
+  .pos-ticket-summary strong { font-size: 1.08rem; }
+  .modal .form-control, .modal .form-select { min-height: 46px; font-size: 1rem; }
+  .modal .btn { min-height: 42px; }
+  .product-card:focus-visible, .category-pill:focus-visible, .pos-order-type:focus-visible {
+    outline: 3px solid rgba(37,99,235,.65); outline-offset: 2px;
+  }
+  @media (max-width: 767.98px) {
+    .pos-header { padding: 10px 12px; }
+    .pos-brand-copy strong { max-width: 46vw; font-size: .96rem; }
+    .pos-header-actions { gap: 6px; flex-wrap: wrap; }
+    .pos-device-badge { display: none; }
+    .pos-workspace { padding: 10px !important; }
+    .pos-catalog-panel, .pos-ticket-panel { border-radius: 14px; }
+    .product-card { min-height: 160px; }
+    .product-title { font-size: .94rem; }
+    .ticket-item-card { padding: 12px !important; }
+    .pos-clear-ticket, .pos-checkout-btn { min-height: 48px; }
+  }
+
 </style>
 
 <!-- Modern POS Header Bar -->
