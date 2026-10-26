@@ -557,6 +557,30 @@ class BillService
             ];
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
+
+            // A concurrent retry can pass the initial idempotency lookup before
+            // another request commits. The unique index prevents a second charge;
+            // re-read the UUID after rollback so the retry receives a stable result.
+            try {
+                $duplicateAfterRollback = Database::fetchOne(
+                    "SELECT id, order_id, payment_method, amount FROM payments
+                     WHERE restaurant_id = ? AND client_payment_uuid = ?",
+                    [$restaurantId, $paymentUuid]
+                );
+                if ($duplicateAfterRollback) {
+                    if ((int)$duplicateAfterRollback['order_id'] !== $orderId
+                        || (string)$duplicateAfterRollback['payment_method'] !== $method
+                        || abs((float)$duplicateAfterRollback['amount'] - $amount) >= 0.01) {
+                        throw new InvalidArgumentException('This payment request identifier was already used for a different payment.', 0, $e);
+                    }
+                    return ['status' => 'already_recorded', 'payment_id' => (int)$duplicateAfterRollback['id']];
+                }
+            } catch (InvalidArgumentException $duplicateError) {
+                throw $duplicateError;
+            } catch (Throwable $lookupError) {
+                // Preserve the original failure if the idempotency lookup itself fails.
+            }
+
             throw $e;
         }
     }
