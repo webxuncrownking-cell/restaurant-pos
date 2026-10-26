@@ -34,7 +34,7 @@ class AuthController
         Response::render('auth/login', [
             'flashes' => Session::getFlashes(),
             'csrf_field' => CSRF::formField(),
-            'title' => 'Sign In - Restaurant POS & Management'
+            'title' => 'Sign In - ServeFlow POS'
         ], 'auth');
     }
 
