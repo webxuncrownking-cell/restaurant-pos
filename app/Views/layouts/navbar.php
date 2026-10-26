@@ -31,6 +31,35 @@ $navGroups = [
   ],
 ];
 
+// Keep navigation consistent with the active user's tenant-scoped permissions.
+// Hiding a link is only the UI layer; controllers must continue enforcing access too.
+$navPermissionMap = [
+  '/menu' => 'menu.manage_catalog',
+  '/inventory' => 'inventory.view_stock',
+  '/expiry' => 'inventory.adjust',
+  '/procurement' => 'inventory.stock_in',
+  '/tables' => 'tables.view_status',
+  '/reservations' => 'tables.view_status',
+  '/devices' => 'users.manage_staff',
+  '/shifts' => 'shifts.open_close',
+  '/bills' => 'pos.process_payment',
+  '/reports' => 'reports.view_sales',
+  '/billing' => 'subscription.manage',
+  '/install' => 'platform.only',
+];
+
+foreach ($navGroups as $group => $items) {
+  $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap, $isPlatform): bool {
+    $route = (string)($item['route'] ?? '');
+    if ($route === '/install') return $isPlatform;
+    if ($route === '/billing') return $isPlatform || \App\Core\Auth::roleSlug() === 'owner';
+    if ($route === '/reservations') return $isPlatform || in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true);
+    if (isset($navPermissionMap[$route])) return \App\Core\Auth::can($navPermissionMap[$route]);
+    return true;
+  }));
+  if (!$navGroups[$group]) unset($navGroups[$group]);
+}
+
 if ($canManageBranding) {
   $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
 }
@@ -95,6 +124,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
     </nav>
 
     <div class="app-sidebar-bottom">
+      <?php if (\App\Core\Auth::can('pos.create_order')): ?>
       <a class="app-sidebar-pos" href="<?= BASE_URL ?>/pos">
         <span class="pos-icon"><i class="bi bi-display" aria-hidden="true"></i></span>
         <span class="flex-grow-1">
@@ -103,6 +133,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
         </span>
         <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
       </a>
+      <?php endif; ?>
       <div class="app-sidebar-version">Restaurant POS <span class="mx-1">·</span> Management</div>
     </div>
   </aside>
@@ -135,9 +166,11 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
           <?php endif; ?>
         <?php endif; ?>
 
+        <?php if (\App\Core\Auth::can('pos.create_order')): ?>
         <a href="<?= BASE_URL ?>/pos" class="app-topbar-pos">
           <i class="bi bi-display" aria-hidden="true"></i><span>POS Terminal</span>
         </a>
+        <?php endif; ?>
 
         <?php if ($user): ?>
           <div class="dropdown">
@@ -153,7 +186,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
               <li><h6 class="dropdown-header">Signed in as <?= htmlspecialchars((string)($user['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h6></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2 text-secondary"></i>Change Password</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li>
+              <?php if ($isPlatform): ?><li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li><?php endif; ?>
               <?php if ($canManageBranding): ?>
                 <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
               <?php endif; ?>

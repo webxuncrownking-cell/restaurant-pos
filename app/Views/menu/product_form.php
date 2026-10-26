@@ -77,6 +77,20 @@ $selectedAddonGroupIds = $isEdit ? array_map(static fn(array $g): int => (int)$g
             </div>
 
             <div class="row g-3 mb-4">
+              <div class="col-12">
+                <label for="kitchen_station" class="form-label fw-semibold small">Kitchen Station</label>
+                <input type="text" class="form-control" id="kitchen_station" name="kitchen_station" maxlength="80" list="kitchenStationOptions" placeholder="e.g. Hot Kitchen, Beverage Station, Dessert Station" value="<?= htmlspecialchars((string)($product['kitchen_station'] ?? 'Hot Kitchen'), ENT_QUOTES, 'UTF-8') ?>">
+                <datalist id="kitchenStationOptions">
+                  <option value="Hot Kitchen">
+                  <option value="Beverage Station">
+                  <option value="Dessert Station">
+                  <option value="Cold Kitchen">
+                </datalist>
+                <div class="form-text">Tickets for this item will be labeled with this station on the Kitchen Display. Enter your own station name if needed.</div>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-4">
               <div class="col-12 col-md-4">
                 <label for="base_price" class="form-label fw-semibold small">Selling Price (PHP) <span class="text-danger">*</span></label>
                 <div class="input-group">

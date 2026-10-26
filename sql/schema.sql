@@ -523,6 +523,7 @@ CREATE TABLE `products` (
   `sku` VARCHAR(50) NOT NULL,
   `barcode` VARCHAR(50) NULL,
   `image_path` VARCHAR(255) NULL,
+  `kitchen_station` VARCHAR(80) NOT NULL DEFAULT 'Hot Kitchen',
   `base_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `cost_price` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `tax_rate` DECIMAL(5,2) NOT NULL DEFAULT 12.00,

@@ -83,6 +83,25 @@ class PosSyncService
     /**
      * Generate or fetch an active offline authorization lease for a device
      */
+    /**
+     * Read the offline lease signing key from server configuration.
+     * The legacy fallback preserves existing installations until an environment
+     * secret is configured; production deployments should set POS_OFFLINE_LEASE_SECRET.
+     */
+    private static function getOfflineLeaseSigningKey(): string
+    {
+        $configured = getenv('POS_OFFLINE_LEASE_SECRET');
+        if (!is_string($configured) || trim($configured) === '') {
+            $configured = $_ENV['POS_OFFLINE_LEASE_SECRET'] ?? $_SERVER['POS_OFFLINE_LEASE_SECRET'] ?? '';
+        }
+        if (is_string($configured) && trim($configured) !== '') {
+            return trim($configured);
+        }
+
+        error_log('[Restaurant POS] POS_OFFLINE_LEASE_SECRET is not configured; using the legacy signing key. Configure a strong server-side secret.');
+        return 'offline_lease_secret_key_restaurant_pos';
+    }
+
     public static function getOrCreateOfflineLease(int $restaurantId, int $deviceId, int $catalogVersionId): array
     {
         $existing = Database::fetchOne(
@@ -116,7 +135,7 @@ class PosSyncService
         $graceExpiresAt = date('Y-m-d H:i:s', strtotime('+14 days'));
 
         $rawPayload = "{$restaurantId}:{$deviceId}:{$subscriptionId}:{$catalogVersionId}:{$leaseId}:{$expiresAt}";
-        $signature = base64_encode(hash_hmac('sha256', $rawPayload, 'offline_lease_secret_key_restaurant_pos', true));
+        $signature = base64_encode(hash_hmac('sha256', $rawPayload, self::getOfflineLeaseSigningKey(), true));
 
         Database::query(
             "INSERT INTO offline_authorization_leases 
@@ -365,11 +384,17 @@ class PosSyncService
             $offlineLeaseId = null;
         } else {
             $lease = Database::fetchOne(
-                "SELECT lease_id FROM offline_authorization_leases WHERE restaurant_id = ? AND device_id = ? AND lease_id = ?",
+                "SELECT lease_id, expires_at, grace_expires_at, revoked_at
+                 FROM offline_authorization_leases
+                 WHERE restaurant_id = ? AND device_id = ? AND lease_id = ?
+                   AND revoked_at IS NULL AND grace_expires_at >= NOW()
+                 LIMIT 1",
                 [$restaurantId, $deviceId, $offlineLeaseId]
             );
             if (!$lease) {
-                throw new InvalidArgumentException('The offline authorization lease is not valid for this device.');
+                throw new InvalidArgumentException(
+                    'The offline authorization lease is revoked, expired beyond its grace period, or not valid for this device. Reconnect the POS to refresh authorization before syncing.'
+                );
             }
         }
 
