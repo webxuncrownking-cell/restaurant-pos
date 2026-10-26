@@ -110,6 +110,8 @@
         </div>
       </div>
 
+      <div class="text-center mt-3"><span class="text-muted small">New to ServeFlow POS?</span> <a href="<?= BASE_URL ?>/register" class="text-decoration-none fw-semibold small">Register your restaurant</a></div>
+
       <!-- Diagnostics Link -->
       <div class="text-center mt-3">
         <a href="<?= BASE_URL ?>/install" class="text-decoration-none text-muted small">
