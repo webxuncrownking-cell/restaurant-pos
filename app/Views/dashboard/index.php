@@ -32,9 +32,11 @@
     </div>
 
     <div class="d-flex gap-2 mt-2 mt-md-0">
-      <a href="<?= BASE_URL ?>/install" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-cpu me-1"></i> System Diagnostics
-      </a>
+      <?php if ($is_platform): ?>
+        <a href="<?= BASE_URL ?>/install" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-cpu me-1"></i> System Diagnostics
+        </a>
+      <?php endif; ?>
       <?php if ($is_platform && !empty($_SESSION['restaurant_id'])): ?>
         <a href="<?= BASE_URL ?>/dashboard/switch-tenant?id=0" class="btn btn-outline-primary btn-sm">
           <i class="bi bi-arrow-left-circle me-1"></i> Exit Tenant View
