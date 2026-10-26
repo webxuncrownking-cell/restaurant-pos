@@ -52,8 +52,8 @@ foreach ($navGroups as $group => $items) {
   $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap, $isPlatform): bool {
     $route = (string)($item['route'] ?? '');
     if ($route === '/install') return $isPlatform;
-    if ($route === '/billing') return $isPlatform || \\App\\Core\\Auth::roleSlug() === 'owner';
-    if (isset($navPermissionMap[$route])) return \\App\\Core\\Auth::can($navPermissionMap[$route]);
+    if ($route === '/billing') return $isPlatform || \App\Core\Auth::roleSlug() === 'owner';
+    if (isset($navPermissionMap[$route])) return \App\Core\Auth::can($navPermissionMap[$route]);
     return true;
   }));
   if (!$navGroups[$group]) unset($navGroups[$group]);
