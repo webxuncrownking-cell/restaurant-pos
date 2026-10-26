@@ -13,11 +13,17 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\Database;
 use App\Core\CSRF;
+use App\Core\Auth;
 
 class InstallController
 {
     public function index(Request $request): void
     {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) {
+            Response::forbidden('Only platform superadmins can access system diagnostics.');
+        }
+
         $diagnostics = $this->runDiagnostics();
         $flashes = Session::getFlashes();
 
@@ -31,6 +37,11 @@ class InstallController
 
     public function runMigration(Request $request): void
     {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) {
+            Response::forbidden('Only platform superadmins can run system migrations.');
+        }
+
         if (!CSRF::validate($request->post('csrf_token'))) {
             Session::setFlash('danger', 'CSRF verification failed.');
             Response::redirect('/install');
@@ -63,6 +74,11 @@ class InstallController
 
     public function runTests(Request $request): void
     {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) {
+            Response::forbidden('Only platform superadmins can run system diagnostics.');
+        }
+
         $testResults = $this->executeAutomatedTests();
         $flashes = Session::getFlashes();
 
