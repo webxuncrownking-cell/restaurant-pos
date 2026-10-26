@@ -365,11 +365,17 @@ class PosSyncService
             $offlineLeaseId = null;
         } else {
             $lease = Database::fetchOne(
-                "SELECT lease_id FROM offline_authorization_leases WHERE restaurant_id = ? AND device_id = ? AND lease_id = ?",
+                "SELECT lease_id, expires_at, grace_expires_at, revoked_at
+                 FROM offline_authorization_leases
+                 WHERE restaurant_id = ? AND device_id = ? AND lease_id = ?
+                   AND revoked_at IS NULL AND grace_expires_at >= NOW()
+                 LIMIT 1",
                 [$restaurantId, $deviceId, $offlineLeaseId]
             );
             if (!$lease) {
-                throw new InvalidArgumentException('The offline authorization lease is not valid for this device.');
+                throw new InvalidArgumentException(
+                    'The offline authorization lease is revoked, expired beyond its grace period, or not valid for this device. Reconnect the POS to refresh authorization before syncing.'
+                );
             }
         }
 
