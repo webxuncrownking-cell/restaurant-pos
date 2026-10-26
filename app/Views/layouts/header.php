@@ -222,6 +222,53 @@
       .app-user-avatar { width: 34px; height: 34px; flex-basis: 34px; }
       .app-footer { padding: 15px; flex-direction: column; align-items: flex-start; }
     }
+
+    /* Accessibility and readability pass: larger type, clearer controls, calmer spacing. */
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body { font-size: 1rem; line-height: 1.55; }
+    p, .form-text, .alert { line-height: 1.55; }
+    .text-muted { color: #606d80 !important; }
+    .small, small, .form-text { font-size: .875rem !important; }
+    .app-brand-copy strong { font-size: 1rem; }
+    .app-brand-copy small { font-size: .75rem; line-height: 1.4; }
+    .app-sidebar-context { font-size: .84rem; }
+    .app-nav-heading { font-size: .72rem; letter-spacing: .1em; }
+    .app-nav-link { min-height: 46px; font-size: .92rem; line-height: 1.35; }
+    .app-nav-link i { font-size: 1.12rem; }
+    .app-page-context small { font-size: .72rem; }
+    .app-page-context strong { font-size: 1.08rem; }
+    .app-user-copy strong { font-size: .84rem; }
+    .app-user-copy small { font-size: .75rem; }
+    .app-footer { font-size: .8rem; }
+    .status-pill { font-size: .8rem; }
+    .badge { font-size: .78rem; padding: .4em .6em; }
+    .table { font-size: .94rem; }
+    .table thead th { font-size: .78rem; line-height: 1.4; }
+    .table > :not(caption) > * > * { padding: .9rem .95rem; }
+    .form-label { font-size: .92rem; font-weight: 600; margin-bottom: .4rem; }
+    .form-control, .form-select { min-height: 46px; font-size: 1rem; }
+    textarea.form-control { min-height: 110px; }
+    .btn:not(.btn-close) { font-size: .94rem; min-height: 42px; }
+    .btn.btn-sm:not(.btn-close) { min-height: 38px; font-size: .86rem; }
+    .btn.btn-lg:not(.btn-close) { min-height: 48px; font-size: 1.02rem; }
+    .card-body { line-height: 1.55; }
+    .card-header { padding-top: .9rem; padding-bottom: .9rem; }
+    .alert { font-size: .95rem; }
+    input, select, textarea, button { scroll-margin-top: 100px; }
+    :focus-visible { outline: 3px solid rgba(37,99,235,.65); outline-offset: 2px; }
+    a, button, input, select, textarea { touch-action: manipulation; }
+    @media (max-width: 575.98px) {
+      body { font-size: .98rem; }
+      .container, .container-fluid { --bs-gutter-x: 1.15rem; }
+      .table > :not(caption) > * > * { padding: .75rem .7rem; }
+      .app-page-context strong { font-size: .95rem; max-width: 150px; }
+      .btn:not(.btn-close) { min-height: 44px; }
+      .btn.btn-sm:not(.btn-close) { min-height: 40px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
   </style>
 </head>
 <body>
