@@ -141,11 +141,12 @@ class DashboardController
                  ORDER BY month_key ASC"
             );
             $data['actual_collected_total'] = (float)(Database::fetchOne(
-                "SELECT COALESCE(SUM(amount), 0) AS amount FROM platform_payments WHERE status = 'succeeded'"
+                "SELECT COALESCE(SUM(CASE WHEN status = 'succeeded' THEN amount WHEN status = 'refunded' THEN -amount ELSE 0 END), 0) AS amount FROM platform_payments"
             )['amount'] ?? 0);
             $data['actual_collected_month'] = (float)(Database::fetchOne(
-                "SELECT COALESCE(SUM(amount), 0) AS amount FROM platform_payments
-                 WHERE status = 'succeeded' AND paid_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                "SELECT COALESCE(SUM(CASE WHEN status = 'succeeded' THEN amount WHEN status = 'refunded' THEN -amount ELSE 0 END), 0) AS amount
+                 FROM platform_payments
+                 WHERE status IN ('succeeded', 'refunded') AND paid_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
                    AND paid_at < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)"
             )['amount'] ?? 0);
             $data['outstanding_invoices'] = Database::fetchOne(
@@ -153,9 +154,11 @@ class DashboardController
                  FROM platform_invoices WHERE status = 'open'"
             ) ?? ['invoice_count' => 0, 'amount' => 0];
             $data['monthly_collections'] = Database::fetchAll(
-                "SELECT DATE_FORMAT(paid_at, '%Y-%m') AS month_key, COALESCE(SUM(amount), 0) AS collected, COUNT(*) AS payment_count
+                "SELECT DATE_FORMAT(paid_at, '%Y-%m') AS month_key,
+                        COALESCE(SUM(CASE WHEN status = 'succeeded' THEN amount WHEN status = 'refunded' THEN -amount ELSE 0 END), 0) AS collected,
+                        SUM(CASE WHEN status = 'succeeded' THEN 1 ELSE 0 END) AS payment_count
                  FROM platform_payments
-                 WHERE status = 'succeeded' AND paid_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')
+                 WHERE status IN ('succeeded', 'refunded') AND paid_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')
                  GROUP BY DATE_FORMAT(paid_at, '%Y-%m')
                  ORDER BY month_key ASC"
             );
