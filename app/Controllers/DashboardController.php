@@ -269,6 +269,119 @@ class DashboardController
         fclose($stream);
     }
 
+
+    private function ensurePlatformAuditTable(): void
+    {
+        Database::query("CREATE TABLE IF NOT EXISTS platform_audit_logs (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            platform_user_id INT UNSIGNED NULL,
+            action VARCHAR(100) NOT NULL,
+            entity_type VARCHAR(50) NOT NULL,
+            entity_id INT UNSIGNED NULL,
+            details_json JSON NULL,
+            ip_address VARCHAR(45) NOT NULL DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_platform_audit_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    }
+
+    private function logPlatformAction(string $action, string $entityType, ?int $entityId, array $details = []): void
+    {
+        $this->ensurePlatformAuditTable();
+        Database::query(
+            "INSERT INTO platform_audit_logs (platform_user_id, action, entity_type, entity_id, details_json, ip_address) VALUES (?, ?, ?, ?, ?, ?)",
+            [null, $action, $entityType, $entityId, json_encode($details), substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45)]
+        );
+    }
+
+    public function updateRestaurantStatus(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) Response::forbidden("Only platform superadmins can change restaurant status.");
+        if (!\App\Core\CSRF::validate($request->post('csrf_token'))) {
+            Session::setFlash('danger', 'Security token expired. Refresh and try again.');
+            Response::redirect('/restaurant-accounts');
+        }
+        $id = (int)$request->post('restaurant_id', 0);
+        $status = (string)$request->post('status', '');
+        if ($id < 1 || !in_array($status, ['active', 'suspended'], true)) {
+            Session::setFlash('danger', 'Invalid restaurant or status.');
+            Response::redirect('/restaurant-accounts');
+        }
+        $old = Database::fetchOne("SELECT id, name, status FROM restaurants WHERE id = ? AND deleted_at IS NULL", [$id]);
+        if (!$old || in_array($old['status'], ['cancelled', 'archived'], true)) {
+            Session::setFlash('danger', 'Restaurant account not found or cannot be changed.');
+            Response::redirect('/restaurant-accounts');
+        }
+        Database::query("UPDATE restaurants SET status = ? WHERE id = ?", [$status, $id]);
+        $this->logPlatformAction('restaurant.status_changed', 'restaurant', $id, ['name' => $old['name'], 'from' => $old['status'], 'to' => $status]);
+        Session::setFlash('success', 'Restaurant account status updated.');
+        Response::redirect('/restaurant-accounts');
+    }
+
+    public function platformSubscriptions(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) Response::forbidden("Only platform superadmins can manage subscriptions.");
+        $data = ['title' => 'Plans & Subscriptions', 'subscriptions' => [], 'plans' => [], 'flashes' => Session::getFlashes(), 'page_error' => null];
+        try {
+            $data['subscriptions'] = Database::fetchAll("SELECT s.id AS subscription_id, s.restaurant_id, s.status, s.billing_cycle, s.trial_ends_at, s.current_period_end, s.grace_period_days, r.name AS restaurant_name, sp.name AS plan_name, sp.id AS plan_id FROM subscriptions s JOIN restaurants r ON r.id=s.restaurant_id JOIN subscription_plans sp ON sp.id=s.plan_id WHERE r.deleted_at IS NULL ORDER BY s.updated_at DESC");
+            $data['plans'] = Database::fetchAll("SELECT id, name, price_monthly, price_annually, is_active FROM subscription_plans ORDER BY price_monthly, name");
+        } catch (\Throwable $e) {
+            $data['page_error'] = 'Subscription data could not be loaded. Check application logs.';
+        }
+        Response::render('dashboard/platform-subscriptions', $data, 'app');
+    }
+
+    public function updatePlatformSubscription(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) Response::forbidden("Only platform superadmins can update subscriptions.");
+        if (!\App\Core\CSRF::validate($request->post('csrf_token'))) {
+            Session::setFlash('danger', 'Security token expired. Refresh and try again.');
+            Response::redirect('/platform-subscriptions');
+        }
+        $id = (int)$request->post('subscription_id', 0);
+        $planId = (int)$request->post('plan_id', 0);
+        $status = (string)$request->post('status', '');
+        $days = (int)$request->post('extend_trial_days', 0);
+        if ($id < 1 || $planId < 1 || !in_array($status, ['trial','active','past_due','suspended','cancelled','expired'], true) || $days < 0 || $days > 365) {
+            Session::setFlash('danger', 'Invalid subscription changes.');
+            Response::redirect('/platform-subscriptions');
+        }
+        $old = Database::fetchOne("SELECT id, restaurant_id, plan_id, status FROM subscriptions WHERE id = ?", [$id]);
+        $plan = Database::fetchOne("SELECT id FROM subscription_plans WHERE id = ? AND is_active = 1", [$planId]);
+        if (!$old || !$plan) {
+            Session::setFlash('danger', 'Subscription or active plan not found.');
+            Response::redirect('/platform-subscriptions');
+        }
+        if ($days > 0) {
+            Database::query("UPDATE subscriptions SET plan_id=?, status=?, trial_ends_at=DATE_ADD(COALESCE(trial_ends_at,NOW()), INTERVAL ? DAY), current_period_end=DATE_ADD(current_period_end, INTERVAL ? DAY), updated_at=NOW() WHERE id=?", [$planId,$status,$days,$days,$id]);
+        } else {
+            Database::query("UPDATE subscriptions SET plan_id=?, status=?, updated_at=NOW() WHERE id=?", [$planId,$status,$id]);
+        }
+        $this->logPlatformAction('subscription.updated', 'subscription', $id, ['restaurant_id'=>(int)$old['restaurant_id'],'old_plan_id'=>(int)$old['plan_id'],'new_plan_id'=>$planId,'old_status'=>$old['status'],'new_status'=>$status,'extended_days'=>$days]);
+        Session::setFlash('success', 'Subscription updated.');
+        Response::redirect('/platform-subscriptions');
+    }
+
+    public function platformHealth(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) Response::forbidden("Only platform superadmins can view platform health.");
+        $data = ['title'=>'Platform Health','flashes'=>Session::getFlashes(),'health_error'=>null];
+        try {
+            $data['db_status'] = Database::testConnection();
+            $data['recent_devices'] = Database::fetchAll("SELECT d.id, d.restaurant_id, d.status, d.last_seen_at, r.name AS restaurant_name FROM pos_devices d JOIN restaurants r ON r.id=d.restaurant_id WHERE r.deleted_at IS NULL ORDER BY d.last_seen_at DESC LIMIT 30");
+            $data['expiring_subscriptions'] = Database::fetchAll("SELECT s.id,s.status,s.current_period_end,s.trial_ends_at,r.name AS restaurant_name FROM subscriptions s JOIN restaurants r ON r.id=s.restaurant_id WHERE r.deleted_at IS NULL AND ((s.status='trial' AND s.trial_ends_at BETWEEN NOW() AND DATE_ADD(NOW(),INTERVAL 14 DAY)) OR (s.status='active' AND s.current_period_end BETWEEN NOW() AND DATE_ADD(NOW(),INTERVAL 14 DAY)) OR s.status='past_due') ORDER BY s.current_period_end LIMIT 50");
+            $this->ensurePlatformAuditTable();
+            $data['recent_actions'] = Database::fetchAll("SELECT * FROM platform_audit_logs ORDER BY created_at DESC LIMIT 50");
+        } catch (\Throwable $e) {
+            $data['health_error'] = 'Some health information could not be loaded. Check application logs.';
+        }
+        Response::render('dashboard/platform-health', $data, 'app');
+    }
+
     public function switchTenant(Request $request): void
     {
         Auth::requireLogin();
