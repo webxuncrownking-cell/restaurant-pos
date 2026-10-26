@@ -48,25 +48,41 @@ $navPermissionMap = [
   '/install' => 'platform.only',
 ];
 
-foreach ($navGroups as $group => $items) {
-  $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap, $isPlatform): bool {
-    $route = (string)($item['route'] ?? '');
-    if ($route === '/install') return $isPlatform;
-    if ($route === '/billing') return $isPlatform || \App\Core\Auth::roleSlug() === 'owner';
-    if ($route === '/reservations') return $isPlatform || in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true);
-    if (isset($navPermissionMap[$route])) return \App\Core\Auth::can($navPermissionMap[$route]);
-    return true;
-  }));
-  if (!$navGroups[$group]) unset($navGroups[$group]);
-}
+if ($isPlatform) {
+  // Platform superadmins get platform-level navigation only.
+  $navGroups = [
+    'Workspace' => [
+      ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
+    ],
+    'Account' => [
+      ['label' => 'Subscription & Billing', 'route' => '/billing', 'icon' => 'bi-credit-card-2-front'],
+    ],
+    'System' => [
+      ['label' => 'System Diagnostics', 'route' => '/install', 'icon' => 'bi-gear'],
+    ],
+  ];
+} else {
+  // Restaurant accounts see only menus allowed by their role permissions.
+  foreach ($navGroups as $group => $items) {
+    $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap): bool {
+      $route = (string)($item['route'] ?? '');
+      if ($route === '/install') return false;
+      if ($route === '/billing') return \\App\\Core\\Auth::roleSlug() === 'owner';
+      if ($route === '/reservations') return in_array(\\App\\Core\\Auth::roleSlug(), ['owner', 'manager'], true);
+      if (isset($navPermissionMap[$route])) return \\App\\Core\\Auth::can($navPermissionMap[$route]);
+      return true;
+    }));
+    if (!$navGroups[$group]) unset($navGroups[$group]);
+  }
 
-if ($canManageBranding) {
-  $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
-}
+  if ($canManageBranding) {
+    $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
+  }
 
-$canViewKitchen = $restaurant !== null && ($isPlatform || in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \App\Core\Auth::can('kitchen.view_kds'));
-if ($canViewKitchen) {
-  $navGroups['Operations'][] = ['label' => 'Kitchen Display', 'route' => '/kitchen', 'icon' => 'bi-fire'];
+  $canViewKitchen = $restaurant !== null && (in_array(\\App\\Core\\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \\App\\Core\\Auth::can('kitchen.view_kds'));
+  if ($canViewKitchen) {
+    $navGroups['Operations'][] = ['label' => 'Kitchen Display', 'route' => '/kitchen', 'icon' => 'bi-fire'];
+  }
 }
 
 $pageTitle = 'Restaurant workspace';
