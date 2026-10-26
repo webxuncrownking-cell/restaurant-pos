@@ -54,9 +54,6 @@ if ($isPlatform) {
     'Workspace' => [
       ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
     ],
-    'Account' => [
-      ['label' => 'Subscription & Billing', 'route' => '/billing', 'icon' => 'bi-credit-card-2-front'],
-    ],
     'System' => [
       ['label' => 'System Diagnostics', 'route' => '/install', 'icon' => 'bi-gear'],
     ],
