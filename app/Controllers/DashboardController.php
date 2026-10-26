@@ -96,6 +96,81 @@ class DashboardController
         Response::render('dashboard/index', $data, 'app');
     }
 
+
+    public function platformAnalytics(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) {
+            Response::forbidden("Only platform superadmins can view platform analytics.");
+        }
+
+        $data = ['title' => 'Platform Analytics', 'analytics_error' => null];
+        try {
+            $data['total_restaurants'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM restaurants WHERE deleted_at IS NULL")['c'] ?? 0);
+            $data['active_restaurants'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM restaurants WHERE deleted_at IS NULL AND status = 'active'")['c'] ?? 0);
+            $data['subscription_counts'] = Database::fetchAll(
+                "SELECT status, COUNT(*) AS total FROM subscriptions GROUP BY status ORDER BY total DESC"
+            );
+            $mrr = Database::fetchOne(
+                "SELECT COALESCE(SUM(CASE
+                    WHEN LOWER(s.billing_cycle) IN ('annual', 'annually', 'yearly')
+                        THEN COALESCE(sp.price_annually, 0) / 12
+                    ELSE COALESCE(sp.price_monthly, 0)
+                END), 0) AS amount
+                FROM subscriptions s
+                INNER JOIN subscription_plans sp ON sp.id = s.plan_id
+                WHERE s.status = 'active'"
+            );
+            $data['estimated_mrr'] = (float)($mrr['amount'] ?? 0);
+            $data['plan_distribution'] = Database::fetchAll(
+                "SELECT sp.name AS plan_name, COUNT(*) AS total
+                 FROM subscriptions s
+                 INNER JOIN subscription_plans sp ON sp.id = s.plan_id
+                 WHERE s.status IN ('active', 'trial')
+                 GROUP BY sp.id, sp.name
+                 ORDER BY total DESC, sp.name ASC"
+            );
+            $data['monthly_orders'] = Database::fetchAll(
+                "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month_key,
+                        COUNT(*) AS total_orders,
+                        COUNT(DISTINCT restaurant_id) AS active_restaurants
+                 FROM orders
+                 WHERE created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')
+                   AND order_status <> 'cancelled'
+                 GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                 ORDER BY month_key ASC"
+            );
+        } catch (\\Throwable $e) {
+            $data['analytics_error'] = 'Some analytics could not be loaded. Check database schema and application logs.';
+        }
+
+        Response::render('dashboard/platform-analytics', $data, 'app');
+    }
+
+    public function restaurantAccounts(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) {
+            Response::forbidden("Only platform superadmins can manage restaurant accounts.");
+        }
+
+        $data = ['title' => 'Restaurant Accounts', 'restaurants' => [], 'accounts_error' => null];
+        try {
+            $data['restaurants'] = Database::fetchAll(
+                "SELECT r.*, s.status AS sub_status, sp.name AS plan_name
+                 FROM restaurants r
+                 LEFT JOIN subscriptions s ON s.restaurant_id = r.id
+                 LEFT JOIN subscription_plans sp ON sp.id = s.plan_id
+                 WHERE r.deleted_at IS NULL
+                 ORDER BY r.id ASC"
+            );
+        } catch (\\Throwable $e) {
+            $data['accounts_error'] = 'Restaurant accounts could not be loaded. Check database schema and application logs.';
+        }
+
+        Response::render('dashboard/restaurant-accounts', $data, 'app');
+    }
+
     public function switchTenant(Request $request): void
     {
         Auth::requireLogin();
