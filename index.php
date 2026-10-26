@@ -74,6 +74,8 @@ $router->get('/', function (Request $req) {
 
 // Authentication Routes
 $router->get('/login', [AuthController::class, 'showLogin']);
+$router->get('/register', [RestaurantRegistrationController::class, 'show']);
+$router->post('/register', [RestaurantRegistrationController::class, 'register']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/change-password', [AuthController::class, 'showChangePassword']);
 $router->post('/change-password', [AuthController::class, 'changePassword']);
