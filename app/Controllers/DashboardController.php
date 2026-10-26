@@ -198,6 +198,74 @@ class DashboardController
         Response::render('dashboard/restaurant-accounts', $data, 'app');
     }
 
+
+    public function exportPlatformCsv(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) {
+            Response::forbidden("Only platform superadmins can export platform reports.");
+        }
+
+        $type = strtolower(trim((string)$request->get('type', 'restaurants')));
+        switch ($type) {
+            case 'revenue':
+                $filename = 'serveflow-revenue-report.csv';
+                $headers = ['Restaurant', 'Invoice Number', 'Payment Reference', 'Payment Method', 'Payment Status', 'Amount (PHP)', 'Paid At', 'Recorded At'];
+                $rows = Database::fetchAll(
+                    "SELECT r.name AS restaurant_name, i.invoice_number, p.transaction_reference, p.payment_method, p.status,
+                            p.amount, p.paid_at, p.created_at
+                     FROM platform_payments p
+                     INNER JOIN restaurants r ON r.id = p.restaurant_id
+                     LEFT JOIN platform_invoices i ON i.id = p.invoice_id AND i.restaurant_id = p.restaurant_id
+                     ORDER BY COALESCE(p.paid_at, p.created_at) DESC"
+                );
+                break;
+            case 'subscriptions':
+                $filename = 'serveflow-subscriptions-report.csv';
+                $headers = ['Restaurant', 'Plan', 'Subscription Status', 'Billing Cycle', 'Period Start', 'Period End', 'Created At'];
+                $rows = Database::fetchAll(
+                    "SELECT r.name AS restaurant_name, sp.name AS plan_name, s.status, s.billing_cycle,
+                            s.current_period_start, s.current_period_end, s.created_at
+                     FROM subscriptions s
+                     INNER JOIN restaurants r ON r.id = s.restaurant_id
+                     INNER JOIN subscription_plans sp ON sp.id = s.plan_id
+                     ORDER BY s.created_at DESC"
+                );
+                break;
+            case 'restaurants':
+                $filename = 'serveflow-restaurant-accounts.csv';
+                $headers = ['Restaurant ID', 'Restaurant', 'Slug', 'Email', 'Phone', 'Account Status', 'Created At'];
+                $rows = Database::fetchAll(
+                    "SELECT id, name, slug, contact_email, contact_phone, status, created_at
+                     FROM restaurants WHERE deleted_at IS NULL ORDER BY created_at DESC"
+                );
+                break;
+            default:
+                Response::redirect('/platform-analytics');
+                return;
+        }
+
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('X-Content-Type-Options: nosniff');
+        $stream = fopen('php://output', 'w');
+        if ($stream === false) return;
+        fwrite($stream, "\xEF\xBB\xBF");
+        fputcsv($stream, $headers);
+        foreach ($rows as $row) {
+            $values = array_values($row);
+            foreach ($values as &$value) {
+                if (is_string($value) && preg_match('/^[=+\-@\t\r]/', $value)) {
+                    $value = "'" . $value;
+                }
+            }
+            unset($value);
+            fputcsv($stream, $values);
+        }
+        fclose($stream);
+    }
+
     public function switchTenant(Request $request): void
     {
         Auth::requireLogin();
