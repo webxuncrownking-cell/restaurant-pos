@@ -57,8 +57,11 @@ if ($isPlatform) {
     ],
     'Tenants' => [
       ['label' => 'Restaurant Accounts', 'route' => '/restaurant-accounts', 'icon' => 'bi-building'],
+      ['label' => 'Plans & Subscriptions', 'route' => '/platform-subscriptions', 'icon' => 'bi-credit-card'],
+
     ],
     'System' => [
+      ['label' => 'Platform Health & Logs', 'route' => '/platform-health', 'icon' => 'bi-activity'],
       ['label' => 'System Diagnostics', 'route' => '/install', 'icon' => 'bi-gear'],
     ],
   ];
