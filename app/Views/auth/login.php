@@ -64,7 +64,7 @@
               <label for="login" class="form-label fw-medium text-secondary small">Username or Email</label>
               <div class="input-group">
                 <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person"></i></span>
-                <input type="text" class="form-control border-start-0 ps-0" id="login" name="login" required placeholder="Enter username or email" autofocus>
+                <input type="text" class="form-control border-start-0 ps-3" id="login" name="login" required placeholder="Enter username or email" autofocus>
               </div>
             </div>
 
@@ -72,7 +72,7 @@
               <label for="password" class="form-label fw-medium text-secondary small">Password</label>
               <div class="input-group">
                 <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-key"></i></span>
-                <input type="password" class="form-control border-start-0 ps-0" id="password" name="password" required placeholder="Enter password">
+                <input type="password" class="form-control border-start-0 ps-3" id="password" name="password" required placeholder="Enter password">
               </div>
             </div>
 
