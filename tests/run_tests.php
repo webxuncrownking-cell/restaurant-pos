@@ -805,6 +805,24 @@ assertTest(
 
 $kitchenPreparing = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'preparing', 1);
 $kitchenReady = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'ready', 1);
+$serveBlockedUntilItemsComplete = false;
+try {
+    \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'served', 1);
+} catch (\InvalidArgumentException $e) {
+    $serveBlockedUntilItemsComplete = str_contains($e->getMessage(), 'every item');
+}
+assertTest("Kitchen Blocks Serving Until Every Item Is Served", $serveBlockedUntilItemsComplete);
+
+$kitchenItemIds = Database::fetchAll(
+    "SELECT id FROM order_items WHERE restaurant_id = ? AND order_id = ? ORDER BY id ASC",
+    [1, (int)$syncRes['server_order_id']]
+);
+foreach ($kitchenItemIds as $kitchenItem) {
+    $kitchenItemId = (int)$kitchenItem['id'];
+    \App\Services\KitchenService::updateItemStatus(1, (int)$syncRes['server_order_id'], $kitchenItemId, 'preparing', 1);
+    \App\Services\KitchenService::updateItemStatus(1, (int)$syncRes['server_order_id'], $kitchenItemId, 'ready', 1);
+    \App\Services\KitchenService::updateItemStatus(1, (int)$syncRes['server_order_id'], $kitchenItemId, 'served', 1);
+}
 $kitchenServed = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'served', 1);
 $kitchenCompleted = \App\Services\KitchenService::updateTicketStatus(1, (int)$syncRes['server_order_id'], 'completed', 1);
 assertTest("Kitchen Status Advances Through Preparing, Ready, Served, Completed",
