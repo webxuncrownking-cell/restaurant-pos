@@ -4,20 +4,20 @@
  */
 declare(strict_types=1);
 
-namespace App\\Controllers;
+namespace App\Controllers;
 
-use App\\Core\\CSRF;
-use App\\Core\\Database;
-use App\\Core\\Request;
-use App\\Core\\Response;
-use App\\Core\\Session;
+use App\Core\CSRF;
+use App\Core\Database;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
 use Throwable;
 
 class RestaurantRegistrationController
 {
     public function show(Request $request): void
     {
-        if (\\App\\Core\\Auth::check()) {
+        if (\App\Core\Auth::check()) {
             Response::redirect('/dashboard');
         }
 
