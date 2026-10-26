@@ -372,7 +372,7 @@ class DashboardController
         $data = ['title'=>'Platform Health','flashes'=>Session::getFlashes(),'health_error'=>null];
         try {
             $data['db_status'] = Database::testConnection();
-            $data['recent_devices'] = Database::fetchAll("SELECT d.id, d.restaurant_id, d.status, d.last_seen_at, r.name AS restaurant_name FROM pos_devices d JOIN restaurants r ON r.id=d.restaurant_id WHERE r.deleted_at IS NULL ORDER BY d.last_seen_at DESC LIMIT 30");
+            $data['recent_devices'] = Database::fetchAll("SELECT d.id, d.restaurant_id, d.status, d.last_sync_at, r.name AS restaurant_name FROM pos_devices d JOIN restaurants r ON r.id=d.restaurant_id WHERE r.deleted_at IS NULL ORDER BY d.last_sync_at DESC LIMIT 30");
             $data['expiring_subscriptions'] = Database::fetchAll("SELECT s.id,s.status,s.current_period_end,s.trial_ends_at,r.name AS restaurant_name FROM subscriptions s JOIN restaurants r ON r.id=s.restaurant_id WHERE r.deleted_at IS NULL AND ((s.status='trial' AND s.trial_ends_at BETWEEN NOW() AND DATE_ADD(NOW(),INTERVAL 14 DAY)) OR (s.status='active' AND s.current_period_end BETWEEN NOW() AND DATE_ADD(NOW(),INTERVAL 14 DAY)) OR s.status='past_due') ORDER BY s.current_period_end LIMIT 50");
             $this->ensurePlatformAuditTable();
             $data['recent_actions'] = Database::fetchAll("SELECT * FROM platform_audit_logs ORDER BY created_at DESC LIMIT 50");
