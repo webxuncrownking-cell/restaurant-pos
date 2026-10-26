@@ -1,8 +1,31 @@
-<div class="container py-4 py-lg-5" style="max-width: 760px;">
+<style>
+  .register-page-wrap {
+    min-height: calc(100vh - 58px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(20px, 4vh, 44px) 18px;
+  }
+  .register-page-wrap > .container {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .register-page-wrap .register-brand-title {
+    font-size: clamp(1.8rem, 2.2vw, 2.15rem);
+    letter-spacing: -.035em;
+  }
+  @media (max-height: 900px) {
+    .register-page-wrap { align-items: flex-start; padding-top: 22px; padding-bottom: 22px; }
+  }
+</style>
+<div class="register-page-wrap">
+<div class="container">
   <div class="text-center mb-4">
-    <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-25 text-warning-emphasis rounded-circle mb-3" style="width:64px;height:64px;"><i class="bi bi-shop fs-2"></i></div>
-    <h1 class="h2 fw-bold text-dark">Create your ServeFlow POS account</h1>
-    <p class="text-muted mb-0">Register your restaurant and start with a 14-day trial.</p>
+    <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-25 text-warning-emphasis p-3 rounded-circle mb-3 shadow-sm" style="width:68px;height:68px;"><i class="bi bi-shop fs-1"></i></div>
+    <h1 class="fw-bold text-dark mb-1 register-brand-title">ServeFlow POS</h1>
+    <p class="text-muted small mb-0">Restaurant operations, made simple.</p>
   </div>
 
   <?php if (!empty($flashes)): ?>
@@ -61,4 +84,5 @@
     </div>
   </div>
   <p class="text-center text-muted mt-4 mb-0">Already registered? <a href="<?= BASE_URL ?>/login" class="fw-semibold text-decoration-none">Sign in</a></p>
+</div>
 </div>
