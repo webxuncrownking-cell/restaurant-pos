@@ -1,14 +1,42 @@
-<div class="container my-auto py-5">
+<style>
+  .login-page-wrap {
+    min-height: calc(100vh - 58px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(20px, 4vh, 44px) 18px;
+  }
+  .login-page-wrap > .container {
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .login-page-wrap .login-column {
+    width: 100%;
+    max-width: 560px;
+    margin-inline: auto;
+  }
+  .login-page-wrap .login-brand-title {
+    font-size: clamp(1.8rem, 2.2vw, 2.15rem);
+    letter-spacing: -.035em;
+  }
+  .login-page-wrap .login-brand-subtitle { margin-bottom: 0; }
+  @media (max-height: 760px) {
+    .login-page-wrap { align-items: flex-start; padding-top: 22px; padding-bottom: 22px; }
+  }
+</style>
+<div class="login-page-wrap">
+<div class="container">
   <div class="row justify-content-center">
-    <div class="col-12 col-md-8 col-lg-5">
+    <div class="col-12 login-column">
       
       <!-- Brand Header -->
       <div class="text-center mb-4">
         <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-25 text-warning-emphasis p-3 rounded-circle mb-3 shadow-sm" style="width: 68px; height: 68px;">
           <i class="bi bi-shop fs-1"></i>
         </div>
-        <h3 class="fw-bold text-dark mb-1">Restaurant POS</h3>
-        <p class="text-muted small">Multi-Tenant Management & Point of Sale System</p>
+        <h1 class="fw-bold text-dark mb-1 login-brand-title">ServeFlow POS</h1>
+        <p class="text-muted small login-brand-subtitle">Restaurant operations, made simple.</p>
       </div>
 
       <!-- Flash Messages -->
@@ -91,6 +119,7 @@
 
     </div>
   </div>
+</div>
 </div>
 
 <script>
