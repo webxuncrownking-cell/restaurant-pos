@@ -1,6 +1,6 @@
     <footer class="app-footer">
-      <span>Restaurant POS &amp; Management &copy; <?= date('Y') ?></span>
-      <span><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Your restaurant workspace</span>
+      <span>&copy; <?= date('Y') ?> ServeFlow POS. All rights reserved.</span>
+      <span><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Restaurant operations platform</span>
     </footer>
   </main>
 </div>
