@@ -67,9 +67,9 @@ if ($isPlatform) {
     $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap): bool {
       $route = (string)($item['route'] ?? '');
       if ($route === '/install') return false;
-      if ($route === '/billing') return \App\\Core\\Auth::roleSlug() === 'owner';
-      if ($route === '/reservations') return in_array(\App\\Core\\Auth::roleSlug(), ['owner', 'manager'], true);
-      if (isset($navPermissionMap[$route])) return \App\\Core\\Auth::can($navPermissionMap[$route]);
+      if ($route === '/billing') return \App\Core\Auth::roleSlug() === 'owner';
+      if ($route === '/reservations') return in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true);
+      if (isset($navPermissionMap[$route])) return \App\Core\Auth::can($navPermissionMap[$route]);
       return true;
     }));
     if (!$navGroups[$group]) unset($navGroups[$group]);
@@ -79,7 +79,7 @@ if ($isPlatform) {
     $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
   }
 
-  $canViewKitchen = $restaurant !== null && (in_array(\App\\Core\\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \App\\Core\\Auth::can('kitchen.view_kds'));
+  $canViewKitchen = $restaurant !== null && (in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \App\Core\Auth::can('kitchen.view_kds'));
   if ($canViewKitchen) {
     $navGroups['Operations'][] = ['label' => 'Kitchen Display', 'route' => '/kitchen', 'icon' => 'bi-fire'];
   }
