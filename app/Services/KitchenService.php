@@ -225,6 +225,12 @@ class KitchenService
             throw new InvalidArgumentException('A valid restaurant, order, and signed-in staff account are required.');
         }
 
+        // MySQL DDL implicitly commits an active transaction. Ensure the additive
+        // item-status table exists before opening the ticket-status transaction.
+        if ($targetStatus === 'served') {
+            self::ensureItemStatusSchema();
+        }
+
         $pdo = Database::getInstance();
         $driver = (string)$pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
         try {
@@ -248,7 +254,6 @@ class KitchenService
             }
 
             if ($targetStatus === 'served') {
-                self::ensureItemStatusSchema();
                 $unfinishedStmt = $pdo->prepare(
                     "SELECT COUNT(*)
                      FROM order_items oi
