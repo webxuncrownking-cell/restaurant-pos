@@ -85,6 +85,7 @@ $router->get('/logout', [AuthController::class, 'logout']);
 // Multi-Tenant Dashboard Routes
 $router->get('/dashboard', [DashboardController::class, 'index']);
 $router->get('/platform-analytics', [DashboardController::class, 'platformAnalytics']);
+$router->get('/platform-analytics/export.csv', [DashboardController::class, 'exportPlatformCsv']);
 $router->get('/restaurant-accounts', [DashboardController::class, 'restaurantAccounts']);
 $router->get('/dashboard/switch-tenant', [DashboardController::class, 'switchTenant']);
 
