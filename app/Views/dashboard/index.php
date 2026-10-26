@@ -87,6 +87,38 @@
       </div>
     </div>
 
+    <!-- Platform usage and recurring revenue -->
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card card-metric p-3 bg-white h-100">
+          <span class="text-muted small fw-medium">Active Restaurants</span>
+          <h3 class="fw-bold mb-0 text-dark"><?= (int)($active_tenants ?? 0) ?></h3>
+          <small class="text-muted">of <?= (int)($total_restaurants ?? 0) ?> registered tenants</small>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card card-metric p-3 bg-white h-100">
+          <span class="text-muted small fw-medium">Estimated Monthly Recurring Revenue</span>
+          <h3 class="fw-bold mb-0 text-dark"><?= htmlspecialchars(number_format((float)($estimated_mrr ?? 0), 2)) ?></h3>
+          <small class="text-muted">Based on active subscription plans; not cash collected</small>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card card-metric p-3 bg-white h-100">
+          <span class="text-muted small fw-medium">Orders This Month</span>
+          <h3 class="fw-bold mb-0 text-dark"><?= number_format((int)($orders_this_month ?? 0)) ?></h3>
+          <small class="text-muted">Excludes cancelled orders</small>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card card-metric p-3 bg-white h-100">
+          <span class="text-muted small fw-medium">Restaurants Using POS This Month</span>
+          <h3 class="fw-bold mb-0 text-dark"><?= number_format((int)($active_restaurants_this_month ?? 0)) ?></h3>
+          <small class="text-muted">Tenants with at least one non-cancelled order</small>
+        </div>
+      </div>
+    </div>
+
     <!-- Tenant List Table -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
       <div class="card-header bg-white py-3">
