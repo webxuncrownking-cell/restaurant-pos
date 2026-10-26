@@ -53,6 +53,32 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
     .bill-summary-box strong { font-size:.95rem; }
     .bill-splits-grid { grid-template-columns:1fr; }
   }
+
+  /* Billing readability pass: make balances, payment state, and actions clearer. */
+  .bills-subtitle { font-size: .96rem; line-height: 1.5; }
+  .bills-eyebrow { font-size: .74rem; }
+  .bill-order-number { font-size: 1.12rem; }
+  .bill-meta { font-size: .9rem; line-height: 1.5; }
+  .bill-chip, .bill-status { font-size: .84rem; }
+  .bill-summary { font-size: .96rem; }
+  .bill-summary-box { padding: 13px; }
+  .bill-summary-box .amount, .bill-summary-box strong { font-size: 1.12rem; }
+  .bill-section-title { font-size: 1rem; }
+  .bill-item-name { font-size: .98rem; line-height: 1.4; }
+  .bill-item-meta { font-size: .84rem; line-height: 1.45; }
+  .bill-item-price { font-size: .96rem; font-weight: 750; }
+  .bill-payment-panel .form-control, .bill-payment-panel .form-select { min-height: 46px; font-size: 1rem; }
+  .bill-payment-panel .btn { min-height: 44px; font-size: .94rem; }
+  .bill-label-help { font-size: .84rem; line-height: 1.45; }
+  .bill-payment-panel :focus-visible { outline: 3px solid rgba(37,99,235,.65); outline-offset: 2px; }
+  @media (max-width: 767.98px) {
+    .bills-page { padding: 14px; }
+    .bills-title { font-size: 1.5rem; }
+    .bill-card { border-radius: 14px; }
+    .bill-card-head { gap: 10px; }
+    .bill-payment-panel .btn { width: 100%; }
+  }
+
 </style>
 
 <div class="bills-page">
