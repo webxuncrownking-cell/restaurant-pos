@@ -89,74 +89,35 @@
       </div>
     </div>
 
-    <!-- Platform usage and recurring revenue -->
-    <div class="row g-3 mb-4" id="platform-usage">
-      <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card card-metric p-3 bg-white h-100">
-          <span class="text-muted small fw-medium">Active Restaurants</span>
-          <h3 class="fw-bold mb-0 text-dark"><?= (int)($active_tenants ?? 0) ?></h3>
-          <small class="text-muted">of <?= (int)($total_restaurants ?? 0) ?> registered tenants</small>
-        </div>
+    <!-- Dedicated platform tools -->
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-lg-6">
+        <a href="<?= BASE_URL ?>/platform-analytics" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset">
+          <div class="card-body d-flex align-items-center gap-3 p-4">
+            <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3"><i class="bi bi-graph-up-arrow fs-3"></i></div>
+            <div class="flex-grow-1">
+              <h5 class="fw-semibold mb-1">Platform Analytics</h5>
+              <p class="text-muted small mb-0">Review subscription status, plan distribution, recurring revenue estimates, and POS usage trends.</p>
+            </div>
+            <i class="bi bi-arrow-right text-primary"></i>
+          </div>
+        </a>
       </div>
-      <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card card-metric p-3 bg-white h-100">
-          <span class="text-muted small fw-medium">Estimated Monthly Subscription Revenue</span>
-          <h3 class="fw-bold mb-0 text-dark"><?= htmlspecialchars(number_format((float)($estimated_mrr ?? 0), 2)) ?></h3>
-          <small class="text-muted">Based on active subscription plans; not cash collected</small>
-        </div>
-      </div>
-      <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card card-metric p-3 bg-white h-100">
-          <span class="text-muted small fw-medium">Orders This Month</span>
-          <h3 class="fw-bold mb-0 text-dark"><?= number_format((int)($orders_this_month ?? 0)) ?></h3>
-          <small class="text-muted">Excludes cancelled orders</small>
-        </div>
-      </div>
-      <div class="col-12 col-sm-6 col-xl-3">
-        <div class="card card-metric p-3 bg-white h-100">
-          <span class="text-muted small fw-medium">Restaurants Active This Month</span>
-          <h3 class="fw-bold mb-0 text-dark"><?= number_format((int)($active_restaurants_this_month ?? 0)) ?></h3>
-          <small class="text-muted">Tenants with at least one non-cancelled order</small>
-        </div>
+      <div class="col-12 col-lg-6">
+        <a href="<?= BASE_URL ?>/restaurant-accounts" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset">
+          <div class="card-body d-flex align-items-center gap-3 p-4">
+            <div class="p-3 bg-info bg-opacity-10 text-info rounded-3"><i class="bi bi-building fs-3"></i></div>
+            <div class="flex-grow-1">
+              <h5 class="fw-semibold mb-1">Restaurant Accounts</h5>
+              <p class="text-muted small mb-0">Search registered restaurants, review their plan and status, and inspect a tenant workspace.</p>
+            </div>
+            <i class="bi bi-arrow-right text-primary"></i>
+          </div>
+        </a>
       </div>
     </div>
 
-    <!-- Tenant List Table -->
-    <div class="card border-0 shadow-sm rounded-3 mb-4" id="restaurant-accounts">
-      <div class="card-header bg-white py-3">
-        <h5 class="card-title mb-0 fw-semibold">Restaurant Accounts</h5>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light small text-uppercase text-muted">
-            <tr>
-              <th>ID</th>
-              <th>Restaurant Name</th>
-              <th>Slug</th>
-              <th>Contact</th>
-              <th>Plan</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php if (!empty($restaurants)): ?>
-              <?php foreach ($restaurants as $r): ?>
-                <tr>
-                  <td class="fw-bold">#<?= $r['id'] ?></td>
-                  <td class="fw-semibold text-dark"><?= htmlspecialchars($r['name']) ?></td>
-                  <td><code><?= htmlspecialchars($r['slug']) ?></code></td>
-                  <td class="small text-muted"><?= htmlspecialchars($r['contact_email']) ?><br><?= htmlspecialchars($r['contact_phone']) ?></td>
-                  <td><span class="badge bg-info text-dark"><?= htmlspecialchars($r['plan_name'] ?? 'Standard') ?></span></td>
-                  <td><span class="badge bg-success"><?= htmlspecialchars(ucfirst($r['status'])) ?></span></td>
-                  <td>
-                    <a href="<?= BASE_URL ?>/dashboard/switch-tenant?id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-primary">
-                      <i class="bi bi-box-arrow-in-right me-1"></i> Inspect Tenant
-                    </a>
-                  </td>
-                </tr>
-              <?php endforeach; ?>
-            <?php else: ?>
+  <?php else: ?>
               <tr><td colspan="7" class="text-center text-muted py-4">No tenant restaurants registered yet.</td></tr>
             <?php endif; ?>
           </tbody>
