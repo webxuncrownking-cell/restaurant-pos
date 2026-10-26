@@ -42,14 +42,14 @@
       <div class="card card-metric p-3 bg-white h-100">
         <span class="text-muted small">Payments Collected — All Time</span>
         <h3 class="fw-bold mb-0">₱<?= number_format((float)($actual_collected_total ?? 0), 2) ?></h3>
-        <small class="text-muted">Successful platform payments recorded</small>
+        <small class="text-muted">Net platform collections after recorded refunds</small>
       </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
       <div class="card card-metric p-3 bg-white h-100">
         <span class="text-muted small">Payments Collected — This Month</span>
         <h3 class="fw-bold mb-0">₱<?= number_format((float)($actual_collected_month ?? 0), 2) ?></h3>
-        <small class="text-muted">Based on successful payment records</small>
+        <small class="text-muted">Net collections for the current calendar month</small>
       </div>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
@@ -71,7 +71,7 @@
   <div class="card border-0 shadow-sm rounded-3 mb-4">
     <div class="card-header bg-white py-3">
       <h5 class="mb-1 fw-semibold">Growth & Actual Collections — Last 6 Months</h5>
-      <small class="text-muted">Registration counts use restaurant creation dates. Collections include only payments marked succeeded.</small>
+      <small class="text-muted">Registration counts use restaurant creation dates. Collections net off records marked refunded.</small>
     </div>
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0">
