@@ -140,7 +140,7 @@ class DashboardController
                  GROUP BY DATE_FORMAT(created_at, '%Y-%m')
                  ORDER BY month_key ASC"
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             $data['analytics_error'] = 'Some analytics could not be loaded. Check database schema and application logs.';
         }
 
@@ -164,7 +164,7 @@ class DashboardController
                  WHERE r.deleted_at IS NULL
                  ORDER BY r.id ASC"
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             $data['accounts_error'] = 'Restaurant accounts could not be loaded. Check database schema and application logs.';
         }
 
