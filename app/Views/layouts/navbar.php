@@ -53,6 +53,10 @@ if ($isPlatform) {
   $navGroups = [
     'Overview' => [
       ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
+      ['label' => 'Platform Analytics', 'route' => '/platform-analytics', 'icon' => 'bi-graph-up-arrow'],
+    ],
+    'Tenants' => [
+      ['label' => 'Restaurant Accounts', 'route' => '/restaurant-accounts', 'icon' => 'bi-building'],
     ],
     'System' => [
       ['label' => 'System Diagnostics', 'route' => '/install', 'icon' => 'bi-gear'],
