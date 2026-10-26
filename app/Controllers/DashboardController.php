@@ -140,6 +140,33 @@ class DashboardController
                  GROUP BY DATE_FORMAT(created_at, '%Y-%m')
                  ORDER BY month_key ASC"
             );
+            $data['actual_collected_total'] = (float)(Database::fetchOne(
+                "SELECT COALESCE(SUM(amount), 0) AS amount FROM platform_payments WHERE status = 'succeeded'"
+            )['amount'] ?? 0);
+            $data['actual_collected_month'] = (float)(Database::fetchOne(
+                "SELECT COALESCE(SUM(amount), 0) AS amount FROM platform_payments
+                 WHERE status = 'succeeded' AND paid_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                   AND paid_at < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH)"
+            )['amount'] ?? 0);
+            $data['outstanding_invoices'] = Database::fetchOne(
+                "SELECT COUNT(*) AS invoice_count, COALESCE(SUM(total_amount), 0) AS amount
+                 FROM platform_invoices WHERE status = 'open'"
+            ) ?? ['invoice_count' => 0, 'amount' => 0];
+            $data['monthly_collections'] = Database::fetchAll(
+                "SELECT DATE_FORMAT(paid_at, '%Y-%m') AS month_key, COALESCE(SUM(amount), 0) AS collected, COUNT(*) AS payment_count
+                 FROM platform_payments
+                 WHERE status = 'succeeded' AND paid_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')
+                 GROUP BY DATE_FORMAT(paid_at, '%Y-%m')
+                 ORDER BY month_key ASC"
+            );
+            $data['monthly_registrations'] = Database::fetchAll(
+                "SELECT DATE_FORMAT(created_at, '%Y-%m') AS month_key, COUNT(*) AS new_restaurants
+                 FROM restaurants
+                 WHERE deleted_at IS NULL AND created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 5 MONTH), '%Y-%m-01')
+                 GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                 ORDER BY month_key ASC"
+            );
+            $data['inactive_restaurants'] = max(0, (int)$data['total_restaurants'] - (int)$data['active_restaurants']);
         } catch (\Throwable $e) {
             $data['analytics_error'] = 'Some analytics could not be loaded. Check database schema and application logs.';
         }
