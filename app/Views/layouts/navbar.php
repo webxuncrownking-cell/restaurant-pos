@@ -31,6 +31,34 @@ $navGroups = [
   ],
 ];
 
+// Keep navigation consistent with the active user's tenant-scoped permissions.
+// Hiding a link is only the UI layer; controllers must continue enforcing access too.
+$navPermissionMap = [
+  '/menu' => 'menu.manage_catalog',
+  '/inventory' => 'inventory.view_stock',
+  '/expiry' => 'inventory.adjust',
+  '/procurement' => 'inventory.stock_in',
+  '/tables' => 'tables.view_status',
+  '/reservations' => 'tables.view_status',
+  '/devices' => 'users.manage_staff',
+  '/shifts' => 'shifts.open_close',
+  '/bills' => 'pos.process_payment',
+  '/reports' => 'reports.view_sales',
+  '/billing' => 'subscription.manage',
+  '/install' => 'platform.only',
+];
+
+foreach ($navGroups as $group => $items) {
+  $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap, $isPlatform): bool {
+    $route = (string)($item['route'] ?? '');
+    if ($route === '/install') return $isPlatform;
+    if ($route === '/billing') return $isPlatform || \\App\\Core\\Auth::roleSlug() === 'owner';
+    if (isset($navPermissionMap[$route])) return \\App\\Core\\Auth::can($navPermissionMap[$route]);
+    return true;
+  }));
+  if (!$navGroups[$group]) unset($navGroups[$group]);
+}
+
 if ($canManageBranding) {
   $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
 }
