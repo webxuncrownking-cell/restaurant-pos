@@ -51,8 +51,12 @@ $navPermissionMap = [
 if ($isPlatform) {
   // Platform superadmins get platform-level navigation only.
   $navGroups = [
-    'Workspace' => [
+    'Overview' => [
       ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
+      ['label' => 'Platform Analytics', 'route' => '/dashboard#platform-analytics', 'icon' => 'bi-graph-up-arrow'],
+    ],
+    'Tenants' => [
+      ['label' => 'Restaurant Accounts', 'route' => '/dashboard#restaurant-accounts', 'icon' => 'bi-building'],
     ],
     'System' => [
       ['label' => 'System Diagnostics', 'route' => '/install', 'icon' => 'bi-gear'],
@@ -123,7 +127,8 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
         <div class="app-nav-group">
           <div class="app-nav-heading"><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></div>
           <?php foreach ($items as $item):
-            $active = $currentPath === $item['route'] || str_starts_with($currentPath, $item['route'] . '/');
+            $itemPath = explode('#', (string)$item['route'], 2)[0];
+            $active = $currentPath === $itemPath || str_starts_with($currentPath, $itemPath . '/');
           ?>
             <a class="app-nav-link <?= $active ? 'active' : '' ?>"
                href="<?= BASE_URL . $item['route'] ?>"
