@@ -109,13 +109,13 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
       </span>
       <span class="app-brand-copy">
         <strong><?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?></strong>
-        <small title="<?= htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') ?>"><?= $restaurantTagline !== '' ? htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') : ($isPlatform && !$restaurant ? 'PLATFORM CONTROL CENTER' : 'RESTAURANT WORKSPACE') ?></small>
+        <small title="<?= htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') ?>"><?= $restaurantTagline !== '' ? htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') : ($isPlatform && !$restaurant ? 'PLATFORM MANAGEMENT' : 'RESTAURANT WORKSPACE') ?></small>
       </span>
     </a>
 
     <div class="app-sidebar-context">
       <span class="context-dot" aria-hidden="true"></span>
-      <span><?= $isPlatform && !$restaurant ? 'Platform administration' : 'Workspace is ready' ?></span>
+      <span><?= $isPlatform && !$restaurant ? 'Platform management' : 'Workspace is ready' ?></span>
     </div>
 
     <nav class="app-sidebar-nav">
@@ -160,7 +160,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
           <i class="bi bi-list" aria-hidden="true"></i>
         </button>
         <div class="app-page-context">
-          <small><?= $isPlatform && !$restaurant ? 'PLATFORM ADMINISTRATION' : 'RESTAURANT MANAGEMENT' ?></small>
+          <small><?= $isPlatform && !$restaurant ? 'PLATFORM OVERVIEW' : 'RESTAURANT MANAGEMENT' ?></small>
           <strong><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></strong>
         </div>
       </div>
