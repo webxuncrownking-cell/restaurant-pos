@@ -36,8 +36,33 @@ class DashboardController
             // Platform Superadmin Overview Metrics
             try {
                 $data['total_restaurants'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM restaurants WHERE deleted_at IS NULL")['c'] ?? 0);
+                $data['active_tenants'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM restaurants WHERE deleted_at IS NULL AND status = 'active'")['c'] ?? 0);
                 $data['active_subscriptions'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM subscriptions WHERE status IN ('active','trial')")['c'] ?? 0);
                 $data['total_devices'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM pos_devices WHERE status = 'active'")['c'] ?? 0);
+
+                // SaaS recurring revenue estimate; this is not the same as cash collected.
+                $mrr = Database::fetchOne(
+                    "SELECT COALESCE(SUM(CASE
+                        WHEN LOWER(s.billing_cycle) IN ('annual', 'annually', 'yearly')
+                            THEN COALESCE(sp.price_annually, 0) / 12
+                        ELSE COALESCE(sp.price_monthly, 0)
+                    END), 0) AS amount
+                    FROM subscriptions s
+                    INNER JOIN subscription_plans sp ON sp.id = s.plan_id
+                    WHERE s.status = 'active'"
+                );
+                $data['estimated_mrr'] = (float)($mrr['amount'] ?? 0);
+
+                $monthOrders = Database::fetchOne(
+                    "SELECT COUNT(*) AS orders_count,
+                            COUNT(DISTINCT restaurant_id) AS active_restaurants
+                     FROM orders
+                     WHERE created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                       AND order_status <> 'cancelled'"
+                );
+                $data['orders_this_month'] = (int)($monthOrders['orders_count'] ?? 0);
+                $data['active_restaurants_this_month'] = (int)($monthOrders['active_restaurants'] ?? 0);
+
                 $data['restaurants'] = Database::fetchAll("SELECT r.*, s.status AS sub_status, sp.name AS plan_name FROM restaurants r LEFT JOIN subscriptions s ON s.restaurant_id = r.id LEFT JOIN subscription_plans sp ON sp.id = s.plan_id WHERE r.deleted_at IS NULL ORDER BY r.id ASC");
             } catch (\Throwable $e) {
                 $data['db_error'] = $e->getMessage();
