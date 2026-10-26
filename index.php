@@ -34,6 +34,7 @@ use App\Core\Router;
 use App\Core\Session;
 use App\Core\Auth;
 use App\Controllers\AuthController;
+use App\Controllers\RestaurantRegistrationController;
 use App\Controllers\DashboardController;
 use App\Controllers\InstallController;
 use App\Controllers\MenuController;
