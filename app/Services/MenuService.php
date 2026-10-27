@@ -444,6 +444,7 @@ class MenuService
         foreach ($products as &$product) {
             $product['combo_components'] = $comboMap[(int)$product['id']] ?? [];
             $product['is_combo'] = !empty($product['combo_components']);
+            $product['combo_valid'] = count($product['combo_components']) >= 2;
             $imagePath = trim((string)($product['image_path'] ?? ''));
             $product['image_url'] = $imagePath !== '' ? BASE_URL . '/' . ltrim($imagePath, '/') : '';
             $basePrice = (float)($product['base_price'] ?? 0);
