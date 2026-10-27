@@ -154,8 +154,8 @@ class ReportService
     public static function getProductDemandForecast(int $restaurantId, string $startDate, string $endDate, int $limit = 10): array
     {
         $limit = max(1, min(50, $limit));
-        $start = new \\DateTimeImmutable($startDate);
-        $end = new \\DateTimeImmutable($endDate);
+        $start = new \DateTimeImmutable($startDate);
+        $end = new \DateTimeImmutable($endDate);
         $calendarDays = max(1, (int)$start->diff($end)->days + 1);
         $rows = Database::fetchAll(
             "SELECT oi.product_id, oi.product_name AS item_name,
