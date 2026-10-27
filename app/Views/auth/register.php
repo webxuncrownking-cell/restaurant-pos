@@ -48,14 +48,14 @@ html[data-theme="dark"] .register-page-wrap .form-control { background:#0d1727 !
 html[data-theme="dark"] .register-page-wrap .form-control::placeholder { color:#8394ad !important; }
 
 
-  .auth-theme-control { position:fixed; top:20px; right:22px; z-index:1200; display:flex; align-items:center; gap:0; padding:5px; border:1px solid #dbe4f0; border-radius:999px; background:rgba(255,255,255,.92); color:#334155; box-shadow:0 8px 24px rgba(15,23,42,.12); backdrop-filter:blur(12px); font-size:0; font-weight:700; width:48px; height:48px; justify-content:center; }
-  .auth-theme-control button { display:flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; border:0; border-radius:50%; background:#e8eef8; color:#27456f; cursor:pointer; }
+  .auth-theme-control { position:fixed; top:20px; right:22px; z-index:1200; display:flex; align-items:center; justify-content:center; padding:5px; border:1px solid #dbe4f0; border-radius:999px; background:rgba(255,255,255,.92); color:#334155; box-shadow:0 8px 24px rgba(15,23,42,.12); backdrop-filter:blur(12px); width:48px; height:48px; }
+  .auth-theme-control button { display:flex; align-items:center; justify-content:center; flex:0 0 36px; width:36px; height:36px; padding:0; border:0; border-radius:50%; background:#e8eef8; color:#27456f; cursor:pointer; }
   .auth-theme-control button:focus-visible { outline:3px solid #60a5fa; outline-offset:2px; }
   .auth-brand-icon { width:68px; height:68px; display:inline-flex; align-items:center; justify-content:center; border-radius:20px !important; background:#2563eb !important; color:#fff !important; border:1px solid rgba(255,255,255,.35); box-shadow:0 10px 24px rgba(37,99,235,.28) !important; }
   .auth-brand-icon i { color:#fff !important; font-size:2rem; }
   html[data-theme="dark"] .auth-theme-control { background:rgba(22,35,56,.94); border-color:#354862; color:#e8eef8; }
-  html[data-theme="dark"] .auth-theme-control button { background:#263a57; color:#dce9fb; }
-  @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; padding:4px; width:42px; height:42px; } .auth-theme-control button { width:30px; height:30px; } }
+  html[data-theme="dark"] .auth-theme-control button { background:#263a57; color:#f1f5fb; }
+  @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; width:44px; height:44px; padding:4px; } .auth-theme-control button { width:34px; height:34px; flex-basis:34px; } }
 
 
 </style>
@@ -76,7 +76,7 @@ html[data-theme="dark"] .register-page-wrap .form-control::placeholder { color:#
     var dark = theme === 'dark';
     if (label) label.textContent = dark ? 'Dark mode' : 'Light mode';
     button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-    button.innerHTML = '<i class="bi ' + (dark ? 'bi-sun-fill' : 'bi-moon-stars-fill') + '" aria-hidden="true"></i>';
+    button.innerHTML = dark ? '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>' : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg>';
   }
   var saved = 'light';
   try { saved = localStorage.getItem('serveflow-theme') === 'dark' ? 'dark' : 'light'; } catch (e) {}
