@@ -53,6 +53,7 @@ use App\Controllers\KitchenController;
 use App\Controllers\ReservationsController;
 use App\Controllers\BillsController;
 use App\Controllers\ExpenseController;
+use App\Controllers\TimePricingController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -159,6 +160,11 @@ $router->post('/bills/migrate', [BillsController::class, 'migrate']);
 $router->post('/bills/split', [BillsController::class, 'createEqualSplits']);
 $router->post('/bills/split-items', [BillsController::class, 'createItemSplits']);
 $router->post('/bills/payment', [BillsController::class, 'collectPayment']);
+
+// Scheduled menu pricing
+$router->get('/pricing', [TimePricingController::class, 'index']);
+$router->post('/pricing/save', [TimePricingController::class, 'save']);
+$router->post('/pricing/toggle', [TimePricingController::class, 'toggle']);
 
 // Operating expenses
 $router->get('/expenses', [ExpenseController::class, 'index']);
