@@ -92,6 +92,11 @@ final class ComboService
         }
         $combo = Database::fetchOne("SELECT id FROM products WHERE restaurant_id = ? AND id = ? AND is_active = 1", [$restaurantId, $comboProductId]);
         if (!$combo) throw new InvalidArgumentException('The combo must use an active menu item in this restaurant.');
+        $usedAsComponent = Database::fetchOne(
+            "SELECT id FROM restaurant_combo_components WHERE restaurant_id = ? AND component_product_id = ? LIMIT 1",
+            [$restaurantId, $comboProductId]
+        );
+        if ($usedAsComponent) throw new InvalidArgumentException('A menu item already used inside another combo cannot itself become a combo.');
         $pairs = [];
         foreach ($componentIds as $index => $rawId) {
             $qtyRaw = $quantities[$index] ?? null;
