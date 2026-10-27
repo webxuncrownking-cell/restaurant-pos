@@ -189,7 +189,6 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
           <i class="bi bi-sun" aria-hidden="true"></i>
           <input type="checkbox" id="appThemeToggle" role="switch" aria-label="Dark mode" aria-checked="false">
           <span class="app-theme-switch-track" aria-hidden="true"></span>
-          <span class="app-theme-switch-label">Dark mode</span>
           <i class="bi bi-moon-stars" aria-hidden="true"></i>
         </label>
         <span class="status-pill app-connectivity"><span class="context-dot" aria-hidden="true"></span> Online</span>
