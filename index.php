@@ -55,6 +55,7 @@ use App\Controllers\BillsController;
 use App\Controllers\ExpenseController;
 use App\Controllers\TimePricingController;
 use App\Controllers\CustomerController;
+use App\Controllers\ComboController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -166,6 +167,11 @@ $router->post('/bills/payment', [BillsController::class, 'collectPayment']);
 $router->get('/customers', [CustomerController::class, 'index']);
 $router->post('/customers/save', [CustomerController::class, 'save']);
 $router->post('/customers/toggle', [CustomerController::class, 'toggle']);
+
+// Combo meal bundles
+$router->get('/combos', [ComboController::class, 'index']);
+$router->post('/combos/save', [ComboController::class, 'save']);
+$router->post('/combos/remove', [ComboController::class, 'remove']);
 
 // Scheduled menu pricing
 $router->get('/pricing', [TimePricingController::class, 'index']);
