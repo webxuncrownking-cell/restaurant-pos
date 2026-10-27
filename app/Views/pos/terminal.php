@@ -1594,6 +1594,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         alert('Select a dining table and choose Dine In before saving an open bill.');
         return;
       }
+      if (this.loyaltyRedeemPoints > 0) {
+        alert('Loyalty points can only be redeemed on an immediately paid sale. Set redemption to zero before saving an open bill.');
+        return;
+      }
       if (!confirm('Send this order to the kitchen without collecting payment now? It will appear in Open Bills for partial or split payment.')) {
         return;
       }
@@ -1724,6 +1728,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           table_id: this.currentTableId,
           cashier_id: cashierId,
           customer_id: this.selectedCustomerId,
+          loyalty_redeem_points: calcs.loyaltyRedeemPoints,
           catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
           offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
           subtotal: calcs.subtotal,
