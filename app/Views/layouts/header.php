@@ -43,6 +43,14 @@
     $primaryColor = $restaurant['pos_primary_color'] ?? '#2563eb';
     $secondaryColor = $restaurant['pos_secondary_color'] ?? '#059669';
   ?>
+<script id="serveflow-theme-prepaint">
+(function () {
+  try {
+    var saved = localStorage.getItem('serveflow-theme');
+    if (saved === 'dark' || saved === 'light') document.documentElement.setAttribute('data-theme', saved);
+  } catch (e) {}
+})();
+</script>
   <style>
     :root {
       --pos-primary: <?= htmlspecialchars((string)$primaryColor, ENT_QUOTES, 'UTF-8') ?>;
@@ -637,6 +645,72 @@
     html[data-theme="dark"] .app-main .alert-info { color:#bae6fd; background:#12364a; border-color:#245b77; }
     @media (max-width:991.98px) { .app-sidebar-collapse-toggle { display:none!important; } }
     @media (max-width:575.98px) { .app-theme-switch { padding:5px 7px; gap:6px; } .app-theme-switch-label { display:none; } }
+
+
+    /* Avoid a light-theme flash while the saved theme is being applied. */
+    html { background:#f3f5f9; }
+    html[data-theme="dark"] { background:#0f1726; }
+    html[data-theme="dark"] body { transition:none!important; }
+    html[data-theme="light"] body { transition:none!important; }
+    html[data-theme="light"] .app-sidebar {
+      background:linear-gradient(180deg,#f8faff 0%,#e8eef8 100%);
+      border-right-color:#cbd8ea;
+    }
+    html[data-theme="light"] .app-nav-link { border:1px solid transparent; }
+    html[data-theme="light"] .app-nav-link:hover { background:#dbeafe; border-color:#c4dafa; color:#123d83; }
+    html[data-theme="light"] .app-nav-link.active { background:linear-gradient(100deg,#c7ddff,#e1edff); border-color:#b6d0fb; color:#123f91; box-shadow:inset 4px 0 #2563eb,0 2px 8px rgba(37,99,235,.08); }
+    html[data-theme="light"] .app-nav-heading { color:#536b8b; }
+    html[data-theme="light"] .app-sidebar-context { background:#fff; border-color:#cbd8ea; box-shadow:0 2px 7px rgba(31,58,95,.05); }
+    html[data-theme="light"] .app-sidebar-pos { background:linear-gradient(110deg,#d9e8ff,#eef5ff); border-color:#b9d0f6; box-shadow:0 3px 10px rgba(37,99,235,.08); }
+    html[data-theme="light"] .app-sidebar-collapse-toggle { border-color:#c4d3e8; background:#f8fbff; color:#1d4ed8; }
+    html[data-theme="dark"] .app-main .form-control,
+    html[data-theme="dark"] .app-main .form-select,
+    html[data-theme="dark"] .app-main textarea,
+    html[data-theme="dark"] .app-main input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="file"]),
+    html[data-theme="dark"] .app-main select { background-color:#111b2b!important; color:#e5ebf5!important; border-color:#3a4960!important; }
+    html[data-theme="dark"] .app-main input[type="file"] { background:#111b2b!important; color:#cbd5e1!important; border-color:#3a4960!important; }
+    html[data-theme="dark"] .app-main .settings-card,
+    html[data-theme="dark"] .app-main .reservation-card,
+    html[data-theme="dark"] .app-main .supplier-card,
+    html[data-theme="dark"] .app-main .expiry-card,
+    html[data-theme="dark"] .app-main .expense-card,
+    html[data-theme="dark"] .app-main [class*="-panel"],
+    html[data-theme="dark"] .app-main [class*="-section"],
+    html[data-theme="dark"] .app-main [class*="-card"] { color:#e5ebf5; }
+    html[data-theme="dark"] .app-main [style*="background:#fff"],
+    html[data-theme="dark"] .app-main [style*="background: #fff"],
+    html[data-theme="dark"] .app-main [style*="background-color:#fff"],
+    html[data-theme="dark"] .app-main [style*="background-color: #fff"],
+    html[data-theme="dark"] .app-main [style*="background: white"],
+    html[data-theme="dark"] .app-main [style*="background-color: white"],
+    html[data-theme="dark"] .app-main .bg-white,
+    html[data-theme="dark"] .app-main .card,
+    html[data-theme="dark"] .app-main .modal-content,
+    html[data-theme="dark"] .app-main .list-group-item { background-color:#182235!important; color:#e5ebf5!important; border-color:#344156!important; }
+    html[data-theme="dark"] .app-main .card *,
+    html[data-theme="dark"] .app-main [class*="-card"] *,
+    html[data-theme="dark"] .app-main [class*="-panel"] *,
+    html[data-theme="dark"] .app-main [class*="-section"] * { border-color:inherit; }
+    html[data-theme="dark"] .app-main .card p,
+    html[data-theme="dark"] .app-main .card label,
+    html[data-theme="dark"] .app-main .card small,
+    html[data-theme="dark"] .app-main [class*="-card"] p,
+    html[data-theme="dark"] .app-main [class*="-card"] label,
+    html[data-theme="dark"] .app-main [class*="-card"] small,
+    html[data-theme="dark"] .app-main [class*="-panel"] p,
+    html[data-theme="dark"] .app-main [class*="-panel"] label,
+    html[data-theme="dark"] .app-main [class*="-panel"] small { color:#b9c6d8; }
+    html[data-theme="dark"] .app-main input[type="file"] { padding:0!important; overflow:hidden; min-height:42px; }
+    html[data-theme="dark"] .app-main input[type="file"]::file-selector-button {
+      height:40px; margin:0 12px 0 0; padding:0 16px; border:0; border-right:1px solid #3a4960;
+      background:#26354b; color:#e5ebf5; font:inherit; cursor:pointer;
+    }
+    html[data-theme="light"] .app-main input[type="file"] { padding:0!important; overflow:hidden; min-height:42px; }
+    html[data-theme="light"] .app-main input[type="file"]::file-selector-button {
+      height:40px; margin:0 12px 0 0; padding:0 16px; border:0; border-right:1px solid #d7e0ec;
+      background:#eef2f7; color:#334155; font:inherit; cursor:pointer;
+    }
+    @media (prefers-reduced-motion:reduce) { .app-nav-link,.app-sidebar,.app-sidebar-collapse-toggle,.app-theme-switch-track { transition:none!important; } }
 
   </style>
 </head>
