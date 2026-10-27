@@ -61,7 +61,27 @@ class ExpenseController
         $role=(string)(Auth::roleSlug()??'');
         if (!Auth::isPlatformAdmin() && !in_array($role,['owner','manager'],true)) Response::forbidden('Only an owner or manager can prepare expense tracking.');
         try {
-            Database::getInstance()->exec("CREATE TABLE IF NOT EXISTS restaurant_expenses (
+            $pdo = Database::getInstance();
+            if ($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS restaurant_expenses (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    restaurant_id INTEGER NOT NULL,
+                    category VARCHAR(40) NOT NULL,
+                    description VARCHAR(180) NOT NULL,
+                    amount NUMERIC NOT NULL,
+                    payment_method VARCHAR(20) NOT NULL DEFAULT 'cash',
+                    expense_date TEXT NOT NULL,
+                    reference_number VARCHAR(80) NULL,
+                    notes TEXT NULL,
+                    status VARCHAR(16) NOT NULL DEFAULT 'active',
+                    created_by INTEGER NOT NULL,
+                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    voided_by INTEGER NULL,
+                    voided_at TEXT NULL
+                )");
+                $pdo->exec("CREATE INDEX IF NOT EXISTS idx_expenses_date ON restaurant_expenses(restaurant_id,expense_date,status)");
+            } else {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS restaurant_expenses (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 restaurant_id INT UNSIGNED NOT NULL,
                 category VARCHAR(40) NOT NULL,
@@ -83,6 +103,7 @@ class ExpenseController
                 CONSTRAINT fk_expenses_creator FOREIGN KEY(restaurant_id,created_by) REFERENCES users(restaurant_id,id) ON DELETE RESTRICT,
                 CONSTRAINT fk_expenses_voider FOREIGN KEY(restaurant_id,voided_by) REFERENCES users(restaurant_id,id) ON DELETE RESTRICT
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
             Session::setFlash('success','Expense tracking is ready.');
         } catch (Throwable $e) { error_log('[Expenses Migration] '.$e); Session::setFlash('danger','Could not prepare expense tracking. Check database permissions and server logs.'); }
         Response::redirect('/expenses');
