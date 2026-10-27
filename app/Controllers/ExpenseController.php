@@ -112,6 +112,7 @@ class ExpenseController
     public function create(Request $request): void
     {
         Auth::requirePermission('reports.view_sales');
+        $this->requireExpenseManager();
         if (!CSRF::validate($request->csrfToken())) { Session::setFlash('danger','Security token expired.'); Response::redirect('/expenses'); return; }
         $rid=(int)(TenantContext::getRestaurantId()??0); $uid=(int)(Auth::id()??0);
         $category=trim((string)$request->post('category','')); $description=trim((string)$request->post('description',''));
@@ -136,6 +137,7 @@ class ExpenseController
     public function void(Request $request): void
     {
         Auth::requirePermission('reports.view_sales');
+        $this->requireExpenseManager();
         if (!CSRF::validate($request->csrfToken())) { Session::setFlash('danger','Security token expired.'); Response::redirect('/expenses'); return; }
         $rid=(int)(TenantContext::getRestaurantId()??0); $uid=(int)(Auth::id()??0);
         $id=filter_var($request->post('expense_id'),FILTER_VALIDATE_INT);
@@ -151,6 +153,14 @@ class ExpenseController
             Session::setFlash('danger','Unable to void this expense. The record remains in history.');
         }
         Response::redirect('/expenses');
+    }
+
+    private function requireExpenseManager(): void
+    {
+        $role = (string)(Auth::roleSlug() ?? '');
+        if (!Auth::isPlatformAdmin() && !in_array($role, ['owner', 'manager'], true)) {
+            Response::forbidden('Only an owner or manager can record or void operating expenses.');
+        }
     }
 
     private function ready(): bool
