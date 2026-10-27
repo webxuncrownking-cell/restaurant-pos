@@ -67,6 +67,8 @@ html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#839
   @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; padding:6px 9px; font-size:.75rem; } .auth-theme-control button { width:30px; height:30px; } }
 
 
+</style>
+
 <div class="auth-theme-control" role="group" aria-label="Appearance">
   <span class="auth-theme-label">Light mode</span>
   <button type="button" class="auth-theme-toggle" aria-label="Switch to dark mode" title="Switch theme"><i class="bi bi-moon-stars-fill" aria-hidden="true"></i></button>
@@ -95,6 +97,7 @@ html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#839
   });
 })();
 </script>
+
 <div class="login-page-wrap">
 <div class="container">
   <div class="row justify-content-center">
