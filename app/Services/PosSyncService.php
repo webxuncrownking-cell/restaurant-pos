@@ -604,9 +604,42 @@ class PosSyncService
             $lineSubtotal = round($unitPrice * $quantity, 2);
             $subtotal += $lineSubtotal;
 
+            $comboComponents = ComboService::getComponentsForProduct($restaurantId, $productId);
             $costInfo = MenuService::calculateProductCost($restaurantId, $productId, $variantId, $addonIds);
+            $comboCostBreakdown = [];
+            if ($comboComponents) {
+                $comboCost = 0.0;
+                foreach ($comboComponents as $component) {
+                    $componentCost = MenuService::calculateProductCost($restaurantId, (int)$component['id'], null, []);
+                    $extendedCost = (float)$componentCost['total_cost'] * (float)$component['quantity'];
+                    $comboCost += $extendedCost;
+                    $comboCostBreakdown[] = [
+                        'product_id' => (int)$component['id'],
+                        'name' => (string)$component['name'],
+                        'quantity_per_combo' => (float)$component['quantity'],
+                        'unit_cost' => (float)$componentCost['total_cost'],
+                        'extended_cost' => round($extendedCost, 4)
+                    ];
+                }
+                $costInfo['total_cost'] = round($comboCost, 4);
+                $costInfo['breakdown'] = $comboCostBreakdown;
+            }
+            $specialInstructions = trim((string)($itemInput['special_instructions'] ?? ''));
+            if (strlen($specialInstructions) > 500) {
+                throw new InvalidArgumentException('Special instructions must be 500 characters or fewer.');
+            }
+            if ($comboComponents) {
+                $included = array_map(
+                    static fn(array $component): string => (string)$component['name'] . ' × ' . rtrim(rtrim(number_format((float)$component['quantity'], 3, '.', ''), '0'), '.'),
+                    $comboComponents
+                );
+                $comboNote = 'Combo includes: ' . implode(', ', $included);
+                $specialInstructions = $specialInstructions !== '' ? $comboNote . ' | ' . $specialInstructions : $comboNote;
+                $specialInstructions = substr($specialInstructions, 0, 500);
+            }
             $recipeSnapshot = json_encode([
                 'cost_breakdown' => $costInfo['breakdown'],
+                'combo_components' => $comboCostBreakdown,
                 'selected_addons' => array_map(
                     static fn(array $addon): array => [
                         'id' => $addon['id'],
@@ -633,8 +666,10 @@ class PosSyncService
                 'subtotal' => $lineSubtotal,
                 'recipe_snapshot_json' => $recipeSnapshot,
                 'addons' => $addons,
-                'product_type' => (string)$product['product_type'],
-                'direct_stock_ingredient_id' => !empty($product['direct_stock_ingredient_id'])
+                'combo_components' => $comboComponents,
+                'special_instructions' => $specialInstructions !== '' ? $specialInstructions : null,
+                'product_type' => $comboComponents ? 'combo' : (string)$product['product_type'],
+                'direct_stock_ingredient_id' => !$comboComponents && !empty($product['direct_stock_ingredient_id'])
                     ? (int)$product['direct_stock_ingredient_id']
                     : null
             ];
