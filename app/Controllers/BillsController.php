@@ -9,6 +9,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\CSRF;
+use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
@@ -210,18 +211,17 @@ class BillsController
             try {
                 $driver = Database::getConnection()->getAttribute(\\PDO::ATTR_DRIVER_NAME);
                 if ($driver === 'sqlite') {
-                    Database::query(
+                    $insertStmt = Database::query(
                         "INSERT OR IGNORE INTO customer_loyalty_ledger (restaurant_id, customer_id, order_id, entry_type, points) VALUES (?, ?, ?, 'earn', ?)",
                         [$restaurantId, $customerId, $orderId, $points]
                     );
                 } else {
-                    Database::query(
+                    $insertStmt = Database::query(
                         "INSERT IGNORE INTO customer_loyalty_ledger (restaurant_id, customer_id, order_id, entry_type, points) VALUES (?, ?, ?, 'earn', ?)",
                         [$restaurantId, $customerId, $orderId, $points]
                     );
                 }
-                $inserted = Database::getConnection()->lastInsertId();
-                if ($inserted !== '0' && $inserted !== '') {
+                if ($insertStmt->rowCount() > 0) {
                     Database::query(
                         "UPDATE restaurant_customers SET loyalty_points = loyalty_points + ?, updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ?",
                         [$points, $restaurantId, $customerId]
