@@ -1755,7 +1755,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           cashier_id: cashierId,
           customer_id: this.selectedCustomerId,
           loyalty_redeem_points: calcs.loyaltyRedeemPoints,
-          catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
+          catalog_version_id: this.catalog.version && Number(this.catalog.version.id) > 0 ? Number(this.catalog.version.id) : null,
           offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
           subtotal: calcs.subtotal,
           discount_amount: calcs.discount,
