@@ -24,11 +24,11 @@ final class TimePricingController
             )");
         } else {
             Database::getConnection()->exec("CREATE TABLE IF NOT EXISTS menu_price_rules (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, restaurant_id BIGINT UNSIGNED NOT NULL,
-                product_id BIGINT UNSIGNED NOT NULL, name VARCHAR(120) NOT NULL, starts_at TIME NOT NULL, ends_at TIME NOT NULL,
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, restaurant_id INT UNSIGNED NOT NULL,
+                product_id INT UNSIGNED NOT NULL, name VARCHAR(120) NOT NULL, starts_at TIME NOT NULL, ends_at TIME NOT NULL,
                 days_of_week VARCHAR(20) NOT NULL DEFAULT '1,2,3,4,5,6,7', price_type ENUM('fixed','percent_off') NOT NULL DEFAULT 'fixed',
                 price_value DECIMAL(12,2) NOT NULL, starts_on DATE NULL, ends_on DATE NULL, is_active TINYINT(1) NOT NULL DEFAULT 1,
-                created_by BIGINT UNSIGNED NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_by INT UNSIGNED NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 INDEX idx_price_rules_lookup (restaurant_id, product_id, is_active),
                 CONSTRAINT fk_price_rules_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
                 CONSTRAINT fk_price_rules_product FOREIGN KEY (restaurant_id, product_id) REFERENCES products(restaurant_id, id) ON DELETE CASCADE
