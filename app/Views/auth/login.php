@@ -89,25 +89,6 @@
             </button>
           </form>
         </div>
-
-        <!-- Quick Demo Credentials for Fast XAMPP Testing -->
-        <div class="card-footer bg-light border-top p-3 text-center">
-          <span class="d-block text-muted small fw-semibold mb-2">⚡ Quick Test Account Fill:</span>
-          <div class="d-flex flex-wrap gap-1 justify-content-center">
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillCreds('juan_admin', 'RestoStaff2026!', 'mang-juan')">
-              Mang Juan (Owner)
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillCreds('maria_cashier', 'RestoStaff2026!', 'mang-juan')">
-              Maria (Cashier)
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillCreds('platform_admin', 'AdminPassword2026!', '')">
-              SaaS Superadmin
-            </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillCreds('nena_admin', 'RestoStaff2026!', 'aling-nena')">
-              Aling Nena (Tenant 2)
-            </button>
-          </div>
-        </div>
       </div>
 
       <div class="text-center mt-3"><span class="text-muted small">New to ServeFlow POS?</span> <a href="<?= BASE_URL ?>/register" class="text-decoration-none fw-semibold small">Register your restaurant</a></div>
@@ -124,10 +105,3 @@
 </div>
 </div>
 
-<script>
-function fillCreds(login, pass, slug) {
-  document.getElementById('login').value = login;
-  document.getElementById('password').value = pass;
-  document.getElementById('tenant_slug').value = slug;
-}
-</script>
