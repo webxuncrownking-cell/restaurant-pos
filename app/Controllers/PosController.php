@@ -48,7 +48,7 @@ class PosController
                 "SELECT id, full_name, phone, loyalty_points FROM restaurant_customers WHERE restaurant_id = ? AND is_active = 1 ORDER BY full_name ASC LIMIT 500",
                 [$restaurantId]
             );
-        } catch (\\Throwable $ignored) {
+        } catch (\Throwable $ignored) {
             // CRM is optional until the customer directory has initialized its schema.
         }
 
