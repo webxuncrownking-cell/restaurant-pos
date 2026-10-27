@@ -569,18 +569,21 @@ class PosSyncService
 
             $variantId = !empty($itemInput['variant_id']) ? (int)$itemInput['variant_id'] : null;
             $variant = null;
+            $variantSnapshot = $variantId !== null ? ($snapshotVariants[$variantId] ?? null) : null;
             if ($variantId !== null) {
+                if (!is_array($variantSnapshot)) {
+                    throw new InvalidArgumentException('The selected variant was not present in this order catalog snapshot.');
+                }
                 $variant = Database::fetchOne(
                     "SELECT id, name, additional_price, cost_price
                      FROM product_variants
-                     WHERE restaurant_id = ? AND product_id = ? AND id = ? AND is_active = 1",
+                     WHERE restaurant_id = ? AND product_id = ? AND id = ?",
                     [$restaurantId, $productId, $variantId]
                 );
                 if (!$variant) {
-                    throw new InvalidArgumentException('An order contains an inactive or mismatched product variant.');
+                    throw new InvalidArgumentException('The selected catalog variant no longer exists in this restaurant.');
                 }
             }
-            $variantSnapshot = $variantId !== null ? ($snapshotVariants[$variantId] ?? null) : null;
             $variantAdditionalPrice = is_array($variantSnapshot) && isset($variantSnapshot['additional_price'])
                 ? (float)$variantSnapshot['additional_price']
                 : (float)($variant['additional_price'] ?? 0);
@@ -598,24 +601,22 @@ class PosSyncService
                     throw new InvalidArgumentException('An order item contains an invalid or duplicate add-on.');
                 }
 
+                $addonSnapshot = $snapshotAddons[$addonId] ?? null;
+                if (!is_array($addonSnapshot)) {
+                    throw new InvalidArgumentException('The selected add-on was not present in this order catalog snapshot.');
+                }
                 $addon = Database::fetchOne(
                     "SELECT pa.id, pa.group_id, pa.name, pa.price, pa.cost_price, pa.ingredient_id, pa.deduction_quantity,
                             i.base_unit AS ingredient_base_unit
                      FROM product_addons pa
-                     JOIN product_addon_group_assignments pag
-                       ON pag.restaurant_id = pa.restaurant_id
-                      AND pag.group_id = pa.group_id
-                      AND pag.product_id = ?
                      LEFT JOIN ingredients i
                        ON i.restaurant_id = pa.restaurant_id AND i.id = pa.ingredient_id
-                     WHERE pa.restaurant_id = ? AND pa.id = ? AND pa.is_active = 1",
-                    [$productId, $restaurantId, $addonId]
+                     WHERE pa.restaurant_id = ? AND pa.id = ?",
+                    [$restaurantId, $addonId]
                 );
                 if (!$addon) {
-                    throw new InvalidArgumentException('An order contains an add-on that is not available for the selected product.');
+                    throw new InvalidArgumentException('The selected catalog add-on no longer exists in this restaurant.');
                 }
-
-                $addonSnapshot = $snapshotAddons[$addonId] ?? null;
                 $addonPrice = is_array($addonSnapshot) && isset($addonSnapshot['price'])
                     ? (float)$addonSnapshot['price']
                     : (float)$addon['price'];
