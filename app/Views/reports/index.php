@@ -131,6 +131,22 @@
     </div>
   </section>
 
+  <?php if (!empty($forecast['available'])): ?>
+    <section class="card border-0 shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="fw-bold mb-1"><i class="bi bi-calendar-week text-primary me-2"></i>Baseline Sales Estimate</h5>
+        <p class="text-muted small mb-3">A simple planning estimate based on recent recorded sales, not an AI-generated prediction.</p>
+        <div class="row g-3">
+          <div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100"><div class="small text-muted">Average daily sales</div><div class="h3 fw-bold mb-0">₱<?= number_format((float)$forecast['average_daily_sales'], 2) ?></div></div></div>
+          <div class="col-12 col-md-6"><div class="border rounded-3 p-3 h-100"><div class="small text-muted">Estimated sales over 7 days</div><div class="h3 fw-bold mb-0">₱<?= number_format((float)$forecast['estimated_next_7_days'], 2) ?></div></div></div>
+        </div>
+        <p class="small text-muted mt-3 mb-0"><?= htmlspecialchars((string)$forecast['basis'], ENT_QUOTES, 'UTF-8') ?></p>
+      </div>
+    </section>
+  <?php else: ?>
+    <div class="alert alert-light border mb-4"><strong>Sales estimate unavailable.</strong> More recorded sales days are needed. The estimate appears after at least five daily sales records in the selected date range.</div>
+  <?php endif; ?>
+
   <!-- Visual Charts Section -->
   <div class="row g-4 mb-4">
     <!-- Daily Revenue Trend (Line Chart) -->
