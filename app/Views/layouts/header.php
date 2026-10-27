@@ -955,6 +955,112 @@
       box-shadow: var(--app-focus-ring);
     }
 
+
+    /* Dark-mode visual hierarchy: keep the navigation darker than the workspace. */
+    html[data-theme="dark"] .app-sidebar {
+      background: #080f1d !important;
+      color: #e7eefb !important;
+      border-right: 1px solid #26344b !important;
+      box-shadow: 10px 0 32px rgba(0, 0, 0, .28) !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-brand {
+      color: #f8fbff !important;
+      border-bottom-color: #26344b !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-brand-mark {
+      background: #142139 !important;
+      border-color: #30415d !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-sidebar-context {
+      background: #101c30 !important;
+      border: 1px solid #263954 !important;
+      color: #b9c8df !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-nav-heading {
+      color: #7185a5 !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-nav-link {
+      color: #b5c3d9 !important;
+      border: 1px solid transparent !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-nav-link:hover,
+    html[data-theme="dark"] .app-sidebar .app-nav-link:focus-visible {
+      color: #f5f9ff !important;
+      background: #14243b !important;
+      border-color: #263d5d !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-nav-link.active,
+    html[data-theme="dark"] .app-sidebar .app-nav-link[aria-current="page"] {
+      color: #ffffff !important;
+      background: linear-gradient(100deg, #174ea6 0%, #1d4ed8 100%) !important;
+      border-color: #3978ed !important;
+      box-shadow: inset 3px 0 0 #7db5ff, 0 5px 16px rgba(0, 0, 0, .18) !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-nav-link.active i,
+    html[data-theme="dark"] .app-sidebar .app-nav-link[aria-current="page"] i {
+      color: #bfdbfe !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-sidebar-bottom {
+      border-top-color: #26344b !important;
+    }
+    html[data-theme="dark"] .app-sidebar .app-sidebar-version {
+      color: #71819b !important;
+    }
+    html[data-theme="dark"] .app-sidebar-collapse-toggle,
+    html[data-theme="dark"] .app-theme-toggle {
+      color: #c8d5e8 !important;
+      background: #111d30 !important;
+      border-color: #30415b !important;
+    }
+    html[data-theme="dark"] .app-sidebar-collapse-toggle:hover,
+    html[data-theme="dark"] .app-theme-toggle:hover {
+      color: #ffffff !important;
+      background: #1a2b45 !important;
+      border-color: #4d6d9b !important;
+    }
+
+    /* Dark mode must not leave white Bootstrap panels or custom page cards behind. */
+    html[data-theme="dark"] .app-main .card,
+    html[data-theme="dark"] .app-main .modal-content,
+    html[data-theme="dark"] .app-main .list-group-item,
+    html[data-theme="dark"] .app-main .bg-white,
+    html[data-theme="dark"] .app-main .bg-light,
+    html[data-theme="dark"] .app-main [class*="-card"],
+    html[data-theme="dark"] .app-main [class*="-panel"] {
+      background-color: #172337 !important;
+      color: #e5edf9 !important;
+      border-color: #2c3c54 !important;
+    }
+    html[data-theme="dark"] .app-main .card-header,
+    html[data-theme="dark"] .app-main .card-footer {
+      background-color: #1d2b41 !important;
+      color: #e5edf9 !important;
+      border-color: #2c3c54 !important;
+    }
+    html[data-theme="dark"] .app-main .table,
+    html[data-theme="dark"] .app-main .table > :not(caption) > * > * {
+      --bs-table-bg: #172337;
+      --bs-table-color: #dce6f5;
+      --bs-table-border-color: #2c3c54;
+      --bs-table-striped-bg: #1b2a40;
+      --bs-table-hover-bg: #233650;
+      background-color: #172337 !important;
+      color: #dce6f5 !important;
+      border-color: #2c3c54 !important;
+    }
+    html[data-theme="dark"] .app-main input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    html[data-theme="dark"] .app-main select,
+    html[data-theme="dark"] .app-main textarea {
+      background-color: #0e1929 !important;
+      color: #e5edf9 !important;
+      border-color: #344761 !important;
+    }
+    html[data-theme="dark"] .app-main input::placeholder,
+    html[data-theme="dark"] .app-main textarea::placeholder {
+      color: #8394ad !important;
+      opacity: 1;
+    }
+
   </style>
 </head>
 <body>
