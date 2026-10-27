@@ -27,8 +27,8 @@ final class CustomerController
             )");
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS restaurant_customers (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                restaurant_id BIGINT UNSIGNED NOT NULL,
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                restaurant_id INT UNSIGNED NOT NULL,
                 full_name VARCHAR(160) NOT NULL,
                 phone VARCHAR(40) NULL,
                 email VARCHAR(190) NULL,
@@ -36,7 +36,7 @@ final class CustomerController
                 notes TEXT NULL,
                 loyalty_points INT UNSIGNED NOT NULL DEFAULT 0,
                 is_active TINYINT(1) NOT NULL DEFAULT 1,
-                created_by BIGINT UNSIGNED NULL,
+                created_by INT UNSIGNED NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NULL DEFAULT NULL,
                 UNIQUE KEY uq_customer_phone (restaurant_id, phone),
