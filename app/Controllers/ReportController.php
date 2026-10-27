@@ -113,6 +113,26 @@ class ReportController
                     $r['expected_cash'], $r['closing_cash'], $r['cash_difference']
                 ], ReportService::getShiftReconciliation($restaurantId, $startDate, $endDate, 200));
                 break;
+            case 'expenses':
+                $filename = 'operating-expenses';
+                $headers = ['Date', 'Category', 'Description', 'Payment Method', 'Reference', 'Amount (PHP)', 'Status', 'Created At'];
+                try {
+                    $expenseRows = \\App\\Core\\Database::fetchAll(
+                        "SELECT expense_date, category, description, payment_method, reference_number, amount, status, created_at
+                         FROM restaurant_expenses
+                         WHERE restaurant_id = ? AND expense_date BETWEEN ? AND ?
+                         ORDER BY expense_date DESC, id DESC LIMIT 5000",
+                        [$restaurantId, $startDate, $endDate]
+                    );
+                    $rows = array_map(static fn(array $r): array => [
+                        $r['expense_date'], $r['category'], $r['description'], $r['payment_method'],
+                        $r['reference_number'], $r['amount'], $r['status'], $r['created_at']
+                    ], $expenseRows);
+                } catch (\\Throwable $e) {
+                    Response::redirect('/reports?start_date=' . rawurlencode($startDate) . '&end_date=' . rawurlencode($endDate));
+                    return;
+                }
+                break;
             case 'sales':
                 $filename = 'daily-sales';
                 $headers = ['Date', 'Orders', 'Sales Revenue (PHP)'];
