@@ -590,9 +590,7 @@ class PosSyncService
             // order was created from a catalog that carried an active pricing rule.
             // This preserves the price for offline orders synced after the rule ends.
             $snapshotProduct = $snapshotProducts[$productId] ?? null;
-            $snapshotBasePrice = is_array($snapshotProduct)
-                && isset($snapshotProduct['scheduled_base_price'])
-                && !empty($snapshotProduct['scheduled_price_rule_id'])
+            $snapshotBasePrice = is_array($snapshotProduct) && isset($snapshotProduct['scheduled_base_price'])
                 ? (float)$snapshotProduct['scheduled_base_price']
                 : (float)$product['base_price'];
             $unitPrice = round(
@@ -604,7 +602,28 @@ class PosSyncService
             $lineSubtotal = round($unitPrice * $quantity, 2);
             $subtotal += $lineSubtotal;
 
-            $comboComponents = ComboService::getComponentsForProduct($restaurantId, $productId);
+            $snapshotComboComponents = is_array($snapshotProduct['combo_components'] ?? null) ? $snapshotProduct['combo_components'] : [];
+            $comboComponents = [];
+            if (!empty($snapshotProduct['is_combo']) && count($snapshotComboComponents) >= 2) {
+                foreach ($snapshotComboComponents as $snapshotComponent) {
+                    $componentId = (int)($snapshotComponent['id'] ?? 0);
+                    $componentProduct = $componentId > 0
+                        ? Database::fetchOne("SELECT id, name, product_type, direct_stock_ingredient_id FROM products WHERE restaurant_id = ? AND id = ?", [$restaurantId, $componentId])
+                        : null;
+                    if (!$componentProduct) {
+                        throw new InvalidArgumentException('A combo component in the order catalog no longer exists in this restaurant.');
+                    }
+                    $comboComponents[] = [
+                        'id' => $componentId,
+                        'name' => (string)($snapshotComponent['name'] ?? $componentProduct['name']),
+                        'quantity' => (float)($snapshotComponent['quantity'] ?? 0),
+                        'product_type' => (string)$componentProduct['product_type'],
+                        'direct_stock_ingredient_id' => !empty($componentProduct['direct_stock_ingredient_id']) ? (int)$componentProduct['direct_stock_ingredient_id'] : null
+                    ];
+                }
+            } else {
+                $comboComponents = ComboService::getComponentsForProduct($restaurantId, $productId);
+            }
             $costInfo = MenuService::calculateProductCost($restaurantId, $productId, $variantId, $addonIds);
             $comboCostBreakdown = [];
             if ($comboComponents) {
