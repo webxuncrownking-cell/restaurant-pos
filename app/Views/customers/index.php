@@ -11,7 +11,7 @@ include APP_ROOT . '/app/Views/layouts/navbar.php';
 <div class="row g-3 mb-4">
 <div class="col-md-4"><div class="card card-body"><div class="text-muted small">Customers</div><div class="h3"><?= (int)($summary['total']??0) ?></div></div></div>
 <div class="col-md-4"><div class="card card-body"><div class="text-muted small">Active</div><div class="h3"><?= (int)($summary['active_count']??0) ?></div></div></div>
-<div class="col-md-4"><div class="card card-body"><div class="text-muted small">Loyalty points held</div><div class="h3"><?= number_format((int)($summary['points']??0)) ?></div><small class="text-muted">Automatic earning/redemption is not yet connected to orders.</small></div></div>
+<div class="col-md-4"><div class="card card-body"><div class="text-muted small">Loyalty points held</div><div class="h3"><?= number_format((int)($summary['points']??0)) ?></div><small class="text-muted">Earn 1 point per ₱100 on paid linked orders. Points redemption is not enabled yet.</small></div></div>
 </div>
 <div class="row g-4"><div class="col-12 col-xl-4"><div class="card card-body"><h2 class="h5"><?= !empty($editCustomer) ? 'Edit customer' : 'Add customer' ?></h2>
 <form method="post" action="<?= BASE_URL ?>/customers/save"><input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string)$csrf_token,ENT_QUOTES,'UTF-8') ?>"><input type="hidden" name="id" value="<?= (int)($editCustomer['id'] ?? 0) ?>">
