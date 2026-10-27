@@ -453,7 +453,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         
         <div class="d-flex justify-content-between align-items-center mb-1">
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted small">Discount:</span>
+            <span id="ticketDiscountLabel" class="text-muted small">Discount:</span>
             <select id="discountSelect" class="form-select form-select-sm bg-dark border-secondary text-white py-0 px-2" style="font-size: 0.75rem;" onchange="window.posApp.applyDiscount(this.value)">
               <option value="0">None (0%)</option>
               <option value="20">Senior / PWD (20%)</option>
@@ -1520,6 +1520,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
       document.getElementById('ticketSubtotal').textContent = `₱${calcs.subtotal.toFixed(2)}`;
       document.getElementById('ticketDiscount').textContent = `-₱${calcs.discount.toFixed(2)}`;
+      const discountLabel = document.getElementById('ticketDiscountLabel');
+      if (discountLabel) discountLabel.textContent = calcs.loyaltyRedeemPoints > 0
+        ? `Discount + ${calcs.loyaltyRedeemPoints} loyalty pts`
+        : 'Discount:';
       document.getElementById('ticketVat').textContent = `₱${calcs.vat.toFixed(2)}`;
       document.getElementById('ticketTotal').textContent = `₱${calcs.total.toFixed(2)}`;
       document.getElementById('checkoutBtn').disabled = false;
