@@ -19,7 +19,25 @@ include APP_ROOT . '/app/Views/layouts/navbar.php';
 <label class="form-label">Phone</label><input class="form-control mb-3" name="phone" maxlength="40" value="<?= htmlspecialchars((string)($editCustomer['phone'] ?? ''),ENT_QUOTES,'UTF-8') ?>">
 <label class="form-label">Email</label><input class="form-control mb-3" name="email" type="email" maxlength="190" value="<?= htmlspecialchars((string)($editCustomer['email'] ?? ''),ENT_QUOTES,'UTF-8') ?>">
 <label class="form-label">Birthday</label><input class="form-control mb-3" name="birthday" type="date" value="<?= htmlspecialchars((string)($editCustomer['birthday'] ?? ''),ENT_QUOTES,'UTF-8') ?>">
-<label class="form-label">Notes</label><textarea class="form-control mb-3" name="notes" rows="3" maxlength="4000"><?= htmlspecialchars((string)($editCustomer['notes'] ?? ''),ENT_QUOTES,'UTF-8') ?></textarea><button class="btn btn-primary w-100"><?= !empty($editCustomer) ? 'Update customer' : 'Save customer' ?></button><?php if (!empty($editCustomer)): ?><a class="btn btn-link w-100 mt-2" href="<?= BASE_URL ?>/customers">Cancel editing</a><?php endif; ?></form></div></div>
+<label class="form-label">Notes</label><textarea class="form-control mb-3" name="notes" rows="3" maxlength="4000"><?= htmlspecialchars((string)($editCustomer['notes'] ?? ''),ENT_QUOTES,'UTF-8') ?></textarea><button class="btn btn-primary w-100"><?= !empty($editCustomer) ? 'Update customer' : 'Save customer' ?></button><?php if (!empty($editCustomer)): ?><a class="btn btn-link w-100 mt-2" href="<?= BASE_URL ?>/customers">Cancel editing</a><?php endif; ?></form></div>
+<?php if (!empty($editCustomer)): ?>
+<div class="card card-body mt-3">
+  <h2 class="h6 fw-bold mb-3">Recent orders</h2>
+  <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>Order</th><th>Status</th><th class="text-end">Total</th><th>Date</th></tr></thead><tbody>
+    <?php if (empty($customerOrders)): ?><tr><td colspan="4" class="text-muted text-center py-3">No linked orders found for this customer.</td></tr><?php endif; ?>
+    <?php foreach (($customerOrders ?? []) as $order): ?>
+      <tr>
+        <td><?= htmlspecialchars((string)$order['order_number'], ENT_QUOTES, 'UTF-8') ?></td>
+        <td><span class="badge text-bg-<?= ($order['payment_status'] ?? '') === 'paid' ? 'success' : 'secondary' ?>"><?= htmlspecialchars((string)$order['payment_status'], ENT_QUOTES, 'UTF-8') ?></span></td>
+        <td class="text-end">₱<?= number_format((float)$order['total_amount'], 2) ?></td>
+        <td class="small text-muted"><?= htmlspecialchars((string)$order['created_at'], ENT_QUOTES, 'UTF-8') ?></td>
+      </tr>
+    <?php endforeach; ?>
+    </tbody></table></div>
+</div>
+<?php endif; ?>
+</div>
 <div class="col-12 col-xl-8"><div class="card card-body"><h2 class="h5 mb-3">Customer directory</h2><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Name</th><th>Contact</th><th>Points</th><th>Status</th><th></th></tr></thead><tbody>
 <?php if (!$customers): ?><tr><td colspan="5" class="text-center text-muted">No customers found.</td></tr><?php endif; ?>
 <?php foreach ($customers as $c): ?><tr><td><strong><?= htmlspecialchars((string)$c['full_name'],ENT_QUOTES,'UTF-8') ?></strong><?php if (!empty($c['birthday'])): ?><div class="small text-muted"><?= htmlspecialchars((string)$c['birthday'],ENT_QUOTES,'UTF-8') ?></div><?php endif; ?><?php if (!empty($c['notes'])): ?><div class="small text-muted"><?= htmlspecialchars((string)$c['notes'],ENT_QUOTES,'UTF-8') ?></div><?php endif; ?></td>
