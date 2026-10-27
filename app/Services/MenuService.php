@@ -443,7 +443,7 @@ class MenuService
         $comboMap = ComboService::getComponentsMap($restaurantId);
         foreach ($products as &$product) {
             $product['combo_components'] = $comboMap[(int)$product['id']] ?? [];
-            $product['is_combo'] = !empty($product['combo_components']);
+            $product['is_combo'] = array_key_exists((int)$product['id'], $comboMap);
             $product['combo_valid'] = count($product['combo_components']) >= 2;
             $imagePath = trim((string)($product['image_path'] ?? ''));
             $product['image_url'] = $imagePath !== '' ? BASE_URL . '/' . ltrim($imagePath, '/') : '';
