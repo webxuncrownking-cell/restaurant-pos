@@ -19,6 +19,34 @@
   @media (max-height: 900px) {
     .register-page-wrap { align-items: flex-start; padding-top: 22px; padding-bottom: 22px; }
   }
+
+/* ServeFlow registration form refresh */
+.register-page-wrap { min-height:100vh; padding:clamp(24px,4vh,52px) 20px; background:radial-gradient(ellipse at 50% 0%, #eaf1ff 0, #f5f7fb 48%, #eef2f8 100%); }
+html[data-theme="dark"] .register-page-wrap { background:radial-gradient(ellipse at 50% 0%, #1b2b45 0, #0b1220 58%, #080e19 100%); }
+.register-page-wrap > .container { max-width:700px; }
+.register-page-wrap .register-brand-title { color:#14213a !important; font-size:2rem; font-weight:800; letter-spacing:-.045em; }
+.register-page-wrap .card { border:1px solid #e0e7f1 !important; border-radius:20px !important; background:#fff !important; box-shadow:0 22px 60px rgba(20,38,68,.12) !important; }
+.register-page-wrap .card-header { background:#fff !important; color:#18263d !important; border-bottom:1px solid #e7edf5 !important; padding:19px 24px !important; }
+.register-page-wrap .card-header h2 { color:#18263d !important; font-weight:750; }
+.register-page-wrap .card-body { padding:clamp(20px,4vw,32px) !important; }
+.register-page-wrap .form-label { color:#34445c !important; font-size:.88rem !important; font-weight:700 !important; }
+.register-page-wrap .form-control { min-height:47px; background:#f8fafd !important; color:#18263d !important; border:1px solid #d5deeb !important; border-radius:11px !important; }
+.register-page-wrap .form-control:focus { background:#fff !important; border-color:#4b83e6 !important; box-shadow:0 0 0 4px rgba(59,130,246,.13) !important; }
+.register-page-wrap .form-text { color:#687890 !important; }
+.register-page-wrap .btn-warning { min-height:49px; border:0 !important; border-radius:11px !important; background:#2563eb !important; color:#fff !important; box-shadow:0 7px 18px rgba(37,99,235,.2) !important; }
+.register-page-wrap .btn-warning:hover { background:#1d4ed8 !important; }
+.register-page-wrap .text-muted { color:#687890 !important; }
+html[data-theme="dark"] .register-page-wrap .register-brand-title { color:#f1f5fb !important; }
+html[data-theme="dark"] .register-page-wrap .text-muted,
+html[data-theme="dark"] .register-page-wrap .form-text { color:#a6b4c9 !important; }
+html[data-theme="dark"] .register-page-wrap .card,
+html[data-theme="dark"] .register-page-wrap .card-header,
+html[data-theme="dark"] .register-page-wrap .card-body { background:#162338 !important; color:#e8eef8 !important; border-color:#2a3a53 !important; }
+html[data-theme="dark"] .register-page-wrap .card-header h2,
+html[data-theme="dark"] .register-page-wrap .form-label { color:#e8eef8 !important; }
+html[data-theme="dark"] .register-page-wrap .form-control { background:#0d1727 !important; color:#f1f5fb !important; border-color:#354862 !important; }
+html[data-theme="dark"] .register-page-wrap .form-control::placeholder { color:#8394ad !important; }
+
 </style>
 <div class="register-page-wrap">
 <div class="container">
