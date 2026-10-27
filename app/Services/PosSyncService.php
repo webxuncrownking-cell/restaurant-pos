@@ -556,6 +556,16 @@ class PosSyncService
             if (!is_array($snapshotProduct)) {
                 throw new InvalidArgumentException('An order item is not present in its tenant catalog snapshot. Refresh the POS catalog and retry.');
             }
+            $snapshotVariants = [];
+            foreach (($snapshotProduct['variants'] ?? []) as $snapshotVariant) {
+                if (is_array($snapshotVariant) && isset($snapshotVariant['id'])) $snapshotVariants[(int)$snapshotVariant['id']] = $snapshotVariant;
+            }
+            $snapshotAddons = [];
+            foreach (($snapshotProduct['addon_groups'] ?? []) as $snapshotGroup) {
+                foreach (($snapshotGroup['options'] ?? []) as $snapshotAddon) {
+                    if (is_array($snapshotAddon) && isset($snapshotAddon['id'])) $snapshotAddons[(int)$snapshotAddon['id']] = $snapshotAddon;
+                }
+            }
 
             $variantId = !empty($itemInput['variant_id']) ? (int)$itemInput['variant_id'] : null;
             $variant = null;
@@ -570,6 +580,10 @@ class PosSyncService
                     throw new InvalidArgumentException('An order contains an inactive or mismatched product variant.');
                 }
             }
+            $variantSnapshot = $variantId !== null ? ($snapshotVariants[$variantId] ?? null) : null;
+            $variantAdditionalPrice = is_array($variantSnapshot) && isset($variantSnapshot['additional_price'])
+                ? (float)$variantSnapshot['additional_price']
+                : (float)($variant['additional_price'] ?? 0);
 
             $addonsInput = $itemInput['addons'] ?? [];
             if (!is_array($addonsInput) || count($addonsInput) > 50) {
@@ -601,15 +615,36 @@ class PosSyncService
                     throw new InvalidArgumentException('An order contains an add-on that is not available for the selected product.');
                 }
 
+                $addonSnapshot = $snapshotAddons[$addonId] ?? null;
+                $addonPrice = is_array($addonSnapshot) && isset($addonSnapshot['price'])
+                    ? (float)$addonSnapshot['price']
+                    : (float)$addon['price'];
+                $addonCostPrice = is_array($addonSnapshot) && isset($addonSnapshot['cost_price'])
+                    ? (float)$addonSnapshot['cost_price']
+                    : (float)$addon['cost_price'];
+                $snapshotIngredientId = is_array($addonSnapshot) && array_key_exists('ingredient_id', $addonSnapshot)
+                    ? (!empty($addonSnapshot['ingredient_id']) ? (int)$addonSnapshot['ingredient_id'] : null)
+                    : (!empty($addon['ingredient_id']) ? (int)$addon['ingredient_id'] : null);
+                $snapshotDeduction = is_array($addonSnapshot) && isset($addonSnapshot['deduction_quantity'])
+                    ? (float)$addonSnapshot['deduction_quantity']
+                    : (float)$addon['deduction_quantity'];
+                $ingredientBaseUnit = (string)($addon['ingredient_base_unit'] ?? '');
+                if ($snapshotIngredientId !== null) {
+                    $ingredientUnitRow = Database::fetchOne(
+                        "SELECT base_unit FROM ingredients WHERE restaurant_id = ? AND id = ?",
+                        [$restaurantId, $snapshotIngredientId]
+                    );
+                    $ingredientBaseUnit = (string)($ingredientUnitRow['base_unit'] ?? $ingredientBaseUnit);
+                }
                 $addonEntry = [
                     'id' => (int)$addon['id'],
                     'group_id' => (int)$addon['group_id'],
-                    'name' => (string)$addon['name'],
-                    'price' => (float)$addon['price'],
-                    'cost_price' => (float)$addon['cost_price'],
-                    'ingredient_id' => !empty($addon['ingredient_id']) ? (int)$addon['ingredient_id'] : null,
-                    'deduction_quantity' => (float)$addon['deduction_quantity'],
-                    'ingredient_base_unit' => $addon['ingredient_base_unit']
+                    'name' => (string)($addonSnapshot['name'] ?? $addon['name']),
+                    'price' => $addonPrice,
+                    'cost_price' => $addonCostPrice,
+                    'ingredient_id' => $snapshotIngredientId,
+                    'deduction_quantity' => $snapshotDeduction,
+                    'ingredient_base_unit' => $ingredientBaseUnit
                 ];
                 $addons[] = $addonEntry;
                 $addonIds[] = $addonEntry['id'];
@@ -643,7 +678,7 @@ class PosSyncService
                 : (float)$product['base_price'];
             $unitPrice = round(
                 $snapshotBasePrice
-                + (float)($variant['additional_price'] ?? 0)
+                + $variantAdditionalPrice
                 + $addonPriceTotal,
                 2
             );
