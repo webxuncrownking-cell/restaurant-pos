@@ -1186,7 +1186,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       container.innerHTML = filtered.map(p => {
         const hasVariants = p.variants && p.variants.length > 0;
         const hasAddons = p.addon_groups && p.addon_groups.length > 0;
-        const isCombo = Array.isArray(p.combo_components) && p.combo_components.length >= 2;
+        const isCombo = Boolean(p.is_combo);
         const price = parseFloat(p.scheduled_base_price ?? p.base_price ?? 0);
         const imageUrl = typeof p.image_url === 'string' ? p.image_url : '';
 
@@ -1202,7 +1202,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
                   ${isCombo ? '<span class="product-custom-tag badge">Combo</span>' : (hasVariants || hasAddons ? '<span class="product-custom-tag badge">Custom</span>' : '')}
                 </div>
                 <h6 class="product-title fw-bold mb-0">${p.name}</h6>
-                ${isCombo ? `<div class="small text-muted mt-1">${p.combo_components.map(c => `${c.name} × ${c.quantity}`).join(' · ')}</div>` : ''}
+                ${isCombo ? `<div class="small ${p.combo_valid ? 'text-muted' : 'text-danger'} mt-1">${p.combo_valid ? p.combo_components.map(c => `${c.name} × ${c.quantity}`).join(' · ') : 'Combo needs at least two active components'}</div>` : ''}
               </div>
               <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                 <span class="product-price">₱${price.toFixed(2)}</span>
@@ -1217,6 +1217,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     onProductClick(productId) {
       const p = (this.catalog.products || []).find(item => item.id == productId);
       if (!p) return;
+      if (p.is_combo && !p.combo_valid) {
+        alert('This combo is incomplete because one or more component items are inactive. Update the combo definition before selling it.');
+        return;
+      }
 
       const hasVariants = p.variants && p.variants.length > 0;
       const hasAddons = p.addon_groups && p.addon_groups.length > 0;
