@@ -12,12 +12,12 @@ final class ScheduledPricingService
                 "SELECT timezone FROM restaurants WHERE id = ? LIMIT 1",
                 [$restaurantId]
             ) ?: 'Asia/Manila');
-            try { $timezone = new \\DateTimeZone($timezoneName); }
-            catch (\\Throwable $ignored) { $timezone = new \\DateTimeZone('Asia/Manila'); }
+            try { $timezone = new \DateTimeZone($timezoneName); }
+            catch (\Throwable $ignored) { $timezone = new \DateTimeZone('Asia/Manila'); }
             $moment = $at !== null
-                ? new \\DateTimeImmutable($at, $timezone)
-                : new \\DateTimeImmutable('now', $timezone);
-        } catch (\\Throwable $e) {
+                ? new \DateTimeImmutable($at, $timezone)
+                : new \DateTimeImmutable('now', $timezone);
+        } catch (\Throwable $e) {
             return null;
         }
         $date = $moment->format('Y-m-d');
