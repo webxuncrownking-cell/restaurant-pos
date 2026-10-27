@@ -45,10 +45,20 @@
   ?>
 <script id="serveflow-theme-prepaint">
 (function () {
+  var root = document.documentElement;
   try {
-    var saved = localStorage.getItem('serveflow-theme');
-    if (saved === 'dark' || saved === 'light') document.documentElement.setAttribute('data-theme', saved);
-  } catch (e) {}
+    var savedTheme = localStorage.getItem('serveflow-theme');
+    // The default is light, so the first paint matches the footer's default instead of flashing dark.
+    root.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'light');
+    if (localStorage.getItem('serveflow-sidebar-collapsed') === '1') {
+      root.setAttribute('data-sidebar-collapsed', 'true');
+    } else {
+      root.removeAttribute('data-sidebar-collapsed');
+    }
+  } catch (e) {
+    root.setAttribute('data-theme', 'light');
+    root.removeAttribute('data-sidebar-collapsed');
+  }
 })();
 </script>
   <style>
@@ -486,7 +496,6 @@
     body.sidebar-collapsed .app-sidebar-pos .pos-icon { flex-basis:36px; }
     body.sidebar-collapsed .app-sidebar-bottom { padding-top:14px; }
     body.sidebar-collapsed .app-sidebar-collapse-toggle .bi { transform:rotate(180deg); }
-    body.sidebar-collapsed .app-sidebar [title]:hover::after { content:attr(title); }
     @media (max-width:991.98px) {
       .app-sidebar-collapse-toggle { display:none!important; }
       body.sidebar-collapsed .app-sidebar { width:min(var(--app-sidebar-width),calc(100vw - 32px)); padding-left:17px; padding-right:17px; }
@@ -711,6 +720,240 @@
       background:#eef2f7; color:#334155; font:inherit; cursor:pointer;
     }
     @media (prefers-reduced-motion:reduce) { .app-nav-link,.app-sidebar,.app-sidebar-collapse-toggle,.app-theme-switch-track { transition:none!important; } }
+
+
+    /* Stable initial layout: restore the saved sidebar state before first paint. */
+    @media (min-width: 992px) {
+      html[data-sidebar-collapsed="true"] .app-sidebar {
+        width: var(--app-sidebar-collapsed-width);
+        padding-left: 12px;
+        padding-right: 12px;
+        transition: none !important;
+      }
+      html[data-sidebar-collapsed="true"] .app-main { margin-left: var(--app-sidebar-collapsed-width); }
+      html[data-sidebar-collapsed="true"] .app-brand { justify-content: center; padding-left: 0; padding-right: 0; }
+      html[data-sidebar-collapsed="true"] .app-brand-copy,
+      html[data-sidebar-collapsed="true"] .app-sidebar-context span:not(.context-dot),
+      html[data-sidebar-collapsed="true"] .app-nav-heading,
+      html[data-sidebar-collapsed="true"] .app-nav-link span,
+      html[data-sidebar-collapsed="true"] .app-sidebar-pos .flex-grow-1,
+      html[data-sidebar-collapsed="true"] .app-sidebar-pos > .bi-arrow-up-right,
+      html[data-sidebar-collapsed="true"] .app-sidebar-version { display: none !important; }
+      html[data-sidebar-collapsed="true"] .app-sidebar-context { justify-content: center; margin-left: 0; margin-right: 0; padding: 10px 0; }
+      html[data-sidebar-collapsed="true"] .app-nav-group { margin-bottom: 14px; }
+      html[data-sidebar-collapsed="true"] .app-nav-link { justify-content: center; padding: 11px 0; min-height: 46px; margin: 4px 0; }
+      html[data-sidebar-collapsed="true"] .app-nav-link i { width: auto; font-size: 1.2rem; }
+      html[data-sidebar-collapsed="true"] .app-sidebar-pos { justify-content: center; padding: 10px 0; }
+      html[data-sidebar-collapsed="true"] .app-sidebar-pos .pos-icon { flex-basis: 36px; }
+      html[data-sidebar-collapsed="true"] .app-sidebar-bottom { padding-top: 14px; }
+      html[data-sidebar-collapsed="true"] .app-sidebar-collapse-toggle {
+        left: calc(var(--app-sidebar-collapsed-width) - 16px);
+        transition: none !important;
+      }
+      html[data-sidebar-collapsed="true"] .app-sidebar-collapse-toggle .bi { transform: none; }
+    }
+
+    /* Brighter, cleaner light sidebar states that still use the restaurant's brand color. */
+    html[data-theme="light"] .app-sidebar {
+      background: linear-gradient(180deg, #fbfdff 0%, #e6eefb 100%);
+      border-right-color: #c7d6eb;
+    }
+    html[data-theme="light"] .app-nav-link {
+      border: 1px solid transparent;
+      transform: none;
+      transition: color .12s ease, background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    html[data-theme="light"] .app-nav-link:hover {
+      background: color-mix(in srgb, var(--pos-primary) 12%, #fff);
+      border-color: color-mix(in srgb, var(--pos-primary) 28%, #fff);
+      color: #173f80;
+      box-shadow: 0 3px 10px color-mix(in srgb, var(--pos-primary) 12%, transparent);
+      transform: none;
+    }
+    html[data-theme="light"] .app-nav-link.active {
+      background: linear-gradient(105deg, color-mix(in srgb, var(--pos-primary) 21%, #fff), color-mix(in srgb, var(--pos-primary) 9%, #fff));
+      border-color: color-mix(in srgb, var(--pos-primary) 35%, #fff);
+      color: #163c78;
+      box-shadow: inset 4px 0 var(--pos-primary), 0 4px 12px color-mix(in srgb, var(--pos-primary) 13%, transparent);
+      transform: none;
+    }
+    html[data-theme="light"] .app-nav-link.active i { color: var(--pos-primary); }
+
+    /* Shared dark tokens make Bootstrap utilities and custom page components agree. */
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --app-surface: #182235;
+      --app-page-bg: #0f1726;
+      --app-text: #e5ebf5;
+      --bs-body-color: #e5ebf5;
+      --bs-body-color-rgb: 229, 235, 245;
+      --bs-body-bg: #0f1726;
+      --bs-body-bg-rgb: 15, 23, 38;
+      --bs-emphasis-color: #f8fafc;
+      --bs-emphasis-color-rgb: 248, 250, 252;
+      --bs-secondary-color: #a7b4c8;
+      --bs-secondary-bg: #202d42;
+      --bs-tertiary-bg: #182235;
+      --bs-border-color: #344156;
+      --bs-heading-color: #edf2fb;
+      --bs-link-color: #9dc4ff;
+      --bs-link-hover-color: #c4dcff;
+      --bs-code-color: #f0abfc;
+    }
+    html[data-theme="dark"] body {
+      background: #0f1726 !important;
+      color: #e5ebf5 !important;
+      --bs-card-bg: #182235;
+      --bs-card-cap-bg: #202d42;
+      --bs-card-color: #e5ebf5;
+    }
+    html[data-theme="dark"] .app-main,
+    html[data-theme="dark"] .app-main .container,
+    html[data-theme="dark"] .app-main .container-fluid { color: #e5ebf5; }
+    html[data-theme="dark"] .app-main .text-muted,
+    html[data-theme="dark"] .app-main .text-secondary,
+    html[data-theme="dark"] .app-main .text-body-secondary,
+    html[data-theme="dark"] .app-main .text-black-50 { color: #aebbd0 !important; }
+    html[data-theme="dark"] .app-main .text-dark,
+    html[data-theme="dark"] .app-main .text-body { color: #e5ebf5 !important; }
+    html[data-theme="dark"] .app-main .text-primary { color: #9dc4ff !important; }
+    html[data-theme="dark"] .app-main .text-success { color: #6ee7b7 !important; }
+    html[data-theme="dark"] .app-main .text-danger { color: #fca5a5 !important; }
+    html[data-theme="dark"] .app-main .text-warning { color: #fcd34d !important; }
+    html[data-theme="dark"] .app-main .text-info { color: #7dd3fc !important; }
+
+    html[data-theme="dark"] .app-main .card,
+    html[data-theme="dark"] .app-main .modal-content,
+    html[data-theme="dark"] .app-main .dropdown-menu,
+    html[data-theme="dark"] .app-main .list-group-item,
+    html[data-theme="dark"] .app-main .bg-white,
+    html[data-theme="dark"] .app-main .bg-light,
+    html[data-theme="dark"] .app-main .bg-light-subtle,
+    html[data-theme="dark"] .app-main [class*="-card"],
+    html[data-theme="dark"] .app-main [class*="-panel"] {
+      background-color: #182235 !important;
+      color: #e5ebf5 !important;
+      border-color: #344156 !important;
+    }
+    html[data-theme="dark"] .app-main .card-header,
+    html[data-theme="dark"] .app-main .card-footer,
+    html[data-theme="dark"] .app-main .settings-card-head {
+      background-color: #202d42 !important;
+      color: #edf2fb !important;
+      border-color: #344156 !important;
+    }
+    html[data-theme="dark"] .app-main .settings-card-body { color: #e5ebf5; }
+    html[data-theme="dark"] .app-main .settings-section-icon {
+      color: #bfdbfe;
+      background: #20385d;
+      border: 1px solid #375681;
+    }
+    html[data-theme="dark"] .app-main .settings-kicker,
+    html[data-theme="dark"] .app-main .settings-field-help { color: #a7b4c8 !important; }
+    html[data-theme="dark"] .app-main .settings-logo-stage {
+      background: linear-gradient(145deg, #172337, #111b2b) !important;
+      border-color: #41516a !important;
+    }
+    html[data-theme="dark"] .app-main .settings-image-wrap {
+      background: #111b2b !important;
+      border-color: #3a4960 !important;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+    }
+    html[data-theme="dark"] .app-main .settings-color-control,
+    html[data-theme="dark"] .app-main .settings-brand-preview {
+      background: #111b2b !important;
+      color: #e5ebf5 !important;
+      border-color: #344156 !important;
+    }
+    html[data-theme="dark"] .app-main .settings-save-bar {
+      background: rgba(24, 34, 53, .96) !important;
+      border-color: #344156 !important;
+      box-shadow: 0 -5px 22px rgba(0, 0, 0, .2);
+    }
+
+    html[data-theme="dark"] .app-main .bg-primary-subtle { background: #1b3355 !important; color: #bfdbfe !important; }
+    html[data-theme="dark"] .app-main .bg-success-subtle { background: #12382e !important; color: #b7f7d5 !important; }
+    html[data-theme="dark"] .app-main .bg-danger-subtle { background: #451f28 !important; color: #fecaca !important; }
+    html[data-theme="dark"] .app-main .bg-warning-subtle { background: #493718 !important; color: #fde68a !important; }
+    html[data-theme="dark"] .app-main .bg-info-subtle { background: #12364a !important; color: #bae6fd !important; }
+    html[data-theme="dark"] .app-main .bg-secondary-subtle { background: #26354b !important; color: #d5dfed !important; }
+    html[data-theme="dark"] .app-main .table-light,
+    html[data-theme="dark"] .app-main .table-light > :not(caption) > * > * {
+      --bs-table-bg: #202d42;
+      --bs-table-color: #e5ebf5;
+      --bs-table-border-color: #344156;
+      --bs-table-striped-bg: #26354b;
+      --bs-table-hover-bg: #2d3d57;
+      background-color: #202d42 !important;
+      color: #e5ebf5 !important;
+      border-color: #344156 !important;
+    }
+    html[data-theme="dark"] .app-main .form-check-input {
+      background-color: #111b2b;
+      border-color: #5b6b82;
+    }
+    html[data-theme="dark"] .app-main .form-check-input:checked {
+      background-color: var(--pos-primary);
+      border-color: var(--pos-primary);
+    }
+    html[data-theme="dark"] .app-main .btn-outline-primary {
+      color: #a6caff;
+      border-color: #5879a8;
+    }
+    html[data-theme="dark"] .app-main .btn-outline-primary:hover {
+      background: #20385d;
+      color: #eff6ff;
+      border-color: #7194c5;
+    }
+
+    /* Native file inputs: equal height, no extra inner whitespace, theme-matched button. */
+    .app-main input[type="file"] {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: 44px;
+      min-height: 44px !important;
+      padding: 0 !important;
+      line-height: 42px;
+      overflow: hidden;
+      border-radius: 10px;
+      font: inherit;
+    }
+    .app-main input[type="file"]::file-selector-button,
+    .app-main input[type="file"]::-webkit-file-upload-button {
+      height: 42px;
+      margin: 0 10px 0 0;
+      padding: 0 16px;
+      border: 0;
+      border-right: 1px solid #d7e0ec;
+      border-radius: 9px 0 0 9px;
+      background: #edf2f8;
+      color: #334155;
+      font: inherit;
+      line-height: 1;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+    html[data-theme="light"] .app-main input[type="file"] {
+      background: #fff !important;
+      color: #334155 !important;
+      border-color: #d7e0ec !important;
+    }
+    html[data-theme="dark"] .app-main input[type="file"] {
+      background: #111b2b !important;
+      color: #d5dfed !important;
+      border-color: #3a4960 !important;
+    }
+    html[data-theme="dark"] .app-main input[type="file"]::file-selector-button,
+    html[data-theme="dark"] .app-main input[type="file"]::-webkit-file-upload-button {
+      background: #26354b;
+      color: #e5ebf5;
+      border-right-color: #3a4960;
+    }
+    .app-main input[type="file"]:focus-visible {
+      outline: 0;
+      box-shadow: var(--app-focus-ring);
+    }
 
   </style>
 </head>
