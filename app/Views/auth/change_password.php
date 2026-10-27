@@ -45,20 +45,20 @@ html[data-theme="dark"] .password-page-wrap .form-control { background:#0d1727 !
 html[data-theme="dark"] .password-page-wrap .form-control::placeholder { color:#8394ad !important; }
 
 
-  .auth-theme-control { position:fixed; top:20px; right:22px; z-index:1200; display:flex; align-items:center; gap:9px; padding:8px 12px; border:1px solid #dbe4f0; border-radius:999px; background:rgba(255,255,255,.92); color:#334155; box-shadow:0 8px 24px rgba(15,23,42,.12); backdrop-filter:blur(12px); font-size:.82rem; font-weight:700; }
+  .auth-theme-control { position:fixed; top:20px; right:22px; z-index:1200; display:flex; align-items:center; gap:0; padding:5px; border:1px solid #dbe4f0; border-radius:999px; background:rgba(255,255,255,.92); color:#334155; box-shadow:0 8px 24px rgba(15,23,42,.12); backdrop-filter:blur(12px); font-size:0; font-weight:700; width:48px; height:48px; justify-content:center; }
   .auth-theme-control button { display:flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; border:0; border-radius:50%; background:#e8eef8; color:#27456f; cursor:pointer; }
   .auth-theme-control button:focus-visible { outline:3px solid #60a5fa; outline-offset:2px; }
   .auth-brand-icon { width:68px; height:68px; display:inline-flex; align-items:center; justify-content:center; border-radius:20px !important; background:#2563eb !important; color:#fff !important; border:1px solid rgba(255,255,255,.35); box-shadow:0 10px 24px rgba(37,99,235,.28) !important; }
   .auth-brand-icon i { color:#fff !important; font-size:2rem; }
   html[data-theme="dark"] .auth-theme-control { background:rgba(22,35,56,.94); border-color:#354862; color:#e8eef8; }
   html[data-theme="dark"] .auth-theme-control button { background:#263a57; color:#dce9fb; }
-  @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; padding:6px 9px; font-size:.75rem; } .auth-theme-control button { width:30px; height:30px; } }
+  @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; padding:4px; width:42px; height:42px; } .auth-theme-control button { width:30px; height:30px; } }
 
 
 </style>
 
 <div class="auth-theme-control" role="group" aria-label="Appearance">
-  <span class="auth-theme-label">Light mode</span>
+  
   <button type="button" class="auth-theme-toggle" aria-label="Switch to dark mode" title="Switch theme"><i class="bi bi-moon-stars-fill" aria-hidden="true"></i></button>
 </div>
 <script>
@@ -71,7 +71,7 @@ html[data-theme="dark"] .password-page-wrap .form-control::placeholder { color:#
   function apply(theme) {
     root.setAttribute('data-theme', theme);
     var dark = theme === 'dark';
-    label.textContent = dark ? 'Dark mode' : 'Light mode';
+    if (label) label.textContent = dark ? 'Dark mode' : 'Light mode';
     button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
     button.innerHTML = '<i class="bi ' + (dark ? 'bi-sun-fill' : 'bi-moon-stars-fill') + '" aria-hidden="true"></i>';
   }
