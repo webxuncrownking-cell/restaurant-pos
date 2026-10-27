@@ -209,20 +209,49 @@
       });
     },
 
-    // Monotonic Sequence Number Generator
+    // Monotonic Sequence Number Generator. Resolve after the counter is durable.
     async getNextSequence() {
       return new Promise((resolve, reject) => {
+        if (!this.db) {
+          reject(new Error('POS local database is not initialized.'));
+          return;
+        }
+
+        let nextSequence = null;
+        let settled = false;
         const transaction = this.db.transaction('meta', 'readwrite');
         const store = transaction.objectStore('meta');
         const req = store.get('last_sequence');
 
         req.onsuccess = () => {
-          let seq = (req.result && req.result.value) ? parseInt(req.result.value, 10) : 0;
-          seq += 1;
-          store.put({ key: 'last_sequence', value: seq });
-          resolve(seq);
+          const current = Number(req.result && req.result.value) || 0;
+          nextSequence = current + 1;
+          store.put({ key: 'last_sequence', value: nextSequence });
         };
-        req.onerror = (e) => reject(e.target.error);
+        req.onerror = () => {
+          if (!settled) {
+            settled = true;
+            reject(req.error || new Error('Unable to read the local order sequence.'));
+          }
+        };
+        transaction.oncomplete = () => {
+          if (!settled) {
+            settled = true;
+            resolve(nextSequence);
+          }
+        };
+        transaction.onerror = () => {
+          if (!settled) {
+            settled = true;
+            reject(transaction.error || new Error('Unable to commit the local order sequence.'));
+          }
+        };
+        transaction.onabort = () => {
+          if (!settled) {
+            settled = true;
+            reject(transaction.error || new Error('The local order sequence transaction was aborted.'));
+          }
+        };
       });
     },
 
