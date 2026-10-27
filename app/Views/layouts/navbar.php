@@ -22,6 +22,7 @@ $navGroups = [
     ['label' => 'Cashier Shifts', 'route' => '/shifts', 'icon' => 'bi-safe2'],
     ['label' => 'Open Bills & Split Payments', 'route' => '/bills', 'icon' => 'bi-receipt-cutoff'],
     ['label' => 'Reports & Analytics', 'route' => '/reports', 'icon' => 'bi-graph-up-arrow'],
+    ['label' => 'Operating Expenses', 'route' => '/expenses', 'icon' => 'bi-wallet2'],
   ],
   'Account' => [
     ['label' => 'Subscription & Billing', 'route' => '/billing', 'icon' => 'bi-credit-card-2-front'],
@@ -44,6 +45,7 @@ $navPermissionMap = [
   '/shifts' => 'shifts.open_close',
   '/bills' => 'pos.process_payment',
   '/reports' => 'reports.view_sales',
+  '/expenses' => 'reports.view_sales',
   '/billing' => 'subscription.manage',
   '/install' => 'platform.only',
 ];
