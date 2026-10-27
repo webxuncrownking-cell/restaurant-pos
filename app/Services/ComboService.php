@@ -28,16 +28,16 @@ final class ComboService
             )");
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS restaurant_combo_products (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, restaurant_id BIGINT UNSIGNED NOT NULL,
-                product_id BIGINT UNSIGNED NOT NULL, is_active TINYINT(1) NOT NULL DEFAULT 1,
-                created_by BIGINT UNSIGNED NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, restaurant_id INT UNSIGNED NOT NULL,
+                product_id INT UNSIGNED NOT NULL, is_active TINYINT(1) NOT NULL DEFAULT 1,
+                created_by INT UNSIGNED NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY uq_restaurant_combo_product (restaurant_id, product_id),
                 KEY idx_combo_active (restaurant_id, is_active),
                 CONSTRAINT fk_combo_product_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             $pdo->exec("CREATE TABLE IF NOT EXISTS restaurant_combo_components (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, restaurant_id BIGINT UNSIGNED NOT NULL,
-                combo_product_id BIGINT UNSIGNED NOT NULL, component_product_id BIGINT UNSIGNED NOT NULL,
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, restaurant_id INT UNSIGNED NOT NULL,
+                combo_product_id INT UNSIGNED NOT NULL, component_product_id INT UNSIGNED NOT NULL,
                 quantity DECIMAL(12,3) NOT NULL DEFAULT 1,
                 UNIQUE KEY uq_combo_component (restaurant_id, combo_product_id, component_product_id),
                 KEY idx_combo_component_product (restaurant_id, component_product_id),
