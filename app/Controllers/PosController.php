@@ -38,10 +38,19 @@ class PosController
         // Check active shift
         $activeShift = ShiftService::getActiveShift($restaurantId, (int)$user['id']);
 
-        // Catalog & Tables
+        // Catalog, tables, and active tenant-scoped customers for optional order association.
         $catalog = MenuService::getPosCatalog($restaurantId);
         $tables = TableService::getTables($restaurantId);
         $floorZones = TableService::getFloorZones($restaurantId);
+        $customers = [];
+        try {
+            $customers = Database::fetchAll(
+                "SELECT id, full_name, phone, loyalty_points FROM restaurant_customers WHERE restaurant_id = ? AND is_active = 1 ORDER BY full_name ASC LIMIT 500",
+                [$restaurantId]
+            );
+        } catch (\\Throwable $ignored) {
+            // CRM is optional until the customer directory has initialized its schema.
+        }
 
         Response::render('pos/terminal', [
             'user' => $user,
@@ -50,7 +59,8 @@ class PosController
             'activeShift' => $activeShift,
             'catalog' => $catalog,
             'tables' => $tables,
-            'floorZones' => $floorZones
+            'floorZones' => $floorZones,
+            'customers' => $customers
         ]);
     }
 
