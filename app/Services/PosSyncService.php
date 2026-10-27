@@ -22,7 +22,7 @@ class PosSyncService
     {
         if (self::$customerLinkSchemaReady) return;
         $pdo = Database::getConnection();
-        if ($pdo->getAttribute(\\PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+        if ($pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite') {
             $pdo->exec("CREATE TABLE IF NOT EXISTS order_customer_links (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, restaurant_id INTEGER NOT NULL, order_id INTEGER NOT NULL,
                 customer_id INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
