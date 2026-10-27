@@ -36,16 +36,16 @@ class PosSyncService
         } else {
             $pdo->exec("CREATE TABLE IF NOT EXISTS order_customer_links (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                restaurant_id BIGINT UNSIGNED NOT NULL, order_id BIGINT UNSIGNED NOT NULL,
-                customer_id BIGINT UNSIGNED NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                restaurant_id INT UNSIGNED NOT NULL, order_id INT UNSIGNED NOT NULL,
+                customer_id INT UNSIGNED NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY uq_order_customer (restaurant_id, order_id),
                 KEY idx_customer_orders (restaurant_id, customer_id),
                 CONSTRAINT fk_order_customer_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             $pdo->exec("CREATE TABLE IF NOT EXISTS customer_loyalty_ledger (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                restaurant_id BIGINT UNSIGNED NOT NULL, customer_id BIGINT UNSIGNED NOT NULL,
-                order_id BIGINT UNSIGNED NOT NULL, entry_type VARCHAR(24) NOT NULL,
+                restaurant_id INT UNSIGNED NOT NULL, customer_id INT UNSIGNED NOT NULL,
+                order_id INT UNSIGNED NOT NULL, entry_type VARCHAR(24) NOT NULL,
                 points INT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY uq_customer_order_entry (restaurant_id, order_id, entry_type),
                 KEY idx_customer_loyalty (restaurant_id, customer_id, created_at),
