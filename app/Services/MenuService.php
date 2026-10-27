@@ -443,6 +443,11 @@ class MenuService
         foreach ($products as &$product) {
             $imagePath = trim((string)($product['image_path'] ?? ''));
             $product['image_url'] = $imagePath !== '' ? BASE_URL . '/' . ltrim($imagePath, '/') : '';
+            $basePrice = (float)($product['base_price'] ?? 0);
+            $scheduled = ScheduledPricingService::calculate($restaurantId, (int)$product['id'], $basePrice);
+            $product['scheduled_base_price'] = (float)$scheduled['price'];
+            $product['scheduled_price_rule_id'] = $scheduled['rule_id'];
+            $product['scheduled_price_rule_name'] = $scheduled['rule_name'];
         }
         unset($product);
 
