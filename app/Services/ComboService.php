@@ -92,8 +92,9 @@ final class ComboService
         if (!$combo) throw new InvalidArgumentException('The combo must use an active menu item in this restaurant.');
         $pairs = [];
         foreach ($componentIds as $index => $rawId) {
-            $id = filter_var($rawId, FILTER_VALIDATE_INT);
             $qtyRaw = $quantities[$index] ?? null;
+            if (($rawId === '' || $rawId === null) && ($qtyRaw === '' || $qtyRaw === null)) continue;
+            $id = filter_var($rawId, FILTER_VALIDATE_INT);
             if (!$id || $id <= 0 || $id === $comboProductId || !is_numeric($qtyRaw) || !is_finite((float)$qtyRaw) || (float)$qtyRaw <= 0 || (float)$qtyRaw > 999) {
                 throw new InvalidArgumentException('Each combo component needs a different active menu item and a positive quantity.');
             }
