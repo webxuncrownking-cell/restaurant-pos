@@ -172,6 +172,9 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
   <main class="app-main">
     <header class="app-topbar">
       <div class="app-topbar-left">
+        <button type="button" class="app-sidebar-collapse-toggle" id="appSidebarCollapseToggle" aria-label="Collapse sidebar" aria-controls="appSidebar" aria-pressed="false" title="Collapse sidebar">
+          <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+        </button>
         <button type="button" class="app-mobile-toggle" id="appSidebarToggle" aria-label="Open navigation menu" aria-controls="appSidebar" aria-expanded="false">
           <i class="bi bi-list" aria-hidden="true"></i>
         </button>
@@ -182,6 +185,9 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
       </div>
 
       <div class="app-topbar-actions">
+        <button type="button" class="app-theme-toggle" id="appThemeToggle" aria-label="Switch to dark mode" title="Switch to dark mode">
+          <i class="bi bi-moon-stars" aria-hidden="true"></i><span class="d-none d-md-inline">Dark mode</span>
+        </button>
         <span class="status-pill app-connectivity"><span class="context-dot" aria-hidden="true"></span> Online</span>
         <?php if ($restaurant): ?>
           <?php if ($isSubValid): ?>
