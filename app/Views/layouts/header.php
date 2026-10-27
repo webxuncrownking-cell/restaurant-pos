@@ -1222,6 +1222,99 @@
       border-color:#2c3d55 !important;
     }
 
+
+    /* Cross-page dark theme pass: inventory, purchasing, tables and expiry/waste. */
+    html[data-theme="dark"] .app-main .procurement-card,
+    html[data-theme="dark"] .app-main .procurement-card-head,
+    html[data-theme="dark"] .app-main .procurement-card-body,
+    html[data-theme="dark"] .app-main .procurement-order,
+    html[data-theme="dark"] .app-main .procurement-order-body,
+    html[data-theme="dark"] .app-main .procurement-order-line,
+    html[data-theme="dark"] .app-main .expiry-card,
+    html[data-theme="dark"] .app-main .expiry-card-head,
+    html[data-theme="dark"] .app-main .expiry-empty {
+      background:#172337 !important;
+      color:#e5edf9 !important;
+      border-color:#2c3d55 !important;
+      box-shadow:none !important;
+    }
+    html[data-theme="dark"] .app-main .procurement-order-head,
+    html[data-theme="dark"] .app-main .procurement-card-head,
+    html[data-theme="dark"] .app-main .expiry-card-head {
+      background:#1d2b41 !important;
+      color:#edf4ff !important;
+      border-color:#2c3d55 !important;
+    }
+    html[data-theme="dark"] .app-main .procurement-order-total,
+    html[data-theme="dark"] .app-main .procurement-order-line-name,
+    html[data-theme="dark"] .app-main .procurement-supplier-name,
+    html[data-theme="dark"] .app-main .expiry-table td,
+    html[data-theme="dark"] .app-main .expiry-table th { color:#e5edf9 !important; }
+    html[data-theme="dark"] .app-main .procurement-order-line-detail,
+    html[data-theme="dark"] .app-main .procurement-empty,
+    html[data-theme="dark"] .app-main .expiry-empty p { color:#aebed3 !important; }
+
+    /* Tables/floor plan: QR buttons and card controls should not stay bright white. */
+    html[data-theme="dark"] .app-main .table-card,
+    html[data-theme="dark"] .app-main .floor-table-card,
+    html[data-theme="dark"] .app-main .zone-filter,
+    html[data-theme="dark"] .app-main .table-zone-filter {
+      background:#172337 !important;
+      color:#e5edf9 !important;
+      border-color:#2c3d55 !important;
+    }
+    html[data-theme="dark"] .app-main a.btn-light,
+    html[data-theme="dark"] .app-main button.btn-light,
+    html[data-theme="dark"] .app-main .btn-outline-light,
+    html[data-theme="dark"] .app-main .btn-light,
+    html[data-theme="dark"] .app-main .qr-ordering-btn,
+    html[data-theme="dark"] .app-main a[class*="qr"],
+    html[data-theme="dark"] .app-main button[class*="qr"] {
+      background:#1d2b41 !important;
+      color:#c9dcfa !important;
+      border-color:#3b5272 !important;
+    }
+    html[data-theme="dark"] .app-main .btn-light:hover,
+    html[data-theme="dark"] .app-main .qr-ordering-btn:hover {
+      background:#263b59 !important;
+      color:#fff !important;
+      border-color:#5c82b7 !important;
+    }
+
+    /* Normalize Bootstrap's light table variants and light badges under dark mode. */
+    html[data-theme="dark"] .app-main .table-light,
+    html[data-theme="dark"] .app-main .table-light > :not(caption) > * > * {
+      --bs-table-bg:#1d2b41 !important;
+      --bs-table-color:#dce6f5 !important;
+      background:#1d2b41 !important;
+      color:#dce6f5 !important;
+      border-color:#344761 !important;
+    }
+    html[data-theme="dark"] .app-main .text-body,
+    html[data-theme="dark"] .app-main .text-secondary { color:#b9c8dc !important; }
+    html[data-theme="dark"] .app-main .bg-body,
+    html[data-theme="dark"] .app-main .bg-body-tertiary { background:#172337 !important; color:#e5edf9 !important; }
+
+    /* Catch common inline white surfaces used by older page-specific templates. */
+    html[data-theme="dark"] .app-main [style*="background:#fff"],
+    html[data-theme="dark"] .app-main [style*="background: #fff"],
+    html[data-theme="dark"] .app-main [style*="background-color:#fff"],
+    html[data-theme="dark"] .app-main [style*="background-color: #fff"],
+    html[data-theme="dark"] .app-main [style*="background: white"],
+    html[data-theme="dark"] .app-main [style*="background-color: white"],
+    html[data-theme="dark"] .app-main [style*="background:#ffffff"],
+    html[data-theme="dark"] .app-main [style*="background: #ffffff"] {
+      background:#172337 !important;
+      color:#e5edf9 !important;
+      border-color:#2c3d55 !important;
+    }
+
+    /* Keep sidebar white in light mode while maintaining clear icon contrast. */
+    html[data-theme="light"] .app-sidebar,
+    html[data-theme="light"] .app-sidebar .app-brand { background:#fff !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link i,
+    html[data-theme="light"] .app-sidebar .app-nav-link .bi { color:#52657e !important; opacity:1 !important; }
+
   </style>
 </head>
 <body>
