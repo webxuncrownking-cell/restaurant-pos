@@ -34,7 +34,7 @@ class ReportController
         // Keep the reports page usable before its table has been prepared.
         $expenseSummary = ['total' => 0.0, 'count' => 0, 'available' => false];
         try {
-            $expenseRow = \\App\\Core\\Database::fetchOne(
+            $expenseRow = \App\Core\Database::fetchOne(
                 "SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS entries
                  FROM restaurant_expenses
                  WHERE restaurant_id = ? AND status = 'active' AND expense_date BETWEEN ? AND ?",
@@ -47,7 +47,7 @@ class ReportController
                     'available' => true
                 ];
             }
-        } catch (\\Throwable $ignored) {
+        } catch (\Throwable $ignored) {
             // Table not created yet; expense total remains unavailable, not zero sales.
         }
 
@@ -113,7 +113,7 @@ class ReportController
                     'detail' => $lowCount . ' active ingredient(s) are at or below their configured minimum-stock alert. Review purchasing and upcoming demand.'
                 ];
             }
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             // Older installs may not yet have the inventory schema.
         }
 
@@ -209,7 +209,7 @@ class ReportController
                 $filename = 'operating-expenses';
                 $headers = ['Date', 'Category', 'Description', 'Payment Method', 'Reference', 'Amount (PHP)', 'Status', 'Created At'];
                 try {
-                    $expenseRows = \\App\\Core\\Database::fetchAll(
+                    $expenseRows = \App\Core\Database::fetchAll(
                         "SELECT expense_date, category, description, payment_method, reference_number, amount, status, created_at
                          FROM restaurant_expenses
                          WHERE restaurant_id = ? AND expense_date BETWEEN ? AND ?
@@ -220,7 +220,7 @@ class ReportController
                         $r['expense_date'], $r['category'], $r['description'], $r['payment_method'],
                         $r['reference_number'], $r['amount'], $r['status'], $r['created_at']
                     ], $expenseRows);
-                } catch (\\Throwable $e) {
+                } catch (\Throwable $e) {
                     Response::redirect('/reports?start_date=' . rawurlencode($startDate) . '&end_date=' . rawurlencode($endDate));
                     return;
                 }
