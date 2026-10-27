@@ -328,11 +328,11 @@ class PosSyncService
         if ($customerId > 0) {
             self::ensureCustomerLinkSchema();
             $customer = Database::fetchOne(
-                "SELECT id FROM restaurant_customers WHERE restaurant_id = ? AND id = ? AND is_active = 1 LIMIT 1",
+                "SELECT id FROM restaurant_customers WHERE restaurant_id = ? AND id = ? LIMIT 1",
                 [$restaurantId, $customerId]
             );
             if (!$customer) {
-                throw new InvalidArgumentException('The selected customer is inactive or does not belong to this restaurant.');
+                throw new InvalidArgumentException('The selected customer does not belong to this restaurant.');
             }
         }
 
