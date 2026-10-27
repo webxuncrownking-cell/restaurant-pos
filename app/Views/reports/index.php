@@ -93,6 +93,23 @@
     </div>
   </div>
 
+  <!-- Operating expense summary for the selected period -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card border-0 shadow-sm h-100 p-3">
+        <div class="text-muted small fw-semibold text-uppercase mb-1">Operating Expenses</div>
+        <?php if (!empty($expenseSummary['available'])): ?>
+          <div class="h3 fw-bold text-danger font-monospace mb-0">₱<?= number_format((float)$expenseSummary['total'], 2) ?></div>
+          <div class="small text-muted mt-2"><?= number_format((int)$expenseSummary['count']) ?> active expense record(s) in the selected period</div>
+          <a class="small mt-2" href="<?= BASE_URL ?>/expenses?from=<?= rawurlencode($startDate) ?>&amp;to=<?= rawurlencode($endDate) ?>">Review expense details</a>
+        <?php else: ?>
+          <div class="fw-semibold text-muted">Not set up yet</div>
+          <div class="small text-muted mt-2">Prepare expense tracking to include recorded costs here.</div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+
   <!-- Visual Charts Section -->
   <div class="row g-4 mb-4">
     <!-- Daily Revenue Trend (Line Chart) -->
