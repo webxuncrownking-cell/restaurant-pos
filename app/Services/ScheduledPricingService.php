@@ -8,13 +8,20 @@ final class ScheduledPricingService
     {
         if ($restaurantId <= 0 || $productId <= 0) return null;
         $at = $at ?? date('Y-m-d H:i:s');
-        $date = substr($at, 0, 10); $time = substr($at, 11, 8); $weekday = (int)date('N', strtotime($at));
+        $timestamp = strtotime($at);
+        if ($timestamp === false) return null;
+        $date = date('Y-m-d', $timestamp);
+        $time = date('H:i:s', $timestamp);
+        $weekday = (int)date('N', $timestamp);
         try { $rows = Database::fetchAll("SELECT * FROM menu_price_rules WHERE restaurant_id = ? AND product_id = ? AND is_active = 1 AND (starts_on IS NULL OR starts_on <= ?) AND (ends_on IS NULL OR ends_on >= ?) ORDER BY id DESC", [$restaurantId, $productId, $date, $date]); } catch (\Throwable $e) { return null; }
         foreach ($rows as $rule) {
             $days = array_map('intval', explode(',', (string)($rule['days_of_week'] ?? '1,2,3,4,5,6,7')));
-            if (!in_array($weekday, $days, true)) continue;
-            $start = substr((string)$rule['starts_at'], 0, 8); $end = substr((string)$rule['ends_at'], 0, 8);
-            $within = $start < $end ? ($time >= $start && $time < $end) : ($time >= $start || $time < $end);
+                        $start = substr((string)$rule['starts_at'], 0, 8); $end = substr((string)$rule['ends_at'], 0, 8);
+            $overnight = $start >= $end;
+            // For the after-midnight part of an overnight rule, the weekday is the day the rule started.
+            $ruleWeekday = ($overnight && $time < $end) ? ($weekday === 1 ? 7 : $weekday - 1) : $weekday;
+            if (!in_array($ruleWeekday, $days, true)) continue;
+            $within = $overnight ? ($time >= $start || $time < $end) : ($time >= $start && $time < $end);
             if ($within) return $rule;
         }
         return null;
