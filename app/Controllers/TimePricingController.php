@@ -66,8 +66,16 @@ final class TimePricingController
         if ($name==='' || mb_strlen($name)>120 || $productId<=0 || !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/',$starts) || !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/',$ends) || $starts===$ends || !is_numeric($valueRaw) || !is_finite((float)$valueRaw) || !in_array($type,['fixed','percent_off'],true) || !$days || ($type==='fixed' && (float)$valueRaw<0) || ($type==='percent_off' && ((float)$valueRaw<=0 || (float)$valueRaw>100))) {
             Response::redirect('/pricing?error=Check+the+rule+name%2C+time%2C+days%2C+product+and+price'); return;
         }
-        foreach ([$startsOn,$endsOn] as $date) { if ($date!=='' && !preg_match('/^\d{4}-\d{2}-\d{2}$/',$date)) { Response::redirect('/pricing?error=Invalid+date'); return; } }
+        foreach ([$startsOn,$endsOn] as $date) {
+            if ($date !== '' && (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !self::isRealDate($date))) {
+                Response::redirect('/pricing?error=Invalid+date'); return;
+            }
+        }
         if ($startsOn!=='' && $endsOn!=='' && $startsOn>$endsOn) { Response::redirect('/pricing?error=Start+date+must+not+follow+end+date'); return; }
+        if ($startsOn !== '' && $startsOn < date('Y-m-d')) {
+            // Past start dates are allowed for retrospective setup only when no end date is set;
+            // they remain bounded by the selected weekly time window.
+        }
         $product = Database::fetchOne("SELECT id FROM products WHERE restaurant_id=? AND id=? AND is_active=1",[$restaurantId,$productId]);
         if (!$product) { Response::redirect('/pricing?error=Choose+an+active+menu+item'); return; }
         $driver = Database::getConnection()->getAttribute(\PDO::ATTR_DRIVER_NAME);
@@ -76,6 +84,12 @@ final class TimePricingController
         $params=[$restaurantId,$productId,$name,$starts,$ends,implode(',',$days),$type,(float)$valueRaw,$dateValue($startsOn),$dateValue($endsOn),$active,Auth::id()];
         if ($driver==='sqlite') { Database::query($sql,$params); } else { Database::query($sql,$params); }
         Response::redirect('/pricing?saved=1');
+    }
+
+    private static function isRealDate(string $value): bool
+    {
+        $date = \\DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        return $date !== false && $date->format('Y-m-d') === $value;
     }
 
     public function toggle(Request $request): void
