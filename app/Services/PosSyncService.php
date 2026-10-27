@@ -604,22 +604,27 @@ class PosSyncService
 
             $snapshotComboComponents = is_array($snapshotProduct['combo_components'] ?? null) ? $snapshotProduct['combo_components'] : [];
             $comboComponents = [];
-            if (!empty($snapshotProduct['is_combo']) && count($snapshotComboComponents) >= 2) {
-                foreach ($snapshotComboComponents as $snapshotComponent) {
-                    $componentId = (int)($snapshotComponent['id'] ?? 0);
-                    $componentProduct = $componentId > 0
-                        ? Database::fetchOne("SELECT id, name, product_type, direct_stock_ingredient_id FROM products WHERE restaurant_id = ? AND id = ?", [$restaurantId, $componentId])
-                        : null;
-                    if (!$componentProduct) {
-                        throw new InvalidArgumentException('A combo component in the order catalog no longer exists in this restaurant.');
+            if (is_array($snapshotProduct)) {
+                if (!empty($snapshotProduct['is_combo'])) {
+                    if (count($snapshotComboComponents) < 2) {
+                        throw new InvalidArgumentException('The order catalog contains an incomplete combo definition. Refresh the POS catalog before selling this combo.');
                     }
-                    $comboComponents[] = [
-                        'id' => $componentId,
-                        'name' => (string)($snapshotComponent['name'] ?? $componentProduct['name']),
-                        'quantity' => (float)($snapshotComponent['quantity'] ?? 0),
-                        'product_type' => (string)$componentProduct['product_type'],
-                        'direct_stock_ingredient_id' => !empty($componentProduct['direct_stock_ingredient_id']) ? (int)$componentProduct['direct_stock_ingredient_id'] : null
-                    ];
+                    foreach ($snapshotComboComponents as $snapshotComponent) {
+                        $componentId = (int)($snapshotComponent['id'] ?? 0);
+                        $componentProduct = $componentId > 0
+                            ? Database::fetchOne("SELECT id, name, product_type, direct_stock_ingredient_id FROM products WHERE restaurant_id = ? AND id = ?", [$restaurantId, $componentId])
+                            : null;
+                        if (!$componentProduct) {
+                            throw new InvalidArgumentException('A combo component in the order catalog no longer exists in this restaurant.');
+                        }
+                        $comboComponents[] = [
+                            'id' => $componentId,
+                            'name' => (string)($snapshotComponent['name'] ?? $componentProduct['name']),
+                            'quantity' => (float)($snapshotComponent['quantity'] ?? 0),
+                            'product_type' => (string)$componentProduct['product_type'],
+                            'direct_stock_ingredient_id' => !empty($componentProduct['direct_stock_ingredient_id']) ? (int)$componentProduct['direct_stock_ingredient_id'] : null
+                        ];
+                    }
                 }
             } else {
                 $comboComponents = ComboService::getComponentsForProduct($restaurantId, $productId);
