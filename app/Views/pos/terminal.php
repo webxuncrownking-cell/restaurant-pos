@@ -797,6 +797,20 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       });
       window.addEventListener('offline', () => this.updateNetworkStatus(false));
 
+      // Recover queued orders after a transient connection/server failure even
+      // when the browser does not emit another "online" event.
+      window.setInterval(() => {
+        if (navigator.onLine && !document.hidden && !this.isSyncingQueue) {
+          void this.syncQueue();
+        }
+      }, 30000);
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && navigator.onLine && !this.isSyncingQueue) {
+          void this.syncQueue();
+        }
+      });
+
       // Don't allow common keyboard reload shortcuts while offline. A browser's
       // toolbar/menu reload cannot be disabled by a web page, so use the native
       // beforeunload confirmation for that path as an additional safeguard.
