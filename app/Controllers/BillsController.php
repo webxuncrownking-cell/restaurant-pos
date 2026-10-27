@@ -209,7 +209,7 @@ class BillsController
 
             Database::beginTransaction();
             try {
-                $driver = Database::getConnection()->getAttribute(\\PDO::ATTR_DRIVER_NAME);
+                $driver = Database::getConnection()->getAttribute(\PDO::ATTR_DRIVER_NAME);
                 if ($driver === 'sqlite') {
                     $insertStmt = Database::query(
                         "INSERT OR IGNORE INTO customer_loyalty_ledger (restaurant_id, customer_id, order_id, entry_type, points) VALUES (?, ?, ?, 'earn', ?)",
@@ -228,11 +228,11 @@ class BillsController
                     );
                 }
                 Database::commit();
-            } catch (\\Throwable $e) {
+            } catch (\Throwable $e) {
                 Database::rollBack();
                 throw $e;
             }
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             // Payment is already recorded. Log the loyalty failure for safe reconciliation;
             // never turn a successful payment into a failed-payment message.
             error_log('[Customer Loyalty] Could not award points for order ' . $orderId . ': ' . $e->getMessage());
