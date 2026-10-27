@@ -56,7 +56,45 @@ html[data-theme="dark"] .login-page-wrap .form-control { background:#0d1727 !imp
 html[data-theme="dark"] .login-page-wrap .input-group-text { background:#223550 !important; color:#a8c8ff !important; border-color:#354862 !important; }
 html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#8394ad !important; }
 
-</style>
+
+  .auth-theme-control { position:fixed; top:20px; right:22px; z-index:1200; display:flex; align-items:center; gap:9px; padding:8px 12px; border:1px solid #dbe4f0; border-radius:999px; background:rgba(255,255,255,.92); color:#334155; box-shadow:0 8px 24px rgba(15,23,42,.12); backdrop-filter:blur(12px); font-size:.82rem; font-weight:700; }
+  .auth-theme-control button { display:flex; align-items:center; justify-content:center; width:32px; height:32px; padding:0; border:0; border-radius:50%; background:#e8eef8; color:#27456f; cursor:pointer; }
+  .auth-theme-control button:focus-visible { outline:3px solid #60a5fa; outline-offset:2px; }
+  .auth-brand-icon { width:68px; height:68px; display:inline-flex; align-items:center; justify-content:center; border-radius:20px !important; background:#2563eb !important; color:#fff !important; border:1px solid rgba(255,255,255,.35); box-shadow:0 10px 24px rgba(37,99,235,.28) !important; }
+  .auth-brand-icon i { color:#fff !important; font-size:2rem; }
+  html[data-theme="dark"] .auth-theme-control { background:rgba(22,35,56,.94); border-color:#354862; color:#e8eef8; }
+  html[data-theme="dark"] .auth-theme-control button { background:#263a57; color:#dce9fb; }
+  @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; padding:6px 9px; font-size:.75rem; } .auth-theme-control button { width:30px; height:30px; } }
+
+
+<div class="auth-theme-control" role="group" aria-label="Appearance">
+  <span class="auth-theme-label">Light mode</span>
+  <button type="button" class="auth-theme-toggle" aria-label="Switch to dark mode" title="Switch theme"><i class="bi bi-moon-stars-fill" aria-hidden="true"></i></button>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var control = document.querySelector('.auth-theme-control');
+  if (!control) return;
+  var button = control.querySelector('.auth-theme-toggle');
+  var label = control.querySelector('.auth-theme-label');
+  function apply(theme) {
+    root.setAttribute('data-theme', theme);
+    var dark = theme === 'dark';
+    label.textContent = dark ? 'Dark mode' : 'Light mode';
+    button.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+    button.innerHTML = '<i class="bi ' + (dark ? 'bi-sun-fill' : 'bi-moon-stars-fill') + '" aria-hidden="true"></i>';
+  }
+  var saved = 'light';
+  try { saved = localStorage.getItem('serveflow-theme') === 'dark' ? 'dark' : 'light'; } catch (e) {}
+  apply(saved);
+  button.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    apply(next);
+    try { localStorage.setItem('serveflow-theme', next); } catch (e) {}
+  });
+})();
+</script>
 <div class="login-page-wrap">
 <div class="container">
   <div class="row justify-content-center">
@@ -64,7 +102,7 @@ html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#839
       
       <!-- Brand Header -->
       <div class="text-center mb-4">
-        <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-25 text-warning-emphasis p-3 rounded-circle mb-3 shadow-sm" style="width: 68px; height: 68px;">
+        <div class="d-inline-flex align-items-center justify-content-center auth-brand-icon mb-3 shadow-sm" style="width: 68px; height: 68px;">
           <i class="bi bi-shop fs-1"></i>
         </div>
         <h1 class="fw-bold text-dark mb-1 login-brand-title">ServeFlow POS</h1>
