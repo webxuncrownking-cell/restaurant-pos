@@ -621,8 +621,10 @@ class PosSyncService
                             'id' => $componentId,
                             'name' => (string)($snapshotComponent['name'] ?? $componentProduct['name']),
                             'quantity' => (float)($snapshotComponent['quantity'] ?? 0),
-                            'product_type' => (string)$componentProduct['product_type'],
-                            'direct_stock_ingredient_id' => !empty($componentProduct['direct_stock_ingredient_id']) ? (int)$componentProduct['direct_stock_ingredient_id'] : null
+                            'product_type' => (string)($snapshotComponent['product_type'] ?? $componentProduct['product_type']),
+                            'direct_stock_ingredient_id' => array_key_exists('direct_stock_ingredient_id', $snapshotComponent)
+                                ? (!empty($snapshotComponent['direct_stock_ingredient_id']) ? (int)$snapshotComponent['direct_stock_ingredient_id'] : null)
+                                : (!empty($componentProduct['direct_stock_ingredient_id']) ? (int)$componentProduct['direct_stock_ingredient_id'] : null)
                         ];
                     }
                 }
