@@ -88,6 +88,35 @@ class ReportController
                 'detail' => 'Recorded operating expenses are ' . number_format($expenseRatio, 1) . '% of gross sales for this period. This is a monitoring indicator, not a net-profit calculation.'
             ];
         }
+        // Inventory risk signals are descriptive, not a demand forecast. They use
+        // the restaurant's current stock thresholds and fail closed on legacy schemas.
+        try {
+            $stockRisk = Database::fetchOne(
+                "SELECT COUNT(*) AS low_count,
+                        COALESCE(SUM(CASE WHEN current_stock <= 0 THEN 1 ELSE 0 END),0) AS out_count
+                 FROM ingredients
+                 WHERE restaurant_id = ? AND is_active = 1 AND current_stock <= minimum_stock_alert",
+                [$restaurantId]
+            );
+            $lowCount = (int)($stockRisk['low_count'] ?? 0);
+            $outCount = (int)($stockRisk['out_count'] ?? 0);
+            if ($outCount > 0) {
+                $insights[] = [
+                    'type' => 'warning',
+                    'title' => 'Ingredients out of stock',
+                    'detail' => $outCount . ' active ingredient(s) currently have zero or negative stock. Review stock levels before accepting orders that depend on them.'
+                ];
+            } elseif ($lowCount > 0) {
+                $insights[] = [
+                    'type' => 'warning',
+                    'title' => 'Low-stock ingredients',
+                    'detail' => $lowCount . ' active ingredient(s) are at or below their configured minimum-stock alert. Review purchasing and upcoming demand.'
+                ];
+            }
+        } catch (\\Throwable $e) {
+            // Older installs may not yet have the inventory schema.
+        }
+
         if (!$insights) {
             $insights[] = [
                 'type' => 'info',
