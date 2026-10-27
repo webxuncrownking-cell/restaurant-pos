@@ -7,12 +7,22 @@ final class ScheduledPricingService
     public static function findActiveRule(int $restaurantId, int $productId, ?string $at = null): ?array
     {
         if ($restaurantId <= 0 || $productId <= 0) return null;
-        $at = $at ?? date('Y-m-d H:i:s');
-        $timestamp = strtotime($at);
-        if ($timestamp === false) return null;
-        $date = date('Y-m-d', $timestamp);
-        $time = date('H:i:s', $timestamp);
-        $weekday = (int)date('N', $timestamp);
+        try {
+            $timezoneName = (string)(Database::fetchColumn(
+                "SELECT timezone FROM restaurants WHERE id = ? LIMIT 1",
+                [$restaurantId]
+            ) ?: 'Asia/Manila');
+            try { $timezone = new \\DateTimeZone($timezoneName); }
+            catch (\\Throwable $ignored) { $timezone = new \\DateTimeZone('Asia/Manila'); }
+            $moment = $at !== null
+                ? new \\DateTimeImmutable($at, $timezone)
+                : new \\DateTimeImmutable('now', $timezone);
+        } catch (\\Throwable $e) {
+            return null;
+        }
+        $date = $moment->format('Y-m-d');
+        $time = $moment->format('H:i:s');
+        $weekday = (int)$moment->format('N');
         try { $rows = Database::fetchAll("SELECT * FROM menu_price_rules WHERE restaurant_id = ? AND product_id = ? AND is_active = 1 AND (starts_on IS NULL OR starts_on <= ?) AND (ends_on IS NULL OR ends_on >= ?) ORDER BY id DESC", [$restaurantId, $productId, $date, $date]); } catch (\Throwable $e) { return null; }
         foreach ($rows as $rule) {
             $days = array_map('intval', explode(',', (string)($rule['days_of_week'] ?? '1,2,3,4,5,6,7')));
