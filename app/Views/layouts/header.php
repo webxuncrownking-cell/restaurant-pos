@@ -1061,6 +1061,90 @@
       opacity: 1;
     }
 
+
+    /* Stronger sidebar separation in both themes. */
+    html[data-theme="light"] .app-sidebar {
+      background: #dce4ef !important;
+      color: #334155 !important;
+      border-right: 1px solid #c0ccdc !important;
+      box-shadow: 8px 0 24px rgba(15, 23, 42, .10) !important;
+    }
+    html[data-theme="light"] .app-sidebar .app-brand { color:#142238 !important; border-bottom-color:#c1ccdb !important; }
+    html[data-theme="light"] .app-sidebar .app-brand-copy small { color:#52647d !important; }
+    html[data-theme="light"] .app-sidebar .app-brand-mark { color:#1e40af !important; background:#f8fbff !important; border-color:#c0ccdc !important; }
+    html[data-theme="light"] .app-sidebar .app-sidebar-context { background:#cbd7e7 !important; border-color:#b5c4d8 !important; color:#34445b !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-heading { color:#526782 !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link { color:#34445b !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link i { color:#435873 !important; opacity:1 !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link:hover { color:#142b4c !important; background:#c5d4e8 !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link.active { color:#123d8b !important; background:#b8d2fa !important; box-shadow:inset 4px 0 #1765d8 !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link.active i { color:#1256bd !important; }
+    html[data-theme="light"] .app-sidebar .app-sidebar-bottom { border-top-color:#bdc9d9 !important; }
+    html[data-theme="light"] .app-sidebar .app-sidebar-pos { color:#123d8b !important; background:#c5d9fb !important; border-color:#a9c4f3 !important; }
+    html[data-theme="light"] .app-sidebar .app-sidebar-pos .pos-icon { color:#fff !important; background:#2563eb !important; }
+    html[data-theme="light"] .app-sidebar .app-sidebar-version { color:#52647d !important; }
+
+    /* Dark navigation stays distinctly darker than the working area. */
+    html[data-theme="dark"] .app-sidebar { background:#070d18 !important; border-right-color:#24334a !important; }
+    html[data-theme="dark"] .app-sidebar .app-nav-link.active { background:linear-gradient(100deg,#1647a0,#2563eb) !important; border-color:#477ff0 !important; }
+
+    /* Page-specific cards use their own inline styles, so override those classes explicitly. */
+    html[data-theme="dark"] .app-main .kitchen-stat,
+    html[data-theme="dark"] .app-main .kitchen-toolbar,
+    html[data-theme="dark"] .app-main .kitchen-filter-group,
+    html[data-theme="dark"] .app-main .kitchen-empty,
+    html[data-theme="dark"] .app-main .kitchen-ticket,
+    html[data-theme="dark"] .app-main .kitchen-ticket-head,
+    html[data-theme="dark"] .app-main .kitchen-ticket-items,
+    html[data-theme="dark"] .app-main .kitchen-item,
+    html[data-theme="dark"] .app-main .kitchen-item-status-row,
+    html[data-theme="dark"] .app-main .bill-empty,
+    html[data-theme="dark"] .app-main .bill-card,
+    html[data-theme="dark"] .app-main .bill-summary-box,
+    html[data-theme="dark"] .app-main .bill-share,
+    html[data-theme="dark"] .app-main .bill-payment-panel {
+      background-color:#172337 !important;
+      color:#e5edf9 !important;
+      border-color:#2c3d55 !important;
+      box-shadow:none;
+    }
+    html[data-theme="dark"] .app-main .kitchen-filter,
+    html[data-theme="dark"] .app-main .kitchen-station-filter {
+      background:#101b2c !important;
+      color:#c9d7eb !important;
+      border-color:#344761 !important;
+    }
+    html[data-theme="dark"] .app-main .kitchen-filter.active,
+    html[data-theme="dark"] .app-main .kitchen-station-filter.active {
+      background:#2563eb !important;
+      color:#fff !important;
+      border-color:#5790ff !important;
+    }
+    html[data-theme="dark"] .app-main .kitchen-ticket-head,
+    html[data-theme="dark"] .app-main .bill-card-head {
+      background:#1d2b41 !important;
+      color:#e5edf9 !important;
+      border-color:#2c3d55 !important;
+    }
+    html[data-theme="dark"] .app-main .kitchen-ticket-number,
+    html[data-theme="dark"] .app-main .kitchen-item-name,
+    html[data-theme="dark"] .app-main .bill-order-number,
+    html[data-theme="dark"] .app-main .bill-item-name,
+    html[data-theme="dark"] .app-main .bill-item-price { color:#edf4ff !important; }
+    html[data-theme="dark"] .app-main .kitchen-ticket-meta,
+    html[data-theme="dark"] .app-main .kitchen-stat-label,
+    html[data-theme="dark"] .app-main .kitchen-stat-note,
+    html[data-theme="dark"] .app-main .bill-meta,
+    html[data-theme="dark"] .app-main .bill-item-meta { color:#aabbd2 !important; }
+    html[data-theme="dark"] .app-main .kitchen-stat-icon { background:#263a57 !important; color:#a8c9ff !important; }
+    html[data-theme="dark"] .app-main .kitchen-item-note { background:#3a301b !important; color:#f6d89a !important; border-color:#62502a !important; }
+    html[data-theme="dark"] .app-main .bill-summary-box.due { background:#352b1b !important; border-color:#5b4827 !important; }
+    html[data-theme="dark"] .app-main .bill-chip { background:#26354b !important; color:#d8e5f7 !important; border-color:#3a4c66 !important; }
+
+    /* Avoid animated layout effects while filtering; preserve only short hover feedback. */
+    html[data-theme="dark"] .app-main .kitchen-ticket,
+    html[data-theme="dark"] .app-main .kitchen-stat { transition:none !important; }
+
   </style>
 </head>
 <body>
