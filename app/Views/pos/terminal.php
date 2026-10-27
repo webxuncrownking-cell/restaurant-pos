@@ -383,6 +383,20 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         </div>
       </div>
 
+      <?php if (!empty($customers)): ?>
+      <div class="row mb-3">
+        <div class="col-12 col-md-7">
+          <label class="form-label small fw-semibold text-muted mb-1" for="posCustomerSelect">Customer (optional)</label>
+          <select id="posCustomerSelect" class="form-select" onchange="window.posApp.setCustomer(this.value)">
+            <option value="">Walk-in customer</option>
+            <?php foreach ($customers as $customer): ?>
+              <option value="<?= (int)$customer['id'] ?>"><?= htmlspecialchars((string)$customer['full_name'], ENT_QUOTES, 'UTF-8') ?><?= !empty($customer['phone']) ? ' · ' . htmlspecialchars((string)$customer['phone'], ENT_QUOTES, 'UTF-8') : '' ?> · <?= (int)$customer['loyalty_points'] ?> pts</option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+      <?php endif; ?>
+
       <!-- Category Filter Pills -->
       <div class="d-flex gap-2 overflow-x-auto pb-2 mb-3" id="categoryPillsContainer">
         <button class="category-pill active" onclick="window.posApp.filterCategory(null, this)">All Items</button>
@@ -695,6 +709,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 (function() {
   const initialCatalog = <?= json_encode($catalog, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
   const initialTables = <?= json_encode($tables, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+  const initialCustomers = <?= json_encode($customers ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
   const tenantId = <?= (int)($user['restaurant_id'] ?? 1) ?>;
   const deviceId = <?= (int)($activeDevice['id'] ?? 1) ?>;
   const cashierId = <?= (int)($user['id'] ?? 1) ?>;
@@ -723,6 +738,8 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   const app = {
     catalog: initialCatalog,
     tables: initialTables,
+    customers: initialCustomers,
+    selectedCustomerId: null,
     currentCategory: null,
     searchQuery: '',
     currentTableId: null,
@@ -736,6 +753,11 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     isSyncingQueue: false,
     offlineLease: null,
     restoredDraftTicket: false,
+
+    setCustomer(value) {
+      const id = Number.parseInt(value, 10);
+      this.selectedCustomerId = Number.isInteger(id) && id > 0 ? id : null;
+    },
 
     async init() {
       // 1. Init IndexedDB
@@ -1545,6 +1567,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           order_type: 'dine_in',
           table_id: this.currentTableId,
           cashier_id: cashierId,
+          customer_id: this.selectedCustomerId,
           catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
           offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
           save_as_open: true,
@@ -1647,6 +1670,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           order_type: this.orderType,
           table_id: this.currentTableId,
           cashier_id: cashierId,
+          customer_id: this.selectedCustomerId,
           catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
           offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
           subtotal: calcs.subtotal,
