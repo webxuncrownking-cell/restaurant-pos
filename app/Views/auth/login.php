@@ -24,6 +24,38 @@
   @media (max-height: 760px) {
     .login-page-wrap { align-items: flex-start; padding-top: 22px; padding-bottom: 22px; }
   }
+
+/* ServeFlow public authentication page refresh */
+.login-page-wrap { min-height:100vh; padding:clamp(24px,5vh,64px) 20px; background:radial-gradient(ellipse at 50% 0%, #eaf1ff 0, #f5f7fb 48%, #eef2f8 100%); }
+html[data-theme="dark"] .login-page-wrap { background:radial-gradient(ellipse at 50% 0%, #1b2b45 0, #0b1220 58%, #080e19 100%); }
+.login-page-wrap .login-column { max-width:460px; }
+.login-page-wrap .login-brand-title { color:#14213a !important; font-size:2rem; font-weight:800; letter-spacing:-.045em; }
+.login-page-wrap .login-brand-subtitle { color:#64748b !important; font-size:.9rem !important; }
+.login-page-wrap .card { border:1px solid #e0e7f1 !important; border-radius:20px !important; background:#fff !important; box-shadow:0 22px 60px rgba(20,38,68,.12) !important; }
+.login-page-wrap .card-header { background:#fff !important; color:#18263d !important; border-bottom:1px solid #e7edf5 !important; padding:19px 24px !important; }
+.login-page-wrap .card-header h5 { color:#18263d !important; font-size:1.05rem; }
+.login-page-wrap .card-body { padding:24px !important; }
+.login-page-wrap .form-label { color:#34445c !important; font-size:.85rem !important; font-weight:700 !important; }
+.login-page-wrap .form-control { min-height:48px; background:#f8fafd !important; color:#18263d !important; border:1px solid #d5deeb !important; border-radius:0 11px 11px 0 !important; }
+.login-page-wrap input#tenant_slug { border-radius:11px !important; }
+.login-page-wrap .input-group-text { min-width:44px; justify-content:center; background:#edf3fc !important; color:#3769b3 !important; border:1px solid #d5deeb !important; border-right:0 !important; border-radius:11px 0 0 11px !important; }
+.login-page-wrap .form-control:focus { background:#fff !important; border-color:#4b83e6 !important; box-shadow:0 0 0 4px rgba(59,130,246,.13) !important; }
+.login-page-wrap .btn-warning { min-height:48px; border:0 !important; border-radius:11px !important; background:#2563eb !important; color:#fff !important; box-shadow:0 7px 18px rgba(37,99,235,.2) !important; }
+.login-page-wrap .btn-warning:hover { background:#1d4ed8 !important; }
+.login-page-wrap a { color:#2563eb; }
+.login-page-wrap .text-muted { color:#687890 !important; }
+html[data-theme="dark"] .login-page-wrap .login-brand-title { color:#f1f5fb !important; }
+html[data-theme="dark"] .login-page-wrap .login-brand-subtitle,
+html[data-theme="dark"] .login-page-wrap .text-muted { color:#a6b4c9 !important; }
+html[data-theme="dark"] .login-page-wrap .card,
+html[data-theme="dark"] .login-page-wrap .card-header,
+html[data-theme="dark"] .login-page-wrap .card-body { background:#162338 !important; color:#e8eef8 !important; border-color:#2a3a53 !important; }
+html[data-theme="dark"] .login-page-wrap .card-header h5,
+html[data-theme="dark"] .login-page-wrap .form-label { color:#e8eef8 !important; }
+html[data-theme="dark"] .login-page-wrap .form-control { background:#0d1727 !important; color:#f1f5fb !important; border-color:#354862 !important; }
+html[data-theme="dark"] .login-page-wrap .input-group-text { background:#223550 !important; color:#a8c8ff !important; border-color:#354862 !important; }
+html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#8394ad !important; }
+
 </style>
 <div class="login-page-wrap">
 <div class="container">
