@@ -1476,6 +1476,8 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         `;
         document.getElementById('ticketSubtotal').textContent = '₱0.00';
         document.getElementById('ticketDiscount').textContent = '-₱0.00';
+        const emptyDiscountLabel = document.getElementById('ticketDiscountLabel');
+        if (emptyDiscountLabel) emptyDiscountLabel.textContent = 'Discount:';
         document.getElementById('ticketVat').textContent = '₱0.00';
         document.getElementById('ticketTotal').textContent = '₱0.00';
         document.getElementById('checkoutBtn').disabled = true;
