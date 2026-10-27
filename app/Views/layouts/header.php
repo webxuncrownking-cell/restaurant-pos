@@ -1315,6 +1315,71 @@
     html[data-theme="light"] .app-sidebar .app-nav-link i,
     html[data-theme="light"] .app-sidebar .app-nav-link .bi { color:#52657e !important; opacity:1 !important; }
 
+
+    /* Procurement: complete dark palette for form rows, totals, labels and history. */
+    html[data-theme="dark"] .app-main .procurement-page { color:#e5edf9 !important; }
+    html[data-theme="dark"] .app-main .procurement-title,
+    html[data-theme="dark"] .app-main .procurement-heading,
+    html[data-theme="dark"] .app-main .procurement-metric strong,
+    html[data-theme="dark"] .app-main .procurement-order-total { color:#edf4ff !important; }
+    html[data-theme="dark"] .app-main .procurement-subtitle,
+    html[data-theme="dark"] .app-main .procurement-help,
+    html[data-theme="dark"] .app-main .procurement-muted,
+    html[data-theme="dark"] .app-main .procurement-order-line-detail { color:#aebed3 !important; }
+    html[data-theme="dark"] .app-main .procurement-card,
+    html[data-theme="dark"] .app-main .procurement-card-head,
+    html[data-theme="dark"] .app-main .procurement-card-body,
+    html[data-theme="dark"] .app-main .procurement-order,
+    html[data-theme="dark"] .app-main .procurement-order-body,
+    html[data-theme="dark"] .app-main .procurement-order-line,
+    html[data-theme="dark"] .app-main .procurement-supplier-row {
+      background:#172337 !important; color:#e5edf9 !important; border-color:#2c3d55 !important;
+      box-shadow:none !important;
+    }
+    html[data-theme="dark"] .app-main .procurement-card-head,
+    html[data-theme="dark"] .app-main .procurement-order-head {
+      background:#1d2b41 !important; color:#edf4ff !important; border-color:#2c3d55 !important;
+    }
+    html[data-theme="dark"] .app-main .procurement-line,
+    html[data-theme="dark"] .app-main .procurement-total,
+    html[data-theme="dark"] .app-main .procurement-waste-form {
+      background:#101b2c !important; color:#e5edf9 !important; border-color:#344761 !important;
+      box-shadow:none !important;
+    }
+    html[data-theme="dark"] .app-main .procurement-total strong,
+    html[data-theme="dark"] .app-main .procurement-line label { color:#dce7f7 !important; }
+    html[data-theme="dark"] .app-main .procurement-icon,
+    html[data-theme="dark"] .app-main .procurement-metric > .procurement-icon {
+      background:#263a57 !important; color:#a8c9ff !important;
+    }
+    html[data-theme="dark"] .app-main .procurement-metric {
+      background:#172337 !important; border-color:#2c3d55 !important; color:#e5edf9 !important;
+    }
+    html[data-theme="dark"] .app-main .procurement-badge.draft { background:#263750 !important; color:#dce6f5 !important; }
+    html[data-theme="dark"] .app-main .procurement-badge.ordered { background:#173e70 !important; color:#c5ddff !important; }
+    html[data-theme="dark"] .app-main .procurement-badge.received { background:#124b3a !important; color:#b9f6d9 !important; }
+    html[data-theme="dark"] .app-main .procurement-badge.cancelled { background:#4b2026 !important; color:#ffc8c8 !important; }
+    html[data-theme="dark"] .app-main .procurement-empty { background:#172337 !important; color:#aebed3 !important; }
+    html[data-theme="dark"] .app-main .procurement-empty i { color:#a8c9ff !important; }
+
+    /* Expiry metrics have semantic pastel backgrounds in light mode; normalize in dark mode. */
+    html[data-theme="dark"] .app-main .expiry-metric,
+    html[data-theme="dark"] .app-main .expiry-metric.danger,
+    html[data-theme="dark"] .app-main .expiry-metric.warning,
+    html[data-theme="dark"] .app-main .expiry-waste-form {
+      background:#172337 !important; border-color:#2c3d55 !important; color:#e5edf9 !important;
+    }
+    html[data-theme="dark"] .app-main .expiry-title,
+    html[data-theme="dark"] .app-main .expiry-section-title,
+    html[data-theme="dark"] .app-main .expiry-metric strong,
+    html[data-theme="dark"] .app-main .expiry-batch-name,
+    html[data-theme="dark"] .app-main .expiry-value { color:#edf4ff !important; }
+    html[data-theme="dark"] .app-main .expiry-subtitle,
+    html[data-theme="dark"] .app-main .expiry-help,
+    html[data-theme="dark"] .app-main .expiry-metric-label,
+    html[data-theme="dark"] .app-main .expiry-subtext { color:#aebed3 !important; }
+    html[data-theme="dark"] .app-main .expiry-waste-form .form-label { color:#dce7f7 !important; }
+
   </style>
 </head>
 <body>
