@@ -107,7 +107,8 @@ class ReportController
             'cashierStats' => $cashierStats,
             'adjustments' => $adjustments,
             'shiftReconciliation' => $shiftReconciliation,
-            'expenseSummary' => $expenseSummary
+            'expenseSummary' => $expenseSummary,
+            'insights' => $insights
         ]);
     }
 
