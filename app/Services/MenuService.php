@@ -440,7 +440,10 @@ class MenuService
 
         $categories = self::getCategories($restaurantId, true);
         $products = self::getProducts($restaurantId, null, true);
+        $comboMap = ComboService::getComponentsMap($restaurantId);
         foreach ($products as &$product) {
+            $product['combo_components'] = $comboMap[(int)$product['id']] ?? [];
+            $product['is_combo'] = !empty($product['combo_components']);
             $imagePath = trim((string)($product['image_path'] ?? ''));
             $product['image_url'] = $imagePath !== '' ? BASE_URL . '/' . ltrim($imagePath, '/') : '';
             $basePrice = (float)($product['base_price'] ?? 0);
