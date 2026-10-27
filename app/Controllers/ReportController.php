@@ -141,6 +141,13 @@ class ReportController
             ];
         }
 
+        $demandForecast = [];
+        try {
+            $demandForecast = ReportService::getProductDemandForecast($restaurantId, $startDate, $endDate, 10);
+        } catch (\Throwable $ignored) {
+            // Older or partially migrated databases may not have order-line history ready.
+        }
+
         Response::render('reports/index', [
             'startDate' => $startDate,
             'endDate' => $endDate,
@@ -154,7 +161,8 @@ class ReportController
             'shiftReconciliation' => $shiftReconciliation,
             'expenseSummary' => $expenseSummary,
             'insights' => $insights,
-            'forecast' => $forecast
+            'forecast' => $forecast,
+            'demandForecast' => $demandForecast
         ]);
     }
 
