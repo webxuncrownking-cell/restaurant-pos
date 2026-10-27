@@ -64,7 +64,7 @@ final class ComboService
     {
         self::ensureSchema();
         $rows = Database::fetchAll(
-            "SELECT cc.combo_product_id, cc.component_product_id AS id, cc.quantity, p.name
+            "SELECT cc.combo_product_id, cc.component_product_id AS id, cc.quantity, p.name, p.product_type, p.direct_stock_ingredient_id
              FROM restaurant_combo_components cc
              JOIN restaurant_combo_products cp ON cp.restaurant_id = cc.restaurant_id AND cp.product_id = cc.combo_product_id AND cp.is_active = 1
              JOIN products p ON p.restaurant_id = cc.restaurant_id AND p.id = cc.component_product_id AND p.is_active = 1
@@ -76,7 +76,9 @@ final class ComboService
             $map[(int)$row['combo_product_id']][] = [
                 'id' => (int)$row['id'],
                 'name' => (string)$row['name'],
-                'quantity' => (float)$row['quantity']
+                'quantity' => (float)$row['quantity'],
+                'product_type' => (string)$row['product_type'],
+                'direct_stock_ingredient_id' => !empty($row['direct_stock_ingredient_id']) ? (int)$row['direct_stock_ingredient_id'] : null
             ];
         }
         return $map;
