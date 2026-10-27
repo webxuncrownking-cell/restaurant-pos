@@ -858,8 +858,51 @@ class PosSyncService
                     );
                 }
 
-                // Deduct recipe BOM ingredients or a directly-stocked item.
-                if ($item['product_type'] === 'recipe') {
+                // Combo lines deduct each included component's recipe or direct stock.
+                if ($item['product_type'] === 'combo') {
+                    if (count($item['combo_components']) < 2) {
+                        throw new InvalidArgumentException('A combo is missing active component items. Update the combo definition before selling it.');
+                    }
+                    foreach ($item['combo_components'] as $component) {
+                        $componentProductId = (int)$component['id'];
+                        $componentQuantity = (float)$component['quantity'] * (float)$item['quantity'];
+                        if ((string)$component['product_type'] === 'recipe') {
+                            $recipeIngredients = Database::fetchAll(
+                                "SELECT ingredient_id, quantity_required FROM recipes
+                                 WHERE restaurant_id = ? AND product_id = ? AND variant_id IS NULL",
+                                [$restaurantId, $componentProductId]
+                            );
+                            foreach ($recipeIngredients as $recipeIngredient) {
+                                $ingredientId = (int)$recipeIngredient['ingredient_id'];
+                                $requiredQuantity = (float)$recipeIngredient['quantity_required'] * $componentQuantity;
+                                $ingredient = Database::fetchOne(
+                                    "SELECT base_unit FROM ingredients WHERE restaurant_id = ? AND id = ? AND is_active = 1",
+                                    [$restaurantId, $ingredientId]
+                                );
+                                if (!$ingredient) throw new InvalidArgumentException('A combo component recipe references an inactive or missing ingredient.');
+                                InventoryService::recordMovement(
+                                    $restaurantId, $ingredientId, 'order_sale', $requiredQuantity,
+                                    (string)$ingredient['base_unit'], null, $orderId,
+                                    "Combo sale: {$item['quantity']}x {$item['product_name']} includes {$componentQuantity}x {$component['name']} (Order #{$orderNumber})",
+                                    $cashierId
+                                );
+                            }
+                        } elseif ((string)$component['product_type'] === 'direct' && !empty($component['direct_stock_ingredient_id'])) {
+                            $ingredientId = (int)$component['direct_stock_ingredient_id'];
+                            $ingredient = Database::fetchOne(
+                                "SELECT base_unit FROM ingredients WHERE restaurant_id = ? AND id = ? AND is_active = 1",
+                                [$restaurantId, $ingredientId]
+                            );
+                            if (!$ingredient) throw new InvalidArgumentException('A combo direct-stock component references an inactive or missing ingredient.');
+                            InventoryService::recordMovement(
+                                $restaurantId, $ingredientId, 'order_sale', $componentQuantity,
+                                (string)$ingredient['base_unit'], null, $orderId,
+                                "Combo sale: {$item['quantity']}x {$item['product_name']} includes {$componentQuantity}x {$component['name']} (Order #{$orderNumber})",
+                                $cashierId
+                            );
+                        }
+                    }
+                } elseif ($item['product_type'] === 'recipe') {
                     $recipeIngredients = Database::fetchAll(
                         "SELECT ingredient_id, quantity_required
                          FROM recipes
