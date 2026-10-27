@@ -143,6 +143,8 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
           ?>
             <a class="app-nav-link <?= $active ? 'active' : '' ?>"
                href="<?= BASE_URL . $item['route'] ?>"
+               title="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>"
+               aria-label="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>"
                <?= $active ? 'aria-current="page"' : '' ?>>
               <i class="bi <?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>
               <span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
@@ -154,7 +156,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
 
     <div class="app-sidebar-bottom">
       <?php if (!$isPlatform && \App\Core\Auth::can('pos.create_order')): ?>
-      <a class="app-sidebar-pos" href="<?= BASE_URL ?>/pos">
+      <a class="app-sidebar-pos" href="<?= BASE_URL ?>/pos" title="Open POS Terminal" aria-label="Open POS Terminal">
         <span class="pos-icon"><i class="bi bi-display" aria-hidden="true"></i></span>
         <span class="flex-grow-1">
           <strong>Open POS Terminal</strong>
