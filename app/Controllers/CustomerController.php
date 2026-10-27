@@ -64,8 +64,12 @@ final class CustomerController
         }
         $sql .= " ORDER BY full_name ASC LIMIT 500";
         $customers = Database::fetchAll($sql, $params);
+        $editId = (int)$request->get('edit', 0);
+        $editCustomer = $editId > 0
+            ? Database::fetchOne("SELECT id, full_name, phone, email, birthday, notes, is_active FROM restaurant_customers WHERE restaurant_id = ? AND id = ? LIMIT 1", [$rid, $editId])
+            : null;
         $summary = Database::fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN is_active=1 THEN 1 ELSE 0 END),0) AS active_count, COALESCE(SUM(loyalty_points),0) AS points FROM restaurant_customers WHERE restaurant_id=?", [$rid]) ?? [];
-        $viewData = ['customers'=>$customers,'summary'=>$summary,'search'=>$search,'flashes'=>Session::getFlashes(),'csrf_token'=>CSRF::getToken(),'title'=>'Customer CRM - ServeFlow POS'];
+        $viewData = ['customers'=>$customers,'summary'=>$summary,'search'=>$search,'editCustomer'=>$editCustomer,'flashes'=>Session::getFlashes(),'csrf_token'=>CSRF::getToken(),'title'=>'Customer CRM - ServeFlow POS'];
         http_response_code(200);
         if (!headers_sent()) header('Content-Type: text/html; charset=utf-8');
         extract($viewData, EXTR_SKIP);
