@@ -370,13 +370,23 @@ class PosSyncService
             : 0;
         $catalogVersion = $catalogVersionId > 0
             ? Database::fetchOne(
-                "SELECT id FROM restaurant_catalog_versions WHERE restaurant_id = ? AND id = ?",
+                "SELECT id, snapshot_json FROM restaurant_catalog_versions WHERE restaurant_id = ? AND id = ?",
                 [$restaurantId, $catalogVersionId]
             )
             : null;
         if (!$catalogVersion) {
             $catalogVersion = self::getOrCreateCatalogVersion($restaurantId);
             $catalogVersionId = (int)$catalogVersion['id'];
+        }
+        $catalogSnapshot = json_decode((string)($catalogVersion['snapshot_json'] ?? ''), true);
+        if (!is_array($catalogSnapshot)) {
+            throw new InvalidArgumentException('The order references an invalid catalog snapshot. Refresh the POS catalog and retry synchronization.');
+        }
+        $snapshotProducts = [];
+        foreach (($catalogSnapshot['products'] ?? []) as $snapshotProduct) {
+            if (is_array($snapshotProduct) && isset($snapshotProduct['id'])) {
+                $snapshotProducts[(int)$snapshotProduct['id']] = $snapshotProduct;
+            }
         }
 
         $offlineLeaseId = trim((string)($orderPayload['offline_lease_id'] ?? ''));
@@ -522,8 +532,17 @@ class PosSyncService
                 }
             }
 
+            // Use the immutable catalog snapshot's scheduled base price when the
+            // order was created from a catalog that carried an active pricing rule.
+            // This preserves the price for offline orders synced after the rule ends.
+            $snapshotProduct = $snapshotProducts[$productId] ?? null;
+            $snapshotBasePrice = is_array($snapshotProduct)
+                && isset($snapshotProduct['scheduled_base_price'])
+                && !empty($snapshotProduct['scheduled_price_rule_id'])
+                ? (float)$snapshotProduct['scheduled_base_price']
+                : (float)$product['base_price'];
             $unitPrice = round(
-                (float)$product['base_price']
+                $snapshotBasePrice
                 + (float)($variant['additional_price'] ?? 0)
                 + $addonPriceTotal,
                 2
