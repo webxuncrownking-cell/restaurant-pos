@@ -32,6 +32,12 @@ final class ComboController
         $componentProducts = Database::fetchAll(
             "SELECT p.id, p.name FROM products p WHERE p.restaurant_id = ? AND p.is_active = 1
              AND NOT EXISTS (SELECT 1 FROM restaurant_combo_products cp WHERE cp.restaurant_id = p.restaurant_id AND cp.product_id = p.id AND cp.is_active = 1)
+             AND NOT EXISTS (SELECT 1 FROM product_variants v WHERE v.restaurant_id = p.restaurant_id AND v.product_id = p.id AND v.is_active = 1)
+             AND NOT EXISTS (
+                 SELECT 1 FROM product_addon_group_assignments pag
+                 JOIN product_addon_groups g ON g.restaurant_id = pag.restaurant_id AND g.id = pag.group_id
+                 WHERE pag.restaurant_id = p.restaurant_id AND pag.product_id = p.id
+             )
              ORDER BY p.name",
             [$restaurantId]
         );
