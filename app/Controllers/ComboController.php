@@ -29,6 +29,12 @@ final class ComboController
              ORDER BY p.name",
             [$restaurantId]
         );
+        $componentProducts = Database::fetchAll(
+            "SELECT p.id, p.name FROM products p WHERE p.restaurant_id = ? AND p.is_active = 1
+             AND NOT EXISTS (SELECT 1 FROM restaurant_combo_products cp WHERE cp.restaurant_id = p.restaurant_id AND cp.product_id = p.id AND cp.is_active = 1)
+             ORDER BY p.name",
+            [$restaurantId]
+        );
         $combos = Database::fetchAll(
             "SELECT cp.product_id, p.name AS combo_name, p.base_price, cp.created_at
              FROM restaurant_combo_products cp JOIN products p ON p.restaurant_id = cp.restaurant_id AND p.id = cp.product_id
@@ -42,6 +48,7 @@ final class ComboController
         Response::render('combos/index', [
             'pageTitle' => 'Combo Meals',
             'products' => $products,
+            'componentProducts' => $componentProducts,
             'combos' => $combos,
             'csrf_token' => CSRF::generate(),
             'flashes' => Session::getFlashes()
