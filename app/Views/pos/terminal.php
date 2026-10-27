@@ -451,7 +451,6 @@ include APP_ROOT . '/app/Views/layouts/header.php';
               <option value="0">None (0%)</option>
               <option value="20">Senior / PWD (20%)</option>
               <option value="10">Staff (10%)</option>
-              <option value="5">Loyalty (5%)</option>
             </select>
           </div>
           <span class="font-monospace text-warning small" id="ticketDiscount">-₱0.00</span>
