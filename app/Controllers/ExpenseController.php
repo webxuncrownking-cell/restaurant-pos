@@ -140,8 +140,16 @@ class ExpenseController
         $rid=(int)(TenantContext::getRestaurantId()??0); $uid=(int)(Auth::id()??0);
         $id=filter_var($request->post('expense_id'),FILTER_VALIDATE_INT);
         if ($rid<=0||$uid<=0||!$id||$id<=0||!$this->ready()) { Session::setFlash('warning','Choose a valid expense.'); Response::redirect('/expenses'); return; }
-        Database::query("UPDATE restaurant_expenses SET status='voided',voided_by=?,voided_at=CURRENT_TIMESTAMP WHERE restaurant_id=? AND id=? AND status='active'",[$uid,$rid,$id]);
-        Session::setFlash('info','Expense voided if it was active. The record remains in history.');
+        try {
+            Database::query(
+                "UPDATE restaurant_expenses SET status='voided',voided_by=?,voided_at=CURRENT_TIMESTAMP WHERE restaurant_id=? AND id=? AND status='active'",
+                [$uid,$rid,$id]
+            );
+            Session::setFlash('info','Expense voided if it was active. The record remains in history.');
+        } catch (Throwable $e) {
+            error_log('[Expenses Void] '.$e);
+            Session::setFlash('danger','Unable to void this expense. The record remains in history.');
+        }
         Response::redirect('/expenses');
     }
 
@@ -154,6 +162,9 @@ class ExpenseController
     private function validDate(string $value): bool
     {
         $date=\DateTimeImmutable::createFromFormat('!Y-m-d',$value);
-        return $date!==false && $date->format('Y-m-d')===$value;
+        $errors=\DateTimeImmutable::getLastErrors();
+        return $date!==false
+            && ($errors===false || ((int)$errors['warning_count']===0 && (int)$errors['error_count']===0))
+            && $date->format('Y-m-d')===$value;
     }
 }
