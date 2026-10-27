@@ -821,8 +821,20 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         }
       });
 
-      // 2. Prime IndexedDB with Catalog & Tables
-      if (this.catalog && this.catalog.products) {
+      // 2. Restore the last server-issued catalog snapshot when reopening offline.
+      // Never overwrite a valid cached database catalog ID with the display-only timestamp
+      // embedded in the server-rendered page.
+      let cachedCatalog = null;
+      try { cachedCatalog = await window.PosDB.getCatalog(); } catch (error) {
+        console.warn('[POS Catalog] Unable to read cached catalog metadata:', error);
+      }
+      const hasCachedServerVersion = cachedCatalog && cachedCatalog.version && Number(cachedCatalog.version.id) > 0;
+      if (!navigator.onLine && hasCachedServerVersion && Array.isArray(cachedCatalog.products) && cachedCatalog.products.length > 0) {
+        this.catalog.products = cachedCatalog.products;
+        this.catalog.categories = cachedCatalog.categories || [];
+        this.catalog.version = cachedCatalog.version;
+      }
+      if (this.catalog && this.catalog.products && this.catalog.version && Number(this.catalog.version.id) > 0) {
         await window.PosDB.saveCatalog(this.catalog.products, this.catalog.categories, this.catalog.version);
       }
       if (this.tables) {
@@ -1595,6 +1607,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
     async saveOpenOrder() {
       if (this.isProcessingSale || !Array.isArray(this.ticket) || this.ticket.length === 0) return;
+      if (!this.catalog.version || Number(this.catalog.version.id) <= 0) {
+        alert('This terminal has no verified server catalog snapshot. Reconnect and refresh the POS before saving an order.');
+        return;
+      }
 
       if (this.orderType !== 'dine_in' || !this.currentTableId) {
         alert('Select a dining table and choose Dine In before saving an open bill.');
@@ -1631,7 +1647,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           cashier_id: cashierId,
           customer_id: this.selectedCustomerId,
           loyalty_redeem_points: calcs.loyaltyRedeemPoints,
-          catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
+          catalog_version_id: this.catalog.version && Number(this.catalog.version.id) > 0 ? Number(this.catalog.version.id) : null,
           offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
           save_as_open: true,
           subtotal: calcs.subtotal,
@@ -1688,6 +1704,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       // Prevent a rapid double-click from generating multiple UUIDs/orders.
       if (this.isProcessingSale) return;
       if (!Array.isArray(this.ticket) || this.ticket.length === 0) return;
+      if (!this.catalog.version || Number(this.catalog.version.id) <= 0) {
+        alert('This terminal has no verified server catalog snapshot. Reconnect and refresh the POS before charging this order.');
+        return;
+      }
 
       this.isProcessingSale = true;
       const confirmButton = document.getElementById('confirmSaleBtn');
