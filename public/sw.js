@@ -1,98 +1,112 @@
 /**
  * Restaurant POS - Progressive Web App (PWA) Service Worker
- * Offline App Shell Caching & Background Network Resilience
+ * Scope-aware app-shell caching for root and subdirectory deployments.
  */
 
-const CACHE_NAME = 'restaurant-pos-shell-v1';
+const CACHE_NAME = 'restaurant-pos-shell-v2';
+
+// Derive paths from the registered service-worker scope so this also works
+// when the app is hosted in a subdirectory such as /restaurant/.
+const SCOPE_URL = new URL(self.registration.scope);
+const APP_ROOT = SCOPE_URL.pathname.replace(/\/$/, '');
+const appPath = (path) => `${APP_ROOT}${path.startsWith('/') ? path : '/' + path}`;
+const POS_PATH = appPath('/pos');
+const BOOTSTRAP_PREFIX = appPath('/api/pos/bootstrap');
+const SYNC_PREFIX = appPath('/api/pos/sync');
+
 const PRECACHE_URLS = [
-  '/pos',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
-  '/public/assets/js/pos-db.js'
+  POS_PATH,
+  appPath('/public/assets/css/bootstrap.min.css'),
+  appPath('/public/assets/js/bootstrap.bundle.min.js'),
+  appPath('/public/assets/js/pos-db.js'),
+  appPath('/manifest.json'),
+  // Keep the current icon stylesheet available for first-load caching when
+  // the CDN responds. Local icon assets can replace this dependency later.
+  'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css'
 ];
 
-// Install: Pre-cache static shell assets
+// Cache shell entries independently. One unavailable CDN resource must not
+// prevent the local app assets from being cached.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_URLS).catch((err) => {
-        console.warn('[ServiceWorker] Some pre-cache assets could not be loaded immediately:', err);
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.all(PRECACHE_URLS.map(async (assetUrl) => {
+        try {
+          await cache.add(assetUrl);
+        } catch (error) {
+          console.warn('[ServiceWorker] Unable to pre-cache:', assetUrl, error);
+        }
+      }));
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate: Clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            console.log('[ServiceWorker] Removing old cache:', key);
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys().then((keyList) => Promise.all(
+      keyList.map((key) => {
+        if (key.startsWith('restaurant-pos-shell-') && key !== CACHE_NAME) {
+          return caches.delete(key);
+        }
+        return undefined;
+      })
+    )).then(() => self.clients.claim())
   );
 });
 
-// Fetch: Strategy depending on request type
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+  const request = event.request;
+  const url = new URL(request.url);
 
-  // Never cache POST requests or real-time sync API calls
-  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/pos/sync')) {
+  // Do not cache mutations or order-sync responses.
+  if (request.method !== 'GET' || url.origin !== self.location.origin ||
+      url.pathname.startsWith(SYNC_PREFIX)) {
     return;
   }
 
-  // Network-first with Cache fallback for POS Terminal UI and API bootstrap
-  if (url.pathname === '/pos' || url.pathname.startsWith('/api/pos/bootstrap')) {
+  const isPosPage = url.pathname === POS_PATH || url.pathname === POS_PATH + '/';
+  const isBootstrap = url.pathname === BOOTSTRAP_PREFIX || url.pathname.startsWith(BOOTSTRAP_PREFIX + '/');
+
+  // Network-first for the terminal and bootstrap data. Fall back only to an
+  // exact cached request; never substitute a different query-string response.
+  if (isPosPage || isBootstrap) {
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          return caches.match(event.request).then((cached) => {
-            if (cached) return cached;
-            if (url.pathname === '/pos') {
-              return caches.match('/pos');
-            }
-            return new Response(JSON.stringify({ error: 'Offline, cached data unavailable' }), {
-              headers: { 'Content-Type': 'application/json' }
-            });
-          });
-        })
+      fetch(request).then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
+        }
+        return response;
+      }).catch(async () => {
+        const cached = await caches.match(request, { ignoreSearch: false });
+        if (cached) return cached;
+        if (isPosPage) {
+          const shell = await caches.match(POS_PATH);
+          if (shell) return shell;
+        }
+        return new Response(JSON.stringify({
+          error: 'Offline and no cached response is available.',
+          offline: true
+        }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json; charset=utf-8' }
+        });
+      })
     );
     return;
   }
 
-  // Cache-first with Network fallback for static assets (CDN styles, scripts, fonts)
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+  // Cache-first for same-origin static assets, with network fallback.
+  if (url.pathname.startsWith(appPath('/public/')) ||
+      url.pathname === appPath('/manifest.json')) {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const copy = response.clone();
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
         }
-        return networkResponse;
-      }).catch((err) => {
-        console.warn('[ServiceWorker] Network fetch failed for:', event.request.url);
-      });
-    })
-  );
+        return response;
+      }))
+    );
+  }
 });
