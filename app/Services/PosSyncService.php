@@ -523,6 +523,10 @@ class PosSyncService
             if (!$product) {
                 throw new InvalidArgumentException('An order contains an inactive product or a product from another restaurant.');
             }
+            $snapshotProduct = $snapshotProducts[$productId] ?? null;
+            if (!is_array($snapshotProduct)) {
+                throw new InvalidArgumentException('An order item is not present in its tenant catalog snapshot. Refresh the POS catalog and retry.');
+            }
 
             $variantId = !empty($itemInput['variant_id']) ? (int)$itemInput['variant_id'] : null;
             $variant = null;
@@ -605,8 +609,7 @@ class PosSyncService
             // Use the immutable catalog snapshot's scheduled base price when the
             // order was created from a catalog that carried an active pricing rule.
             // This preserves the price for offline orders synced after the rule ends.
-            $snapshotProduct = $snapshotProducts[$productId] ?? null;
-            $snapshotBasePrice = is_array($snapshotProduct) && isset($snapshotProduct['scheduled_base_price'])
+            $snapshotBasePrice = isset($snapshotProduct['scheduled_base_price'])
                 ? (float)$snapshotProduct['scheduled_base_price']
                 : (float)$product['base_price'];
             $unitPrice = round(
