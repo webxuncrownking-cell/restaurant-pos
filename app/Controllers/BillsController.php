@@ -162,6 +162,10 @@ class BillsController
                 $splitId ? (int)$splitId : null
             );
 
+            if ((float)($result['balance_due'] ?? 0) <= 0.009) {
+                $this->awardCustomerLoyaltyForPaidOrder($restaurantId, (int)$orderId);
+            }
+
             if (($result['status'] ?? '') === 'already_recorded') {
                 Session::setFlash('info', 'This payment was already recorded; no duplicate payment was created.');
             } else {
@@ -180,6 +184,59 @@ class BillsController
             Session::setFlash('danger', 'Unable to record this payment. Check the payment history before retrying.');
         }
         Response::redirect('/bills');
+    }
+
+    /**
+     * Award loyalty points once a linked open bill is fully paid.
+     * POS orders award at creation; the unique ledger key prevents duplicate awards here.
+     */
+    private function awardCustomerLoyaltyForPaidOrder(int $restaurantId, int $orderId): void
+    {
+        try {
+            $link = Database::fetchOne(
+                "SELECT l.customer_id, o.total_amount
+                 FROM order_customer_links l
+                 JOIN orders o ON o.restaurant_id = l.restaurant_id AND o.id = l.order_id
+                 WHERE l.restaurant_id = ? AND l.order_id = ? AND o.payment_status = 'paid'
+                 LIMIT 1",
+                [$restaurantId, $orderId]
+            );
+            if (!$link) return;
+            $customerId = (int)$link['customer_id'];
+            $points = (int)floor(max(0.0, (float)$link['total_amount']) / 100);
+            if ($customerId <= 0 || $points <= 0) return;
+
+            Database::beginTransaction();
+            try {
+                $driver = Database::getConnection()->getAttribute(\\PDO::ATTR_DRIVER_NAME);
+                if ($driver === 'sqlite') {
+                    Database::query(
+                        "INSERT OR IGNORE INTO customer_loyalty_ledger (restaurant_id, customer_id, order_id, entry_type, points) VALUES (?, ?, ?, 'earn', ?)",
+                        [$restaurantId, $customerId, $orderId, $points]
+                    );
+                } else {
+                    Database::query(
+                        "INSERT IGNORE INTO customer_loyalty_ledger (restaurant_id, customer_id, order_id, entry_type, points) VALUES (?, ?, ?, 'earn', ?)",
+                        [$restaurantId, $customerId, $orderId, $points]
+                    );
+                }
+                $inserted = Database::getConnection()->lastInsertId();
+                if ($inserted !== '0' && $inserted !== '') {
+                    Database::query(
+                        "UPDATE restaurant_customers SET loyalty_points = loyalty_points + ?, updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ?",
+                        [$points, $restaurantId, $customerId]
+                    );
+                }
+                Database::commit();
+            } catch (\\Throwable $e) {
+                Database::rollBack();
+                throw $e;
+            }
+        } catch (\\Throwable $e) {
+            // Payment is already recorded. Log the loyalty failure for safe reconciliation;
+            // never turn a successful payment into a failed-payment message.
+            error_log('[Customer Loyalty] Could not award points for order ' . $orderId . ': ' . $e->getMessage());
+        }
     }
 
     private function authorize(): int
