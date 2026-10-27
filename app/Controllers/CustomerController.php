@@ -68,8 +68,23 @@ final class CustomerController
         $editCustomer = $editId > 0
             ? Database::fetchOne("SELECT id, full_name, phone, email, birthday, notes, is_active FROM restaurant_customers WHERE restaurant_id = ? AND id = ? LIMIT 1", [$rid, $editId])
             : null;
+        $customerOrders = [];
+        if ($editCustomer) {
+            try {
+                $customerOrders = Database::fetchAll(
+                    "SELECT o.id, o.order_number, o.order_status, o.payment_status, o.total_amount, o.created_at
+                     FROM order_customer_links l
+                     JOIN orders o ON o.restaurant_id = l.restaurant_id AND o.id = l.order_id
+                     WHERE l.restaurant_id = ? AND l.customer_id = ?
+                     ORDER BY o.created_at DESC, o.id DESC LIMIT 50",
+                    [$rid, (int)$editCustomer['id']]
+                );
+            } catch (\Throwable $ignored) {
+                $customerOrders = [];
+            }
+        }
         $summary = Database::fetchOne("SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN is_active=1 THEN 1 ELSE 0 END),0) AS active_count, COALESCE(SUM(loyalty_points),0) AS points FROM restaurant_customers WHERE restaurant_id=?", [$rid]) ?? [];
-        $viewData = ['customers'=>$customers,'summary'=>$summary,'search'=>$search,'editCustomer'=>$editCustomer,'flashes'=>Session::getFlashes(),'csrf_token'=>CSRF::getToken(),'title'=>'Customer CRM - ServeFlow POS'];
+        $viewData = ['customers'=>$customers,'summary'=>$summary,'search'=>$search,'editCustomer'=>$editCustomer,'customerOrders'=>$customerOrders,'flashes'=>Session::getFlashes(),'csrf_token'=>CSRF::getToken(),'title'=>'Customer CRM - ServeFlow POS'];
         http_response_code(200);
         if (!headers_sent()) header('Content-Type: text/html; charset=utf-8');
         extract($viewData, EXTR_SKIP);
