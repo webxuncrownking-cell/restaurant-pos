@@ -270,15 +270,15 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   .product-title { font-size: 1rem; line-height: 1.35; }
   .product-price { font-size: 1.05rem; font-weight: 800; }
   .product-category-tag, .product-custom-tag { font-size: .75rem; }
-  .ticket-item-name { font-size: 1rem; line-height: 1.4; }
-  .ticket-item-price { font-size: .98rem; font-weight: 800; }
-  .ticket-item-meta, .ticket-addon-text { font-size: .84rem; line-height: 1.45; }
+  .ticket-item-name { font-size: 1.1rem; line-height: 1.45; }
+  .ticket-item-price { font-size: 1.06rem; font-weight: 800; }
+  .ticket-item-meta, .ticket-addon-text { font-size: .92rem; line-height: 1.5; }
   .ticket-qty-btn, .ticket-remove-btn { min-width: 40px; min-height: 40px; }
-  .ticket-qty { min-width: 28px; font-size: 1rem; }
+  .ticket-qty { min-width: 30px; font-size: 1.05rem; }
   .pos-order-type { min-height: 44px; font-size: .92rem; }
   .pos-clear-ticket, .pos-checkout-btn { min-height: 48px; font-size: 1rem; }
-  .pos-ticket-summary { font-size: .98rem; }
-  .pos-ticket-summary strong { font-size: 1.08rem; }
+  .pos-ticket-summary { font-size: 1rem; }
+  .pos-ticket-summary strong { font-size: 1.12rem; }
   .modal .form-control, .modal .form-select { min-height: 46px; font-size: 1rem; }
   .modal .btn { min-height: 42px; }
   .product-card:focus-visible, .category-pill:focus-visible, .pos-order-type:focus-visible {
@@ -292,7 +292,9 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     .pos-workspace { padding: 10px !important; }
     .pos-catalog-panel, .pos-ticket-panel { border-radius: 14px; }
     .product-card { min-height: 160px; }
-    .product-title { font-size: .94rem; }
+    .product-title { font-size: 1rem; }
+    .ticket-item-name { font-size: 1.04rem; }
+    .ticket-item-meta, .ticket-addon-text { font-size: .9rem; }
     .ticket-item-card { padding: 12px !important; }
     .pos-clear-ticket, .pos-checkout-btn { min-height: 48px; }
   }
