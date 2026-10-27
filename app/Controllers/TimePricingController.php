@@ -88,7 +88,7 @@ final class TimePricingController
 
     private static function isRealDate(string $value): bool
     {
-        $date = \\DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
         return $date !== false && $date->format('Y-m-d') === $value;
     }
 
