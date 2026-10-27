@@ -26,12 +26,11 @@
       root.setAttribute('data-theme', theme);
       if (themeToggle) {
         const dark = theme === 'dark';
-        themeToggle.innerHTML = dark
-          ? '<i class="bi bi-sun" aria-hidden="true"></i><span class="d-none d-md-inline">Light mode</span>'
-          : '<i class="bi bi-moon-stars" aria-hidden="true"></i><span class="d-none d-md-inline">Dark mode</span>';
-        themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-        themeToggle.title = dark ? 'Switch to light mode' : 'Switch to dark mode';
-        themeToggle.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        themeToggle.checked = dark;
+        themeToggle.setAttribute('aria-checked', dark ? 'true' : 'false');
+        const label = document.querySelector('.app-theme-switch-label');
+        if (label) label.textContent = dark ? 'Dark mode' : 'Light mode';
+        themeToggle.setAttribute('aria-label', dark ? 'Dark mode enabled' : 'Dark mode disabled');
       }
     };
     applyTheme(savedTheme);
@@ -50,8 +49,8 @@
       try { localStorage.setItem('serveflow-sidebar-collapsed', collapsed ? '1' : '0'); } catch (error) {}
       updateCollapseToggle();
     });
-    themeToggle?.addEventListener('click', () => {
-      const theme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    themeToggle?.addEventListener('change', () => {
+      const theme = themeToggle.checked ? 'dark' : 'light';
       applyTheme(theme);
       try { localStorage.setItem('serveflow-theme', theme); } catch (error) {}
     });
