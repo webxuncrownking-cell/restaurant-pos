@@ -125,6 +125,22 @@ class ReportController
             ];
         }
 
+        // Simple, explainable baseline estimate from recent recorded sales.
+        // This is not machine learning and does not claim to account for seasonality.
+        $forecast = ['available' => false, 'average_daily_sales' => 0.0, 'estimated_next_7_days' => 0.0, 'days_used' => 0, 'basis' => ''];
+        $forecastRows = array_slice($dailyTrend, -7);
+        $forecastValues = array_map(static fn(array $row): float => max(0.0, (float)($row['daily_revenue'] ?? 0)), $forecastRows);
+        if (count($forecastValues) >= 5) {
+            $averageDaily = array_sum($forecastValues) / count($forecastValues);
+            $forecast = [
+                'available' => true,
+                'average_daily_sales' => round($averageDaily, 2),
+                'estimated_next_7_days' => round($averageDaily * 7, 2),
+                'days_used' => count($forecastValues),
+                'basis' => 'Average of the latest ' . count($forecastValues) . ' recorded sales days in the selected range. Assumes the same average each day; does not adjust for weekdays, holidays, events, stockouts, or seasonality.'
+            ];
+        }
+
         Response::render('reports/index', [
             'startDate' => $startDate,
             'endDate' => $endDate,
@@ -137,7 +153,8 @@ class ReportController
             'adjustments' => $adjustments,
             'shiftReconciliation' => $shiftReconciliation,
             'expenseSummary' => $expenseSummary,
-            'insights' => $insights
+            'insights' => $insights,
+            'forecast' => $forecast
         ]);
     }
 
