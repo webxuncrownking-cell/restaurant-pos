@@ -63,6 +63,12 @@ final class ComboService
     public static function getComponentsMap(int $restaurantId): array
     {
         self::ensureSchema();
+        $comboRows = Database::fetchAll(
+            "SELECT product_id FROM restaurant_combo_products WHERE restaurant_id = ? AND is_active = 1",
+            [$restaurantId]
+        );
+        $map = [];
+        foreach ($comboRows as $comboRow) $map[(int)$comboRow['product_id']] = [];
         $rows = Database::fetchAll(
             "SELECT cc.combo_product_id, cc.component_product_id AS id, cc.quantity, p.name, p.product_type, p.direct_stock_ingredient_id
              FROM restaurant_combo_components cc
@@ -71,7 +77,6 @@ final class ComboService
              WHERE cc.restaurant_id = ? ORDER BY cc.combo_product_id, p.name",
             [$restaurantId]
         );
-        $map = [];
         foreach ($rows as $row) {
             $map[(int)$row['combo_product_id']][] = [
                 'id' => (int)$row['id'],
