@@ -384,7 +384,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       </div>
 
       <?php if (!empty($customers)): ?>
-      <div class="row mb-3">
+      <div class="row g-2 mb-3">
         <div class="col-12 col-md-7">
           <label class="form-label small fw-semibold text-muted mb-1" for="posCustomerSelect">Customer (optional)</label>
           <select id="posCustomerSelect" class="form-select" onchange="window.posApp.setCustomer(this.value)">
@@ -393,6 +393,13 @@ include APP_ROOT . '/app/Views/layouts/header.php';
               <option value="<?= (int)$customer['id'] ?>"><?= htmlspecialchars((string)$customer['full_name'], ENT_QUOTES, 'UTF-8') ?><?= !empty($customer['phone']) ? ' · ' . htmlspecialchars((string)$customer['phone'], ENT_QUOTES, 'UTF-8') : '' ?> · <?= (int)$customer['loyalty_points'] ?> pts</option>
             <?php endforeach; ?>
           </select>
+        </div>
+        <div class="col-12 col-md-5">
+          <label class="form-label small fw-semibold text-muted mb-1" for="posLoyaltyRedeem">Redeem loyalty points</label>
+          <select id="posLoyaltyRedeem" class="form-select" onchange="window.posApp.setLoyaltyRedeem(this.value)" disabled>
+            <option value="0">Select a customer first</option>
+          </select>
+          <div class="form-text">100 points = ₱5 off paid sales.</div>
         </div>
       </div>
       <?php endif; ?>
@@ -739,6 +746,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     tables: initialTables,
     customers: initialCustomers,
     selectedCustomerId: null,
+    loyaltyRedeemPoints: 0,
     currentCategory: null,
     searchQuery: '',
     currentTableId: null,
@@ -756,6 +764,34 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     setCustomer(value) {
       const id = Number.parseInt(value, 10);
       this.selectedCustomerId = Number.isInteger(id) && id > 0 ? id : null;
+      this.loyaltyRedeemPoints = 0;
+      this.renderLoyaltyOptions();
+      this.renderTicket();
+    },
+
+    setLoyaltyRedeem(value) {
+      const points = Number.parseInt(value, 10);
+      this.loyaltyRedeemPoints = Number.isInteger(points) && points > 0 ? Math.floor(points / 100) * 100 : 0;
+      this.renderTicket();
+    },
+
+    renderLoyaltyOptions() {
+      const select = document.getElementById('posLoyaltyRedeem');
+      if (!select) return;
+      const customer = this.customers.find(c => Number(c.id) === Number(this.selectedCustomerId));
+      const subtotal = this.ticket.reduce((sum, item) => sum + (Number(item.unit_price) * Number(item.quantity)), 0);
+      const baseDiscount = subtotal * (Number(this.discountPercent) / 100);
+      const maxAffordable = Math.floor(Math.max(0, subtotal - baseDiscount) / 5) * 100;
+      const available = customer ? Math.max(0, Number(customer.loyalty_points) || 0) : 0;
+      const maxPoints = Math.min(Math.floor(available / 100) * 100, maxAffordable);
+      if (this.loyaltyRedeemPoints > maxPoints) this.loyaltyRedeemPoints = 0;
+      select.disabled = !customer || maxPoints < 100;
+      let options = '<option value="0">Do not redeem points</option>';
+      for (let points = 100; points <= maxPoints; points += 100) {
+        options += `<option value="${points}" ${points === this.loyaltyRedeemPoints ? 'selected' : ''}>Redeem ${points} pts (₱${(points / 100 * 5).toFixed(2)})</option>`;
+      }
+      select.innerHTML = options;
+      select.value = String(this.loyaltyRedeemPoints);
     },
 
     async init() {
@@ -1402,7 +1438,9 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
     getCalculations() {
       const subtotal = this.ticket.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
-      const discount = subtotal * (this.discountPercent / 100);
+      const baseDiscount = subtotal * (this.discountPercent / 100);
+      const loyaltyDiscount = Math.floor(this.loyaltyRedeemPoints / 100) * 5;
+      const discount = Math.min(subtotal, baseDiscount + loyaltyDiscount);
       const afterDiscount = subtotal - discount;
       const vat = afterDiscount - (afterDiscount / 1.12); // Included 12% VAT
       const total = afterDiscount;
@@ -1410,6 +1448,8 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       return {
         subtotal: round(subtotal),
         discount: round(discount),
+        loyaltyRedeemPoints: this.loyaltyRedeemPoints,
+        loyaltyDiscount: round(loyaltyDiscount),
         vat: round(vat),
         total: round(total)
       };
@@ -1419,6 +1459,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       const container = document.getElementById('ticketItemsList');
       if (!container) return;
 
+      this.renderLoyaltyOptions();
       // Save every cart edit, including removals, before a possible page reload.
       void this.persistDraftTicket();
 
@@ -1579,6 +1620,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           table_id: this.currentTableId,
           cashier_id: cashierId,
           customer_id: this.selectedCustomerId,
+          loyalty_redeem_points: calcs.loyaltyRedeemPoints,
           catalog_version_id: this.catalog.version ? this.catalog.version.id : 1,
           offline_lease_id: this.offlineLease && this.offlineLease.lease_id ? this.offlineLease.lease_id : null,
           save_as_open: true,
