@@ -16,6 +16,49 @@ use Throwable;
 
 class PosSyncService
 {
+    private static bool $customerLinkSchemaReady = false;
+
+    private static function ensureCustomerLinkSchema(): void
+    {
+        if (self::$customerLinkSchemaReady) return;
+        $pdo = Database::getConnection();
+        if ($pdo->getAttribute(\\PDO::ATTR_DRIVER_NAME) === 'sqlite') {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS order_customer_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, restaurant_id INTEGER NOT NULL, order_id INTEGER NOT NULL,
+                customer_id INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(restaurant_id, order_id)
+            )");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS customer_loyalty_ledger (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, restaurant_id INTEGER NOT NULL, customer_id INTEGER NOT NULL,
+                order_id INTEGER NOT NULL, entry_type TEXT NOT NULL, points INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(restaurant_id, order_id, entry_type)
+            )");
+        } else {
+            $pdo->exec("CREATE TABLE IF NOT EXISTS order_customer_links (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                restaurant_id BIGINT UNSIGNED NOT NULL, order_id BIGINT UNSIGNED NOT NULL,
+                customer_id BIGINT UNSIGNED NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_order_customer (restaurant_id, order_id),
+                KEY idx_customer_orders (restaurant_id, customer_id),
+                CONSTRAINT fk_order_customer_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
+                CONSTRAINT fk_order_customer_order FOREIGN KEY (restaurant_id, order_id) REFERENCES orders(restaurant_id, id) ON DELETE CASCADE,
+                CONSTRAINT fk_order_customer_customer FOREIGN KEY (restaurant_id, customer_id) REFERENCES restaurant_customers(restaurant_id, id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS customer_loyalty_ledger (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                restaurant_id BIGINT UNSIGNED NOT NULL, customer_id BIGINT UNSIGNED NOT NULL,
+                order_id BIGINT UNSIGNED NOT NULL, entry_type VARCHAR(24) NOT NULL,
+                points INT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_customer_order_entry (restaurant_id, order_id, entry_type),
+                KEY idx_customer_loyalty (restaurant_id, customer_id, created_at),
+                CONSTRAINT fk_loyalty_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
+                CONSTRAINT fk_loyalty_order FOREIGN KEY (restaurant_id, order_id) REFERENCES orders(restaurant_id, id) ON DELETE CASCADE,
+                CONSTRAINT fk_loyalty_customer FOREIGN KEY (restaurant_id, customer_id) REFERENCES restaurant_customers(restaurant_id, id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        }
+        self::$customerLinkSchemaReady = true;
+    }
+
     /**
      * Get or create the latest immutable catalog snapshot version
      */
@@ -280,6 +323,21 @@ class PosSyncService
         $clientUuid = trim((string)($orderPayload['client_uuid'] ?? ''));
         if ($restaurantId <= 0 || $clientUuid === '' || strlen($clientUuid) > 36) {
             throw new InvalidArgumentException('A valid restaurant and client order UUID are required.');
+        }
+
+        $customerId = (int)($orderPayload['customer_id'] ?? 0);
+        if ($customerId < 0) {
+            throw new InvalidArgumentException('The selected customer is invalid.');
+        }
+        if ($customerId > 0) {
+            self::ensureCustomerLinkSchema();
+            $customer = Database::fetchOne(
+                "SELECT id FROM restaurant_customers WHERE restaurant_id = ? AND id = ? AND is_active = 1 LIMIT 1",
+                [$restaurantId, $customerId]
+            );
+            if (!$customer) {
+                throw new InvalidArgumentException('The selected customer is inactive or does not belong to this restaurant.');
+            }
         }
 
         // Idempotency: repeated delivery of the same client order must never create a second sale.
@@ -691,6 +749,28 @@ class PosSyncService
                 ]
             );
             $orderId = (int)Database::lastInsertId();
+
+            if ($customerId > 0) {
+                Database::query(
+                    "INSERT INTO order_customer_links (restaurant_id, order_id, customer_id) VALUES (?, ?, ?)",
+                    [$restaurantId, $orderId, $customerId]
+                );
+                // Award one point per complete PHP 100 on paid POS sales. The unique ledger
+                // key makes the award idempotent per order; open bills earn points when paid.
+                if (!$saveAsOpen) {
+                    $earnedPoints = (int)floor($totalAmount / 100);
+                    if ($earnedPoints > 0) {
+                        Database::query(
+                            "INSERT INTO customer_loyalty_ledger (restaurant_id, customer_id, order_id, entry_type, points) VALUES (?, ?, ?, 'earn', ?)",
+                            [$restaurantId, $customerId, $orderId, $earnedPoints]
+                        );
+                        Database::query(
+                            "UPDATE restaurant_customers SET loyalty_points = loyalty_points + ?, updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ?",
+                            [$earnedPoints, $restaurantId, $customerId]
+                        );
+                    }
+                }
+            }
 
             if ($saveAsOpen && $orderType === 'dine_in' && $tableId !== null) {
                 Database::query(
