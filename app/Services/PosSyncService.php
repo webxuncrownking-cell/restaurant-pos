@@ -169,11 +169,21 @@ class PosSyncService
 
     public static function getOrCreateOfflineLease(int $restaurantId, int $deviceId, int $catalogVersionId): array
     {
+        // A lease signature includes the catalog version ID. Never reuse a
+        // still-active lease issued for a different catalog snapshot.
         $existing = Database::fetchOne(
-            "SELECT * FROM offline_authorization_leases 
-             WHERE restaurant_id = :restaurant_id AND device_id = :device_id AND revoked_at IS NULL AND expires_at > NOW()
+            "SELECT * FROM offline_authorization_leases
+             WHERE restaurant_id = :restaurant_id
+               AND device_id = :device_id
+               AND catalog_version_id = :catalog_version_id
+               AND revoked_at IS NULL
+               AND expires_at > NOW()
              ORDER BY id DESC LIMIT 1",
-            [':restaurant_id' => $restaurantId, ':device_id' => $deviceId]
+            [
+                ':restaurant_id' => $restaurantId,
+                ':device_id' => $deviceId,
+                ':catalog_version_id' => $catalogVersionId
+            ]
         );
 
         if ($existing) {
