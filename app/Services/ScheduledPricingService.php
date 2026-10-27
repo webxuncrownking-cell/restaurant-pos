@@ -4,16 +4,21 @@ namespace App\Services;
 use App\Core\Database;
 final class ScheduledPricingService
 {
+    private static array $timezoneCache = [];
+
     public static function findActiveRule(int $restaurantId, int $productId, ?string $at = null): ?array
     {
         if ($restaurantId <= 0 || $productId <= 0) return null;
         try {
-            $timezoneName = (string)(Database::fetchColumn(
-                "SELECT timezone FROM restaurants WHERE id = ? LIMIT 1",
-                [$restaurantId]
-            ) ?: 'Asia/Manila');
-            try { $timezone = new \DateTimeZone($timezoneName); }
-            catch (\Throwable $ignored) { $timezone = new \DateTimeZone('Asia/Manila'); }
+            if (!isset(self::$timezoneCache[$restaurantId])) {
+                $timezoneName = (string)(Database::fetchColumn(
+                    "SELECT timezone FROM restaurants WHERE id = ? LIMIT 1",
+                    [$restaurantId]
+                ) ?: 'Asia/Manila');
+                try { self::$timezoneCache[$restaurantId] = new \DateTimeZone($timezoneName); }
+                catch (\Throwable $ignored) { self::$timezoneCache[$restaurantId] = new \DateTimeZone('Asia/Manila'); }
+            }
+            $timezone = self::$timezoneCache[$restaurantId];
             $moment = $at !== null
                 ? new \DateTimeImmutable($at, $timezone)
                 : new \DateTimeImmutable('now', $timezone);
