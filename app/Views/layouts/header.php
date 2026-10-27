@@ -1145,6 +1145,83 @@
     html[data-theme="dark"] .app-main .kitchen-ticket,
     html[data-theme="dark"] .app-main .kitchen-stat { transition:none !important; }
 
+
+    /* Final theme correction: white sidebar in light mode, dark surfaces in dark mode. */
+    html[data-theme="light"] .app-sidebar {
+      background:#ffffff !important;
+      color:#334155 !important;
+      border-right:1px solid #d8e0eb !important;
+      box-shadow:6px 0 20px rgba(15,23,42,.055) !important;
+    }
+    html[data-theme="light"] .app-sidebar .app-brand { background:#fff !important; }
+    html[data-theme="light"] .app-sidebar .app-sidebar-context { background:#f3f6fb !important; border-color:#dce4ef !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link { color:#475569 !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link i { color:#52657e !important; opacity:1 !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link.active { background:#e5efff !important; color:#1748a0 !important; }
+    html[data-theme="light"] .app-sidebar .app-nav-link.active i { color:#1d4ed8 !important; }
+    html[data-theme="light"] .app-sidebar .app-sidebar-pos { background:#edf4ff !important; color:#1748a0 !important; }
+
+    /* Kitchen Display uses page-local CSS; explicitly theme its text, controls and footer. */
+    html[data-theme="dark"] .app-main .kitchen-stat-value,
+    html[data-theme="dark"] .app-main .kitchen-ticket-number,
+    html[data-theme="dark"] .app-main .kitchen-item-name,
+    html[data-theme="dark"] .app-main .kitchen-item-line,
+    html[data-theme="dark"] .app-main .kitchen-section-title { color:#edf4ff !important; }
+    html[data-theme="dark"] .app-main .kitchen-ticket-meta,
+    html[data-theme="dark"] .app-main .kitchen-ticket-kicker,
+    html[data-theme="dark"] .app-main .kitchen-item-variant,
+    html[data-theme="dark"] .app-main .kitchen-item-addon,
+    html[data-theme="dark"] .app-main .kitchen-refresh-note { color:#aebed3 !important; }
+    html[data-theme="dark"] .app-main .kitchen-ticket-actions,
+    html[data-theme="dark"] .app-main .kitchen-ticket-note,
+    html[data-theme="dark"] .app-main .kitchen-item-status-row { background:#172337 !important; color:#e5edf9 !important; border-color:#2c3d55 !important; }
+    html[data-theme="dark"] .app-main .kitchen-chip,
+    html[data-theme="dark"] .app-main .kitchen-elapsed,
+    html[data-theme="dark"] .app-main .kitchen-item-status {
+      background:#263750 !important; color:#dce9fb !important; border-color:#405572 !important;
+    }
+    html[data-theme="dark"] .app-main .kitchen-status.status-new { background:#49391b !important; color:#ffdf91 !important; }
+    html[data-theme="dark"] .app-main .kitchen-status.status-preparing { background:#173e70 !important; color:#c5ddff !important; }
+    html[data-theme="dark"] .app-main .kitchen-status.status-ready,
+    html[data-theme="dark"] .app-main .kitchen-status.status-served { background:#124b3a !important; color:#b9f6d9 !important; }
+    html[data-theme="dark"] .app-main .kitchen-delay-badge { background:#4b2026 !important; color:#ffc8c8 !important; border-color:#74333b !important; }
+    html[data-theme="dark"] .app-main .kitchen-ticket-actions .btn-outline-primary,
+    html[data-theme="dark"] .app-main .kitchen-ticket-actions .btn-outline-secondary {
+      background:#1c2b40 !important; color:#d6e5fb !important; border-color:#526985 !important;
+    }
+    html[data-theme="dark"] .app-main .kitchen-ticket-actions .btn-primary {
+      background:#2563eb !important; color:#fff !important; border-color:#4b83f2 !important;
+    }
+    html[data-theme="dark"] .app-main .kitchen-ticket-actions .btn:disabled,
+    html[data-theme="dark"] .app-main .kitchen-ticket-actions .btn.disabled {
+      background:#26354b !important; color:#91a2ba !important; border-color:#3b4b63 !important; opacity:1 !important;
+    }
+
+    /* Open Bills and Split Payments: readable empty states and payment panels. */
+    html[data-theme="dark"] .app-main .bill-empty,
+    html[data-theme="dark"] .app-main .bill-card,
+    html[data-theme="dark"] .app-main .bill-summary-box,
+    html[data-theme="dark"] .app-main .bill-share,
+    html[data-theme="dark"] .app-main .bill-payment-panel { background:#172337 !important; color:#e5edf9 !important; border-color:#2c3d55 !important; }
+    html[data-theme="dark"] .app-main .bill-card-head { background:#1d2b41 !important; color:#edf4ff !important; }
+    html[data-theme="dark"] .app-main .bill-empty .bill-empty-title,
+    html[data-theme="dark"] .app-main .bill-empty strong { color:#edf4ff !important; }
+    html[data-theme="dark"] .app-main .bill-empty p,
+    html[data-theme="dark"] .app-main .bill-meta,
+    html[data-theme="dark"] .app-main .bill-item-meta { color:#aebed3 !important; }
+    html[data-theme="dark"] .app-main .bill-summary-box.due { background:#382d1b !important; color:#ffdf91 !important; border-color:#62502b !important; }
+
+    /* Ensure dark-mode generic white utility classes cannot wash out nested panels. */
+    html[data-theme="dark"] .app-main .bg-white,
+    html[data-theme="dark"] .app-main [style*="background:#fff"],
+    html[data-theme="dark"] .app-main [style*="background: #fff"],
+    html[data-theme="dark"] .app-main [style*="background-color:#fff"],
+    html[data-theme="dark"] .app-main [style*="background-color: #fff"] {
+      background-color:#172337 !important;
+      color:#e5edf9 !important;
+      border-color:#2c3d55 !important;
+    }
+
   </style>
 </head>
 <body>
