@@ -47,7 +47,7 @@
     :root {
       --pos-primary: <?= htmlspecialchars((string)$primaryColor, ENT_QUOTES, 'UTF-8') ?>;
       --pos-secondary: <?= htmlspecialchars((string)$secondaryColor, ENT_QUOTES, 'UTF-8') ?>;
-      --app-sidebar-width: 272px;
+      --app-sidebar-width: 320px;
       --app-ink: #172033;
       --app-muted: #718096;
       --app-line: #e7ebf2;
@@ -269,6 +269,185 @@
       html { scroll-behavior: auto; }
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
     }
+
+    /* ServeFlow shared UI system: consistent controls and roomier navigation. */
+    :root {
+      --app-control-radius: 10px;
+      --app-control-height: 44px;
+      --app-control-border: #d7dfeb;
+      --app-control-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+      --app-focus-ring: 0 0 0 .22rem color-mix(in srgb, var(--pos-primary) 16%, transparent);
+    }
+
+    /* Use one shape, height, type scale, and focus treatment across management pages. */
+    .app-main .btn:not(.btn-close),
+    .app-topbar-pos,
+    .app-sidebar-pos,
+    .app-user-button,
+    .app-mobile-toggle {
+      border-radius: var(--app-control-radius);
+      font-weight: 650;
+      transition: background-color .16s ease, border-color .16s ease, color .16s ease,
+        box-shadow .16s ease, transform .16s ease;
+    }
+    .app-main .btn:not(.btn-close) {
+      min-height: var(--app-control-height);
+      padding: .62rem .95rem;
+      gap: .45rem;
+      line-height: 1.2;
+      box-shadow: none;
+      text-decoration: none;
+    }
+    .app-main .btn.btn-sm:not(.btn-close) {
+      min-height: 36px;
+      padding: .42rem .72rem;
+      font-size: .86rem;
+    }
+    .app-main .btn.btn-lg:not(.btn-close) {
+      min-height: 48px;
+      padding: .78rem 1.15rem;
+    }
+    .app-main .btn.btn-primary,
+    .app-main .btn.btn-success,
+    .app-main .btn.btn-danger,
+    .app-main .btn.btn-warning,
+    .app-main .btn.btn-pos-primary {
+      border-color: transparent;
+      box-shadow: 0 2px 4px rgba(15, 23, 42, .08);
+    }
+    .app-main .btn.btn-primary {
+      background: var(--pos-primary);
+      border-color: var(--pos-primary);
+      color: #fff;
+    }
+    .app-main .btn.btn-primary:hover {
+      filter: brightness(.94);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, .12);
+      transform: translateY(-1px);
+    }
+    .app-main .btn.btn-outline-primary {
+      color: var(--pos-primary);
+      border-color: color-mix(in srgb, var(--pos-primary) 36%, #d7dfeb);
+      background: #fff;
+    }
+    .app-main .btn.btn-outline-primary:hover {
+      color: var(--pos-primary);
+      background: color-mix(in srgb, var(--pos-primary) 7%, white);
+      border-color: var(--pos-primary);
+    }
+    .app-main .btn.btn-outline-secondary,
+    .app-main .btn.btn-secondary {
+      border-color: #d7dfeb;
+    }
+    .app-main .btn:disabled,
+    .app-main .btn.disabled {
+      opacity: .58;
+      box-shadow: none;
+      transform: none;
+      cursor: not-allowed;
+    }
+    .app-main .btn:focus-visible,
+    .app-topbar-pos:focus-visible,
+    .app-sidebar-pos:focus-visible,
+    .app-user-button:focus-visible,
+    .app-mobile-toggle:focus-visible {
+      outline: 0;
+      box-shadow: var(--app-focus-ring);
+    }
+
+    /* Inputs and search fields share the same height, border, padding, and focus state. */
+    .app-main .form-control,
+    .app-main .form-select,
+    .app-main input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]):not([type="button"]),
+    .app-main select,
+    .app-main textarea {
+      border: 1px solid var(--app-control-border);
+      border-radius: var(--app-control-radius);
+      color: #1f2937;
+      background-color: #fff;
+      box-shadow: var(--app-control-shadow);
+      font-size: .94rem;
+      line-height: 1.4;
+      transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+    }
+    .app-main .form-control,
+    .app-main .form-select,
+    .app-main input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="submit"]):not([type="button"]),
+    .app-main select {
+      min-height: var(--app-control-height);
+      padding: .62rem .82rem;
+    }
+    .app-main textarea,
+    .app-main textarea.form-control {
+      min-height: 100px;
+      padding: .75rem .82rem;
+      resize: vertical;
+    }
+    .app-main .form-control::placeholder,
+    .app-main input::placeholder,
+    .app-main textarea::placeholder {
+      color: #8a96a8;
+      opacity: 1;
+    }
+    .app-main .form-control:focus,
+    .app-main .form-select:focus,
+    .app-main input:focus,
+    .app-main select:focus,
+    .app-main textarea:focus {
+      border-color: color-mix(in srgb, var(--pos-primary) 70%, white);
+      box-shadow: var(--app-focus-ring);
+      outline: 0;
+    }
+    .app-main input[type="checkbox"],
+    .app-main input[type="radio"] {
+      accent-color: var(--pos-primary);
+    }
+    .app-main .input-group > .form-control,
+    .app-main .input-group > .form-select,
+    .app-main .input-group > .btn {
+      min-height: var(--app-control-height);
+    }
+
+    /* Search forms should stay compact instead of stretching awkwardly on wide screens. */
+    .app-main form[method="get"],
+    .app-main form[method="GET"] {
+      align-items: center;
+    }
+    .app-main form[method="get"] input[name="q"],
+    .app-main form[method="GET"] input[name="q"] {
+      flex: 1 1 260px;
+      width: 1%;
+      min-width: 180px;
+    }
+    .app-main form[method="get"] button,
+    .app-main form[method="GET"] button {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    /* A little more room for long menu names; keep mobile navigation inside the viewport. */
+    .app-sidebar { padding-left: 17px; padding-right: 17px; }
+    .app-brand { gap: 12px; padding-left: 7px; padding-right: 7px; }
+    .app-brand-mark { flex-basis: 45px; width: 45px; height: 45px; }
+    .app-nav-link { gap: 13px; padding-left: 13px; padding-right: 13px; }
+    .app-nav-link span { overflow-wrap: anywhere; }
+    .app-main { min-width: 0; }
+    @media (max-width: 991.98px) {
+      :root { --app-sidebar-width: 320px; }
+      .app-sidebar { width: min(var(--app-sidebar-width), calc(100vw - 32px)); }
+    }
+    @media (max-width: 575.98px) {
+      .app-main form[method="get"],
+      .app-main form[method="GET"] {
+        width: 100%;
+        min-width: 0;
+      }
+      .app-main form[method="get"] input[name="q"],
+      .app-main form[method="GET"] input[name="q"] {
+        min-width: 0;
+      }
+    }
+
   </style>
 </head>
 <body>
