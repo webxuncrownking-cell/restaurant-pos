@@ -1164,7 +1164,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       container.innerHTML = filtered.map(p => {
         const hasVariants = p.variants && p.variants.length > 0;
         const hasAddons = p.addon_groups && p.addon_groups.length > 0;
-        const price = parseFloat(p.base_price || 0);
+        const price = parseFloat(p.scheduled_base_price ?? p.base_price ?? 0);
         const imageUrl = typeof p.image_url === 'string' ? p.image_url : '';
 
         return `
@@ -1204,7 +1204,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           name: p.name,
           variant_id: null,
           variant_name: null,
-          unit_price: parseFloat(p.base_price),
+          unit_price: parseFloat(p.scheduled_base_price ?? p.base_price),
           addons: []
         });
       } else {
@@ -1216,7 +1216,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     openCustomModal(product) {
       this.activeItemForModal = product;
       document.getElementById('modalProductName').textContent = product.name;
-      document.getElementById('modalProductBasePrice').textContent = `Base: ₱${parseFloat(product.base_price).toFixed(2)}`;
+      document.getElementById('modalProductBasePrice').textContent = `Base: ₱${parseFloat(product.scheduled_base_price ?? product.base_price).toFixed(2)}`;
 
       // Variants
       const vSec = document.getElementById('modalVariantSection');
@@ -1270,7 +1270,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 
     calcModalTotal() {
       if (!this.activeItemForModal) return;
-      let total = parseFloat(this.activeItemForModal.base_price || 0);
+      let total = parseFloat(this.activeItemForModal.scheduled_base_price ?? this.activeItemForModal.base_price ?? 0);
 
       const selVar = document.querySelector('input[name="modal_variant"]:checked');
       if (selVar) {
@@ -1304,7 +1304,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         });
       });
 
-      const unitPrice = parseFloat(p.base_price) + varPrice + addons.reduce((sum, item) => sum + item.price, 0);
+      const unitPrice = parseFloat(p.scheduled_base_price ?? p.base_price) + varPrice + addons.reduce((sum, item) => sum + item.price, 0);
 
       this.addToTicket({
         product_id: p.id,
