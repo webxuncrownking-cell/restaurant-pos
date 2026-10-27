@@ -147,6 +147,41 @@ class ReportService
         );
     }
 
+    /**
+     * Simple explainable menu demand estimate from paid historical orders.
+     * Uses calendar days in the selected period, including zero-sales days.
+     */
+    public static function getProductDemandForecast(int $restaurantId, string $startDate, string $endDate, int $limit = 10): array
+    {
+        $limit = max(1, min(50, $limit));
+        $start = new \\DateTimeImmutable($startDate);
+        $end = new \\DateTimeImmutable($endDate);
+        $calendarDays = max(1, (int)$start->diff($end)->days + 1);
+        $rows = Database::fetchAll(
+            "SELECT oi.product_id, oi.product_name AS item_name,
+                    COALESCE(SUM(oi.quantity), 0) AS units_sold,
+                    COUNT(DISTINCT DATE(o.created_at)) AS active_sales_days
+             FROM order_items oi
+             JOIN orders o ON o.restaurant_id = oi.restaurant_id AND o.id = oi.order_id
+             WHERE oi.restaurant_id = ?
+               AND o.order_status <> 'cancelled'
+               AND o.payment_status = 'paid'
+               AND DATE(o.created_at) BETWEEN ? AND ?
+             GROUP BY oi.product_id, oi.product_name
+             ORDER BY units_sold DESC
+             LIMIT {$limit}",
+            [$restaurantId, $startDate, $endDate]
+        );
+        foreach ($rows as &$row) {
+            $units = (float)($row['units_sold'] ?? 0);
+            $row['calendar_days_used'] = $calendarDays;
+            $row['average_daily_units'] = round($units / $calendarDays, 2);
+            $row['estimated_next_7_days_units'] = round(($units / $calendarDays) * 7, 1);
+        }
+        unset($row);
+        return $rows;
+    }
+
     public static function getProductProfitability(int $restaurantId, string $startDate, string $endDate): array
     {
         $rows = self::getTopSellingProducts($restaurantId, 100, $startDate, $endDate);
