@@ -30,6 +30,26 @@ class ReportController
         $cashierStats = ReportService::getCashierPerformance($restaurantId, $startDate, $endDate);
         $adjustments = ReportService::getFinancialAdjustments($restaurantId, $startDate, $endDate);
         $shiftReconciliation = ReportService::getShiftReconciliation($restaurantId, $startDate, $endDate);
+        // Expense tracking is an optional module on existing installations.
+        // Keep the reports page usable before its table has been prepared.
+        $expenseSummary = ['total' => 0.0, 'count' => 0, 'available' => false];
+        try {
+            $expenseRow = \\App\\Core\\Database::fetchOne(
+                "SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS entries
+                 FROM restaurant_expenses
+                 WHERE restaurant_id = ? AND status = 'active' AND expense_date BETWEEN ? AND ?",
+                [$restaurantId, $startDate, $endDate]
+            );
+            if (is_array($expenseRow)) {
+                $expenseSummary = [
+                    'total' => (float)($expenseRow['total'] ?? 0),
+                    'count' => (int)($expenseRow['entries'] ?? 0),
+                    'available' => true
+                ];
+            }
+        } catch (\\Throwable $ignored) {
+            // Table not created yet; expense total remains unavailable, not zero sales.
+        }
 
         Response::render('reports/index', [
             'startDate' => $startDate,
@@ -41,7 +61,8 @@ class ReportController
             'profitability' => $profitability,
             'cashierStats' => $cashierStats,
             'adjustments' => $adjustments,
-            'shiftReconciliation' => $shiftReconciliation
+            'shiftReconciliation' => $shiftReconciliation,
+            'expenseSummary' => $expenseSummary
         ]);
     }
 
