@@ -147,6 +147,32 @@
     <div class="alert alert-light border mb-4"><strong>Sales estimate unavailable.</strong> More recorded sales days are needed. The estimate appears after at least five daily sales records in the selected date range.</div>
   <?php endif; ?>
 
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 py-3">
+      <h5 class="fw-bold mb-1"><i class="bi bi-basket text-primary me-2"></i>Menu Demand Estimate</h5>
+      <p class="text-muted small mb-0">Estimated next-seven-day unit demand using paid sales across every calendar day in the selected date range, including days with no sales. Use this as a planning baseline, not a guarantee.</p>
+    </div>
+    <div class="card-body pt-0">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead class="table-light"><tr><th>Menu item</th><th class="text-end">Units sold</th><th class="text-end">Avg. units/day</th><th class="text-end">Est. next 7 days</th></tr></thead>
+          <tbody>
+          <?php if (empty($demandForecast)): ?>
+            <tr><td colspan="4" class="text-center text-muted py-3">No paid menu-item sales found in this date range.</td></tr>
+          <?php else: foreach ($demandForecast as $demand): ?>
+            <tr>
+              <td><?= htmlspecialchars((string)$demand['item_name'], ENT_QUOTES, 'UTF-8') ?></td>
+              <td class="text-end"><?= number_format((float)$demand['units_sold'], 1) ?></td>
+              <td class="text-end"><?= number_format((float)$demand['average_daily_units'], 2) ?></td>
+              <td class="text-end fw-semibold"><?= number_format((float)$demand['estimated_next_7_days_units'], 1) ?></td>
+            </tr>
+          <?php endforeach; endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- Visual Charts Section -->
   <div class="row g-4 mb-4">
     <!-- Daily Revenue Trend (Line Chart) -->
