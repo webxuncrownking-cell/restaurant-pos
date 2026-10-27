@@ -47,7 +47,7 @@
     :root {
       --pos-primary: <?= htmlspecialchars((string)$primaryColor, ENT_QUOTES, 'UTF-8') ?>;
       --pos-secondary: <?= htmlspecialchars((string)$secondaryColor, ENT_QUOTES, 'UTF-8') ?>;
-      --app-sidebar-width: 320px;
+      --app-sidebar-width: 352px;
       --app-ink: #172033;
       --app-muted: #718096;
       --app-line: #e7ebf2;
@@ -433,7 +433,7 @@
     .app-nav-link span { overflow-wrap: anywhere; }
     .app-main { min-width: 0; }
     @media (max-width: 991.98px) {
-      :root { --app-sidebar-width: 320px; }
+      :root { --app-sidebar-width: 352px; }
       .app-sidebar { width: min(var(--app-sidebar-width), calc(100vw - 32px)); }
     }
     @media (max-width: 575.98px) {
