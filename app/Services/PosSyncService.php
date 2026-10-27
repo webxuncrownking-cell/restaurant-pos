@@ -322,17 +322,30 @@ class PosSyncService
         }
 
         $customerId = (int)($orderPayload['customer_id'] ?? 0);
-        if ($customerId < 0) {
-            throw new InvalidArgumentException('The selected customer is invalid.');
+        $redeemPointsRaw = $orderPayload['loyalty_redeem_points'] ?? 0;
+        if ($customerId < 0 || !is_numeric($redeemPointsRaw) || !is_finite((float)$redeemPointsRaw)) {
+            throw new InvalidArgumentException('The selected customer or loyalty redemption is invalid.');
         }
+        $redeemPoints = (int)$redeemPointsRaw;
+        if ((float)$redeemPointsRaw !== (float)$redeemPoints || $redeemPoints < 0 || $redeemPoints > 1000000 || ($redeemPoints > 0 && $redeemPoints % 100 !== 0)) {
+            throw new InvalidArgumentException('Loyalty redemption must use increments of 100 points.');
+        }
+        if ($redeemPoints > 0 && $customerId <= 0) {
+            throw new InvalidArgumentException('Select a customer before redeeming loyalty points.');
+        }
+        $customerPointsAvailable = 0;
         if ($customerId > 0) {
             self::ensureCustomerLinkSchema();
             $customer = Database::fetchOne(
-                "SELECT id FROM restaurant_customers WHERE restaurant_id = ? AND id = ? LIMIT 1",
+                "SELECT id, loyalty_points FROM restaurant_customers WHERE restaurant_id = ? AND id = ? LIMIT 1",
                 [$restaurantId, $customerId]
             );
             if (!$customer) {
                 throw new InvalidArgumentException('The selected customer does not belong to this restaurant.');
+            }
+            $customerPointsAvailable = (int)$customer['loyalty_points'];
+            if ($redeemPoints > $customerPointsAvailable) {
+                throw new InvalidArgumentException('The customer does not have enough loyalty points for this redemption.');
             }
         }
 
@@ -390,6 +403,9 @@ class PosSyncService
 
         $tableId = !empty($orderPayload['table_id']) ? (int)$orderPayload['table_id'] : null;
         $saveAsOpen = ($orderPayload['save_as_open'] ?? false) === true;
+        if ($saveAsOpen && $redeemPoints > 0) {
+            throw new InvalidArgumentException('Loyalty points can only be redeemed on an immediately paid sale.');
+        }
         if ($saveAsOpen && ($orderType !== 'dine_in' || $tableId === null)) {
             throw new InvalidArgumentException('Open unpaid tickets require a selected dine-in table.');
         }
@@ -710,6 +726,10 @@ class PosSyncService
         if ($discountAmount < 0 || $discountAmount > $subtotal) {
             throw new InvalidArgumentException('The order discount must be between zero and the subtotal.');
         }
+        $requiredLoyaltyDiscount = ($redeemPoints / 100) * 5;
+        if ($redeemPoints > 0 && ($requiredLoyaltyDiscount <= 0 || $discountAmount + 0.009 < $requiredLoyaltyDiscount)) {
+            throw new InvalidArgumentException('The order discount does not include the selected loyalty redemption value.');
+        }
 
         $totalAmount = round($subtotal - $discountAmount, 2);
         // The POS displays VAT as included in the post-discount amount.
@@ -812,8 +832,22 @@ class PosSyncService
                     "INSERT INTO order_customer_links (restaurant_id, order_id, customer_id) VALUES (?, ?, ?)",
                     [$restaurantId, $orderId, $customerId]
                 );
-                // Award one point per complete PHP 100 on paid POS sales. The unique ledger
-                // key makes the award idempotent per order; open bills earn points when paid.
+                if ($redeemPoints > 0) {
+                    $redeemUpdate = Database::query(
+                        "UPDATE restaurant_customers SET loyalty_points = loyalty_points - ?, updated_at = CURRENT_TIMESTAMP
+                         WHERE restaurant_id = ? AND id = ? AND loyalty_points >= ?",
+                        [$redeemPoints, $restaurantId, $customerId, $redeemPoints]
+                    );
+                    if ($redeemUpdate->rowCount() !== 1) {
+                        throw new InvalidArgumentException('The customer loyalty balance changed. Refresh the customer balance and retry.');
+                    }
+                    Database::query(
+                        "INSERT INTO customer_loyalty_ledger (restaurant_id, customer_id, order_id, entry_type, points) VALUES (?, ?, ?, 'redeem', ?)",
+                        [$restaurantId, $customerId, $orderId, -$redeemPoints]
+                    );
+                }
+                // Award one point per complete PHP 100 on the post-discount paid amount.
+                // Unique ledger entries make earning and redemption idempotent per order.
                 if (!$saveAsOpen) {
                     $earnedPoints = (int)floor($totalAmount / 100);
                     if ($earnedPoints > 0) {
