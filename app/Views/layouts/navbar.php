@@ -12,6 +12,7 @@ $navGroups = [
     ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
     ['label' => 'Menu Management', 'route' => '/menu', 'icon' => 'bi-journal-richtext'],
     ['label' => 'Scheduled Menu Pricing', 'route' => '/pricing', 'icon' => 'bi-clock-history'],
+    ['label' => 'Customer CRM', 'route' => '/customers', 'icon' => 'bi-people'],
     ['label' => 'Inventory', 'route' => '/inventory', 'icon' => 'bi-box-seam'],
     ['label' => 'Expiry & Wastage Tracking', 'route' => '/expiry', 'icon' => 'bi-calendar2-x'],
     ['label' => 'Suppliers & Purchase Orders', 'route' => '/procurement', 'icon' => 'bi-truck'],
@@ -38,6 +39,7 @@ $navGroups = [
 $navPermissionMap = [
   '/menu' => 'menu.manage_catalog',
   '/pricing' => 'menu.manage_catalog',
+  '/customers' => 'reports.view_sales',
   '/inventory' => 'inventory.view_stock',
   '/expiry' => 'inventory.adjust',
   '/procurement' => 'inventory.stock_in',
