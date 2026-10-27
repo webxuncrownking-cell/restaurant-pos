@@ -1943,6 +1943,25 @@ include APP_ROOT . '/app/Views/layouts/header.php';
             Number(result.server_order_id) > 0
           ) {
             await window.PosDB.markOrderSynced(result.client_uuid, result.server_order_id);
+            if (Number.isFinite(Number(result.loyalty_points_earned)) && Number.isFinite(Number(result.loyalty_points_redeemed))) {
+              const queuedOrder = pending.find(order => order && order.client_uuid === result.client_uuid);
+              const customerId = Number(result.customer_id || (queuedOrder && queuedOrder.customer_id) || 0);
+              const customer = this.customers.find(item => Number(item.id) === customerId);
+              if (customer && customerId > 0) {
+                customer.loyalty_points = Math.max(0,
+                  Number(customer.loyalty_points || 0) +
+                  Number(result.loyalty_points_earned || 0) -
+                  Number(result.loyalty_points_redeemed || 0)
+                );
+                const customerSelect = document.getElementById('posCustomerSelect');
+                const option = customerSelect ? Array.from(customerSelect.options).find(item => Number(item.value) === customerId) : null;
+                if (option) {
+                  const phone = customer.phone ? ' · ' + customer.phone : '';
+                  option.textContent = customer.full_name + phone + ' · ' + customer.loyalty_points + ' pts';
+                }
+                this.renderLoyaltyOptions();
+              }
+            }
           } else {
             console.error('[POS Sync] An order was not acknowledged by the server:', result);
           }
