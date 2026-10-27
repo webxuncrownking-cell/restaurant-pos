@@ -1186,6 +1186,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       container.innerHTML = filtered.map(p => {
         const hasVariants = p.variants && p.variants.length > 0;
         const hasAddons = p.addon_groups && p.addon_groups.length > 0;
+        const isCombo = Array.isArray(p.combo_components) && p.combo_components.length >= 2;
         const price = parseFloat(p.scheduled_base_price ?? p.base_price ?? 0);
         const imageUrl = typeof p.image_url === 'string' ? p.image_url : '';
 
@@ -1198,9 +1199,10 @@ include APP_ROOT . '/app/Views/layouts/header.php';
                   : `<div class="product-image-wrap is-fallback"><i class="bi bi-image" aria-hidden="true"></i></div>`}
                 <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
                   <span class="product-category-tag">${p.category_name || 'Menu item'}</span>
-                  ${hasVariants || hasAddons ? '<span class="product-custom-tag badge">Custom</span>' : ''}
+                  ${isCombo ? '<span class="product-custom-tag badge">Combo</span>' : (hasVariants || hasAddons ? '<span class="product-custom-tag badge">Custom</span>' : '')}
                 </div>
                 <h6 class="product-title fw-bold mb-0">${p.name}</h6>
+                ${isCombo ? `<div class="small text-muted mt-1">${p.combo_components.map(c => `${c.name} × ${c.quantity}`).join(' · ')}</div>` : ''}
               </div>
               <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                 <span class="product-price">₱${price.toFixed(2)}</span>
@@ -1227,7 +1229,8 @@ include APP_ROOT . '/app/Views/layouts/header.php';
           variant_id: null,
           variant_name: null,
           unit_price: parseFloat(p.scheduled_base_price ?? p.base_price),
-          addons: []
+          addons: [],
+          combo_components: Array.isArray(p.combo_components) ? p.combo_components : []
         });
       } else {
         // Open drawer modal
@@ -1334,7 +1337,8 @@ include APP_ROOT . '/app/Views/layouts/header.php';
         variant_id: variantId,
         variant_name: variantName,
         unit_price: unitPrice,
-        addons: addons
+        addons: addons,
+        combo_components: Array.isArray(p.combo_components) ? p.combo_components : []
       });
 
       bootstrap.Modal.getInstance(document.getElementById('variantModal')).hide();
@@ -1440,6 +1444,9 @@ include APP_ROOT . '/app/Views/layouts/header.php';
       container.innerHTML = this.ticket.map((item, index) => {
         const itemTotal = item.unit_price * item.quantity;
         const addonsText = item.addons.map(a => `+ ${a.name}`).join(', ');
+        const comboText = Array.isArray(item.combo_components) && item.combo_components.length
+          ? item.combo_components.map(c => `${c.name} × ${c.quantity}`).join(', ')
+          : '';
 
         return `
           <div class="ticket-item-card">
@@ -1448,6 +1455,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
                 <strong class="ticket-item-name d-block">${item.name}</strong>
                 ${item.variant_name ? `<span class="badge bg-light text-secondary border mt-1">${item.variant_name}</span>` : ''}
                 ${addonsText ? `<div class="ticket-addon-text mt-1">${addonsText}</div>` : ''}
+                ${comboText ? `<div class="small text-primary mt-1">Combo: ${comboText}</div>` : ''}
                 <div class="ticket-item-meta font-monospace mt-2">₱${item.unit_price.toFixed(2)} each</div>
               </div>
               <span class="ticket-item-price font-monospace">₱${itemTotal.toFixed(2)}</span>
