@@ -55,6 +55,32 @@ class PosSyncService
         self::$customerLinkSchemaReady = true;
     }
 
+    private static function getLoyaltySyncMetadata(int $restaurantId, int $orderId): array
+    {
+        $metadata = ['customer_id' => null, 'loyalty_points_earned' => 0, 'loyalty_points_redeemed' => 0];
+        try {
+            $link = Database::fetchOne(
+                "SELECT customer_id FROM order_customer_links WHERE restaurant_id = ? AND order_id = ? LIMIT 1",
+                [$restaurantId, $orderId]
+            );
+            if (!$link) return $metadata;
+            $metadata['customer_id'] = (int)$link['customer_id'];
+            $entries = Database::fetchAll(
+                "SELECT entry_type, COALESCE(SUM(points), 0) AS points
+                 FROM customer_loyalty_ledger
+                 WHERE restaurant_id = ? AND order_id = ? GROUP BY entry_type",
+                [$restaurantId, $orderId]
+            );
+            foreach ($entries as $entry) {
+                if (($entry['entry_type'] ?? '') === 'earn') $metadata['loyalty_points_earned'] = max(0, (int)$entry['points']);
+                if (($entry['entry_type'] ?? '') === 'redeem') $metadata['loyalty_points_redeemed'] = abs((int)$entry['points']);
+            }
+        } catch (\Throwable $ignored) {
+            // Existing orders may predate customer/loyalty tables.
+        }
+        return $metadata;
+    }
+
     /**
      * Get or create the latest immutable catalog snapshot version
      */
@@ -362,7 +388,10 @@ class PosSyncService
                 'status' => 'already_synced',
                 'server_order_id' => (int)$existingOrder['id'],
                 'order_number' => $existingOrder['order_number'],
-                'client_uuid' => $clientUuid
+                'client_uuid' => $clientUuid,
+                'total_amount' => (float)($existingOrder['total_amount'] ?? 0),
+                'payment_status' => (string)($existingOrder['payment_status'] ?? ''),
+                ...self::getLoyaltySyncMetadata($restaurantId, (int)$existingOrder['id'])
             ];
         }
 
@@ -1074,7 +1103,10 @@ class PosSyncService
                 'status' => 'synced',
                 'server_order_id' => $orderId,
                 'order_number' => $orderNumber,
-                'client_uuid' => $clientUuid
+                'client_uuid' => $clientUuid,
+                'total_amount' => $totalAmount,
+                'payment_status' => $saveAsOpen ? 'unpaid' : 'paid',
+                ...self::getLoyaltySyncMetadata($restaurantId, $orderId)
             ];
         } catch (\Throwable $e) {
             Database::rollBack();
