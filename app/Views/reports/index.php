@@ -111,6 +111,26 @@
     </div>
   </div>
 
+  <!-- Explainable predictive/decision-support insights from existing sales and cost snapshots -->
+  <section class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 py-3">
+      <h5 class="fw-bold mb-1"><i class="bi bi-lightbulb text-warning me-2"></i>Business Insights</h5>
+      <p class="text-muted small mb-0">Rule-based indicators from this tenant's sales, menu margins, and recorded expenses. These are guidance signals, not guaranteed forecasts.</p>
+    </div>
+    <div class="card-body pt-0">
+      <div class="row g-3">
+        <?php foreach (($insights ?? []) as $insight): ?>
+          <div class="col-12 col-lg-4">
+            <div class="border rounded-3 p-3 h-100">
+              <div class="fw-semibold mb-1"><span class="badge text-bg-<?= htmlspecialchars((string)($insight['type'] ?? 'info'), ENT_QUOTES, 'UTF-8') ?> me-1"><?= htmlspecialchars(strtoupper((string)($insight['type'] ?? 'info')), ENT_QUOTES, 'UTF-8') ?></span><?= htmlspecialchars((string)($insight['title'] ?? 'Insight'), ENT_QUOTES, 'UTF-8') ?></div>
+              <p class="small text-muted mb-0"><?= htmlspecialchars((string)($insight['detail'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>
+            </div>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    </div>
+  </section>
+
   <!-- Visual Charts Section -->
   <div class="row g-4 mb-4">
     <!-- Daily Revenue Trend (Line Chart) -->
