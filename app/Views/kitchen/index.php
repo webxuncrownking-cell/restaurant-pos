@@ -97,12 +97,12 @@ ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
   .kitchen-item-name { color:#243047; font-size:.84rem; font-weight:800; line-height:1.35; overflow-wrap:anywhere; }
   .kitchen-item-variant { color:#728096; font-weight:650; font-size:.74rem; margin-top:3px; }
   .kitchen-item-addon { font-size:.72rem; color:#5c6f8b; margin-top:5px; }
-  .kitchen-item-status-row { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin:8px 0 0 38px; }
+  .kitchen-item-status-row { display:flex; flex-wrap:wrap; align-items:center; gap:9px; margin:9px 0 0 38px; }
   .kitchen-item-status { display:inline-flex; align-items:center; border-radius:7px; padding:4px 7px; font-size:.65rem; font-weight:800; background:#f1f5f9; color:#64748b; }
   .kitchen-item-status.preparing { background:#eaf2ff; color:#1d4ed8; }
   .kitchen-item-status.ready { background:#dff9ed; color:#047857; }
   .kitchen-item-status.served { background:#eef1f5; color:#5b6474; }
-  .kitchen-item-status-row .btn { font-size:.67rem; padding:4px 7px; }
+  .kitchen-item-status-row .btn { font-size:.9rem; padding:8px 13px; min-height:42px; border-radius:9px; font-weight:700; }
   .kitchen-item-note { margin:7px 0 0 38px; color:#8a4b07; font-size:.75rem; background:#fff8e8; border-radius:8px; border:1px solid #fae3b0; padding:7px 9px; overflow-wrap:anywhere; }
   .kitchen-ticket-note { margin:0 16px 14px; border-left:3px solid #d8e3f1; padding:3px 0 3px 10px; color:#68768a; font-size:.76rem; overflow-wrap:anywhere; }
   .kitchen-ticket-actions { display:flex; flex-wrap:wrap; gap:8px; padding:13px 16px 16px; border-top:1px solid #edf1f6; background:#fbfcfe; }
@@ -137,7 +137,7 @@ ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
   .kitchen-qty { font-size: 1.05rem; min-width: 34px; }
   .kitchen-item-name { font-size: 1.05rem; line-height: 1.4; }
   .kitchen-item-variant, .kitchen-item-addon, .kitchen-item-note { font-size: .9rem; line-height: 1.5; }
-  .kitchen-item-status { min-height: 42px; font-size: .9rem; }
+  .kitchen-item-status { min-height: 42px; padding:8px 12px; font-size: .9rem; line-height:1.25; border-radius:9px; }
   .kitchen-ticket-note { font-size: .92rem; line-height: 1.5; }
   .kitchen-ticket-actions .btn { min-height: 44px; font-size: .94rem; }
   .kitchen-filter:focus-visible, .kitchen-station-filter:focus-visible,
