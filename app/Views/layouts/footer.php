@@ -34,9 +34,11 @@
       }
     };
     applyTheme(savedTheme);
-    if (savedCollapse && window.innerWidth > 991) document.body.classList.add('sidebar-collapsed');
+    if (savedCollapse) root.setAttribute('data-sidebar-collapsed', 'true');
+    else root.removeAttribute('data-sidebar-collapsed');
+    document.body.classList.toggle('sidebar-collapsed', savedCollapse && window.innerWidth > 991);
     const updateCollapseToggle = () => {
-      const collapsed = document.body.classList.contains('sidebar-collapsed');
+      const collapsed = root.getAttribute('data-sidebar-collapsed') === 'true';
       if (!collapseToggle) return;
       collapseToggle.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
       collapseToggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
@@ -45,7 +47,10 @@
     };
     updateCollapseToggle();
     collapseToggle?.addEventListener('click', () => {
-      const collapsed = document.body.classList.toggle('sidebar-collapsed');
+      const collapsed = root.getAttribute('data-sidebar-collapsed') !== 'true';
+      if (collapsed) root.setAttribute('data-sidebar-collapsed', 'true');
+      else root.removeAttribute('data-sidebar-collapsed');
+      document.body.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth > 991);
       try { localStorage.setItem('serveflow-sidebar-collapsed', collapsed ? '1' : '0'); } catch (error) {}
       updateCollapseToggle();
     });
@@ -81,7 +86,13 @@
       if (event.key === 'Escape') closeSidebar();
     });
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 991) closeSidebar();
+      if (window.innerWidth > 991) {
+        closeSidebar();
+        document.body.classList.toggle('sidebar-collapsed', root.getAttribute('data-sidebar-collapsed') === 'true');
+      } else {
+        document.body.classList.remove('sidebar-collapsed');
+      }
+      updateCollapseToggle();
     });
 
     // Automatically inject the CSRF token into state-changing Fetch requests.
