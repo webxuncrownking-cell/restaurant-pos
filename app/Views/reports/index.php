@@ -25,6 +25,7 @@
         <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=profitability&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Profitability CSV</a>
         <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=cashiers&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Cashiers CSV</a>
         <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=reconciliation&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Shifts CSV</a>
+        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=expenses&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Expenses CSV</a>
       </div>
     </div>
   </div>
