@@ -11,6 +11,7 @@ $navGroups = [
   'Workspace' => [
     ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
     ['label' => 'Menu Management', 'route' => '/menu', 'icon' => 'bi-journal-richtext'],
+    ['label' => 'Combo Meals', 'route' => '/combos', 'icon' => 'bi-boxes'],
     ['label' => 'Scheduled Menu Pricing', 'route' => '/pricing', 'icon' => 'bi-clock-history'],
     ['label' => 'Customer CRM', 'route' => '/customers', 'icon' => 'bi-people'],
     ['label' => 'Inventory', 'route' => '/inventory', 'icon' => 'bi-box-seam'],
@@ -38,6 +39,7 @@ $navGroups = [
 // Hiding a link is only the UI layer; controllers must continue enforcing access too.
 $navPermissionMap = [
   '/menu' => 'menu.manage_catalog',
+  '/combos' => 'menu.manage_catalog',
   '/pricing' => 'menu.manage_catalog',
   '/customers' => 'reports.view_sales',
   '/inventory' => 'inventory.view_stock',
