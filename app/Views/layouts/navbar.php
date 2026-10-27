@@ -167,14 +167,14 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
     </div>
   </aside>
 
+  <button type="button" class="app-sidebar-collapse-toggle" id="appSidebarCollapseToggle" aria-label="Collapse sidebar" aria-controls="appSidebar" aria-pressed="false" title="Collapse sidebar">
+    <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
+  </button>
   <button type="button" class="app-sidebar-backdrop" id="appSidebarBackdrop" aria-label="Close navigation menu"></button>
 
   <main class="app-main">
     <header class="app-topbar">
       <div class="app-topbar-left">
-        <button type="button" class="app-sidebar-collapse-toggle" id="appSidebarCollapseToggle" aria-label="Collapse sidebar" aria-controls="appSidebar" aria-pressed="false" title="Collapse sidebar">
-          <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
-        </button>
         <button type="button" class="app-mobile-toggle" id="appSidebarToggle" aria-label="Open navigation menu" aria-controls="appSidebar" aria-expanded="false">
           <i class="bi bi-list" aria-hidden="true"></i>
         </button>
@@ -185,9 +185,13 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
       </div>
 
       <div class="app-topbar-actions">
-        <button type="button" class="app-theme-toggle" id="appThemeToggle" aria-label="Switch to dark mode" title="Switch to dark mode">
-          <i class="bi bi-moon-stars" aria-hidden="true"></i><span class="d-none d-md-inline">Dark mode</span>
-        </button>
+        <label class="app-theme-switch" for="appThemeToggle" title="Switch between light and dark appearance">
+          <i class="bi bi-sun" aria-hidden="true"></i>
+          <input type="checkbox" id="appThemeToggle" role="switch" aria-label="Dark mode" aria-checked="false">
+          <span class="app-theme-switch-track" aria-hidden="true"></span>
+          <span class="app-theme-switch-label">Dark mode</span>
+          <i class="bi bi-moon-stars" aria-hidden="true"></i>
+        </label>
         <span class="status-pill app-connectivity"><span class="context-dot" aria-hidden="true"></span> Online</span>
         <?php if ($restaurant): ?>
           <?php if ($isSubValid): ?>
