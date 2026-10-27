@@ -51,6 +51,51 @@ class ReportController
             // Table not created yet; expense total remains unavailable, not zero sales.
         }
 
+        // Explainable sales insights from existing tenant-scoped report data (no external AI service).
+        $insights = [];
+        $dailyValues = array_map(static fn(array $row): float => (float)($row['daily_revenue'] ?? 0), $dailyTrend);
+        $dailyCount = count($dailyValues);
+        if ($dailyCount >= 4) {
+            $mid = (int)floor($dailyCount / 2);
+            $older = array_slice($dailyValues, 0, $mid);
+            $recent = array_slice($dailyValues, $mid);
+            $olderAvg = array_sum($older) / max(1, count($older));
+            $recentAvg = array_sum($recent) / max(1, count($recent));
+            if ($olderAvg > 0) {
+                $change = (($recentAvg - $olderAvg) / $olderAvg) * 100;
+                $insights[] = [
+                    'type' => $change >= 0 ? 'success' : 'warning',
+                    'title' => $change >= 0 ? 'Sales trend is improving' : 'Sales trend is softening',
+                    'detail' => 'Average revenue on the later recorded sales days is ' . number_format(abs($change), 1) . '% ' . ($change >= 0 ? 'higher' : 'lower') . ' than the earlier days in this selected period.'
+                ];
+            }
+        }
+        $lowMarginItems = array_values(array_filter($profitability, static fn(array $item): bool => (float)($item['total_revenue'] ?? 0) > 0 && (float)($item['gross_margin_pct'] ?? 0) < 25));
+        if ($lowMarginItems) {
+            usort($lowMarginItems, static fn(array $a, array $b): int => (float)$a['gross_margin_pct'] <=> (float)$b['gross_margin_pct']);
+            $item = $lowMarginItems[0];
+            $insights[] = [
+                'type' => 'warning',
+                'title' => 'Review a low-margin menu item',
+                'detail' => (string)$item['item_name'] . ' has an estimated gross margin of ' . number_format((float)$item['gross_margin_pct'], 1) . '%. Review ingredient costs, portion sizes, and selling price.'
+            ];
+        }
+        if (!empty($expenseSummary['available']) && (float)$kpis['gross_sales'] > 0) {
+            $expenseRatio = ((float)$expenseSummary['total'] / (float)$kpis['gross_sales']) * 100;
+            $insights[] = [
+                'type' => $expenseRatio >= 30 ? 'warning' : 'info',
+                'title' => 'Operating expense share',
+                'detail' => 'Recorded operating expenses are ' . number_format($expenseRatio, 1) . '% of gross sales for this period. This is a monitoring indicator, not a net-profit calculation.'
+            ];
+        }
+        if (!$insights) {
+            $insights[] = [
+                'type' => 'info',
+                'title' => 'More sales history needed',
+                'detail' => 'Record more paid orders and menu cost data to generate useful trend and margin indicators for this period.'
+            ];
+        }
+
         Response::render('reports/index', [
             'startDate' => $startDate,
             'endDate' => $endDate,
