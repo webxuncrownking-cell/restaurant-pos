@@ -40,9 +40,7 @@ class PosSyncService
                 customer_id BIGINT UNSIGNED NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY uq_order_customer (restaurant_id, order_id),
                 KEY idx_customer_orders (restaurant_id, customer_id),
-                CONSTRAINT fk_order_customer_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
-                CONSTRAINT fk_order_customer_order FOREIGN KEY (restaurant_id, order_id) REFERENCES orders(restaurant_id, id) ON DELETE CASCADE,
-                CONSTRAINT fk_order_customer_customer FOREIGN KEY (restaurant_id, customer_id) REFERENCES restaurant_customers(restaurant_id, id) ON DELETE CASCADE
+                CONSTRAINT fk_order_customer_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
             $pdo->exec("CREATE TABLE IF NOT EXISTS customer_loyalty_ledger (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -51,9 +49,7 @@ class PosSyncService
                 points INT NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY uq_customer_order_entry (restaurant_id, order_id, entry_type),
                 KEY idx_customer_loyalty (restaurant_id, customer_id, created_at),
-                CONSTRAINT fk_loyalty_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
-                CONSTRAINT fk_loyalty_order FOREIGN KEY (restaurant_id, order_id) REFERENCES orders(restaurant_id, id) ON DELETE CASCADE,
-                CONSTRAINT fk_loyalty_customer FOREIGN KEY (restaurant_id, customer_id) REFERENCES restaurant_customers(restaurant_id, id) ON DELETE CASCADE
+                CONSTRAINT fk_loyalty_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         }
         self::$customerLinkSchemaReady = true;
