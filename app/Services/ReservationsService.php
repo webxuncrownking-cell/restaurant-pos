@@ -252,7 +252,12 @@ class ReservationsService
             throw new InvalidArgumentException('Only booked reservations can be changed.');
         }
 
-        if ($targetStatus === 'booked') {\n            Database::query(\"UPDATE reservations SET status = 'booked', updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ? AND status = 'pending'\", [$restaurantId, $reservationId]);\n            return;\n        }\n\n        if ($targetStatus === 'seated') {
+        if ($targetStatus === 'booked') {
+            Database::query("UPDATE reservations SET status = 'booked', updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ? AND status = 'pending'", [$restaurantId, $reservationId]);
+            return;
+        }
+
+        if ($targetStatus === 'seated') {
             $chosenTableId = $tableId ?? (!empty($reservation['table_id']) ? (int)$reservation['table_id'] : null);
             if (!$chosenTableId) throw new InvalidArgumentException('Choose a table before seating this reservation.');
             $table = self::getBookableTable($restaurantId, $chosenTableId, (int)$reservation['party_size'], time(), true);
