@@ -201,7 +201,19 @@
     </div>
   </div>
 
-  <div class="d-flex flex-wrap gap-2 mb-4 pb-2 border-bottom">
+  <form method="get" action="<?= BASE_URL ?>/menu" class="card border-0 shadow-sm rounded-4 mb-3">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-end">
+      <?php if ($selectedCat !== null): ?><input type="hidden" name="category_id" value="<?= (int)$selectedCat ?>"><?php endif; ?>
+      <div class="flex-grow-1" style="min-width:220px">
+        <label for="menuSearch" class="form-label small fw-semibold">Search menu catalog</label>
+        <input id="menuSearch" class="form-control" type="search" name="search" value="<?= htmlspecialchars((string)($search ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Menu item, SKU, or category">
+      </div>
+      <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
+      <?php if (!empty($search)): ?><a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/menu<?= $selectedCat !== null ? '?category_id='.(int)$selectedCat : '' ?>">Clear</a><?php endif; ?>
+    </div>
+  </form>
+
+  <div class="d-flex flex-wrap gap-2 mb-4 pb-2 border-bottom>
     <a href="<?= BASE_URL ?>/menu" class="btn btn-sm <?= $selectedCat === null ? 'btn-dark' : 'btn-outline-secondary' ?>">
       All Categories <span class="badge bg-secondary ms-1"><?= count($products) ?></span>
     </a>
