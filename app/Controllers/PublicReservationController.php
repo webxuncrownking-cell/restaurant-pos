@@ -66,7 +66,7 @@ final class PublicReservationController
         $restaurant=PublicReservationService::getRestaurantByToken($token);
         $reservation=PublicReservationService::getPublicStatus($token,$tracking);
         if(!$restaurant || !$reservation) Response::notFound('This reservation status link is invalid or no longer active.');
-        Response::render('public_reservations/status',['restaurant'=>$restaurant,'reservation'=>$reservation],'none');
+        Response::render('public_reservations/status',['restaurant'=>$restaurant,'reservation'=>$reservation,'paramsToken'=>$token],'none');
     }
 
     public function settings(Request $request, array $params=[]): void
