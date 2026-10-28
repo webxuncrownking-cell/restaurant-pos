@@ -359,11 +359,17 @@ class ReservationsService
             return (string)$row['public_token'];
         }
         $token = bin2hex(random_bytes(32));
-        Database::query(
-            "INSERT INTO waitlist_public_links (restaurant_id, public_token, is_active) VALUES (?, ?, 1)
-             ON DUPLICATE KEY UPDATE public_token = VALUES(public_token), is_active = 1",
-            [$restaurantId, $token]
-        );
+        if ($row) {
+            Database::query(
+                "UPDATE waitlist_public_links SET public_token = ?, is_active = 1 WHERE restaurant_id = ?",
+                [$token, $restaurantId]
+            );
+        } else {
+            Database::query(
+                "INSERT INTO waitlist_public_links (restaurant_id, public_token, is_active) VALUES (?, ?, 1)",
+                [$restaurantId, $token]
+            );
+        }
         return $token;
     }
 
@@ -399,12 +405,13 @@ class ReservationsService
         if (mb_strlen($notes) > 500) throw new InvalidArgumentException('Special requests must be 500 characters or fewer.');
 
         // Prevent accidental repeated submissions from creating duplicate queue entries.
+        $recentSince = date('Y-m-d H:i:s', time() - 120);
         $recent = Database::fetchOne(
             "SELECT id FROM waitlist_entries
              WHERE restaurant_id = ? AND status = 'waiting' AND phone = ?
-               AND created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 2 MINUTE)
+               AND created_at >= ?
              LIMIT 1",
-            [(int)$restaurant['restaurant_id'], $phone]
+            [(int)$restaurant['restaurant_id'], $phone, $recentSince]
         );
         if ($recent) throw new InvalidArgumentException('You already have an active waiting-list entry. Please ask staff if you need help.');
 
