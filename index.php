@@ -155,7 +155,7 @@ $router->post('/waitlist/{token}/join', [PublicWaitlistController::class, 'join'
 $router->get('/waitlist/{token}/status/{trackingToken}', [PublicWaitlistController::class, 'status']);
 $router->post('/waitlist/{token}/status/{trackingToken}/cancel', [PublicWaitlistController::class, 'cancel']);
 
-// Front-of-house reservations and waiting-list routes
+// Public online table reservations.\n$router->get('/reserve/{token}', [PublicReservationController::class, 'show']);\n$router->get('/reserve/{token}/availability', [PublicReservationController::class, 'availability']);\n$router->post('/reserve/{token}/book', [PublicReservationController::class, 'create']);\n$router->get('/reserve/{token}/status/{trackingToken}', [PublicReservationController::class, 'status']);\n$router->get('/reservations/online-booking', [PublicReservationController::class, 'settings']);\n$router->post('/reservations/online-booking/save', [PublicReservationController::class, 'saveSettings']);\n\n// Front-of-house reservations and waiting-list routes
 $router->get('/reservations', [ReservationsController::class, 'index']);
 $router->post('/reservations/migrate', [ReservationsController::class, 'migrate']);
 $router->post('/reservations/create', [ReservationsController::class, 'createReservation']);
