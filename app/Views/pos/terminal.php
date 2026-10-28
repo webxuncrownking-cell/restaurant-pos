@@ -349,6 +349,74 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     color:#738096!important;
   }
 
+
+  /* POS terminal stays light regardless of the management theme preference. */
+  html[data-theme="dark"] body:has(.pos-workspace),
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-catalog-panel,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-panel,
+  html[data-theme="dark"] body:has(.pos-workspace) .ticket-items {
+    background:#f4f6fa!important;
+    color:#192335!important;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-panel,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-order-type-switcher,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-summary {
+    background:#fff!important;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace .form-select,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace select,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace .form-control,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace input {
+    background-color:#fff!important;
+    color:#263247!important;
+    border-color:#dfe5ee!important;
+    color-scheme:light;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace select option {
+    background:#fff!important;
+    color:#263247!important;
+  }
+  .pos-order-type {
+    min-height:64px!important;
+    padding:15px 12px!important;
+    font-size:1rem!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:10px!important;
+  }
+  .pos-order-type i {
+    font-size:1.25rem!important;
+    line-height:1!important;
+  }
+  .ticket-item-card .ticket-item-name {
+    font-size:1.05rem!important;
+    line-height:1.45!important;
+    font-weight:750!important;
+  }
+  .ticket-item-card .ticket-item-price {
+    font-size:1.05rem!important;
+  }
+  .ticket-item-card .ticket-item-meta {
+    font-size:.86rem!important;
+  }
+  .ticket-item-card .ticket-addon-text {
+    font-size:.84rem!important;
+  }
+  .ticket-item-card .ticket-qty {
+    font-size:1rem!important;
+    font-weight:750!important;
+  }
+  .ticket-item-card .ticket-remove-btn {
+    font-size:.86rem!important;
+  }
+  @media (max-width: 576px) {
+    .pos-order-type { min-height:56px!important; font-size:.9rem!important; gap:6px!important; padding:12px 6px!important; }
+    .pos-order-type i { font-size:1.1rem!important; }
+    .ticket-item-card .ticket-item-name { font-size:.98rem!important; }
+  }
+
 </style>
 
 <!-- Modern POS Header Bar -->
