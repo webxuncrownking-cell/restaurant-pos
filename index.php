@@ -153,6 +153,7 @@ $router->get('/order/{token}/track/{trackingToken}/status.json', [QROrderControl
 $router->get('/waitlist/{token}', [PublicWaitlistController::class, 'show']);
 $router->post('/waitlist/{token}/join', [PublicWaitlistController::class, 'join']);
 $router->get('/waitlist/{token}/status/{trackingToken}', [PublicWaitlistController::class, 'status']);
+$router->post('/waitlist/{token}/status/{trackingToken}/cancel', [PublicWaitlistController::class, 'cancel']);
 
 // Front-of-house reservations and waiting-list routes
 $router->get('/reservations', [ReservationsController::class, 'index']);
