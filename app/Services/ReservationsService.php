@@ -469,6 +469,24 @@ class ReservationsService
         ];
     }
 
+    /** Cancel a public guest's entry, but only while it is still waiting. */
+    public static function cancelPublicWaitlistEntry(string $linkToken, string $trackingToken): bool
+    {
+        $restaurant = self::getPublicWaitlistRestaurant($linkToken);
+        if (!$restaurant || !preg_match('/^[a-f0-9]{64}$/i', $trackingToken)) return false;
+
+        Database::query(
+            "UPDATE waitlist_entries SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+             WHERE restaurant_id = ? AND public_tracking_token = ? AND status = 'waiting'",
+            [(int)$restaurant['restaurant_id'], strtolower($trackingToken)]
+        );
+        $entry = Database::fetchOne(
+            "SELECT status FROM waitlist_entries WHERE restaurant_id = ? AND public_tracking_token = ? LIMIT 1",
+            [(int)$restaurant['restaurant_id'], strtolower($trackingToken)]
+        );
+        return $entry && $entry['status'] === 'cancelled';
+    }
+
     private static function getBookableTable(int $restaurantId, int $tableId, int $partySize, int $when, bool $mustBeCurrentlyAvailable = false): ?array
     {
         $table = Database::fetchOne(

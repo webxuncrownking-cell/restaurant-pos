@@ -44,6 +44,25 @@ class PublicWaitlistController
         }
     }
 
+    public function cancel(Request $request, array $params): void
+    {
+        $linkToken = strtolower(trim((string)($params['token'] ?? '')));
+        $trackingToken = strtolower(trim((string)($params['trackingToken'] ?? '')));
+        $statusUrl = '/waitlist/' . rawurlencode($linkToken) . '/status/' . rawurlencode($trackingToken);
+
+        if (!CSRF::validate($request->csrfToken())) {
+            Response::redirect($statusUrl . '?error=' . rawurlencode('Your session expired. Please refresh the page and try again.'));
+        }
+        try {
+            $cancelled = ReservationsService::cancelPublicWaitlistEntry($linkToken, $trackingToken);
+            if (!$cancelled) Response::redirect($statusUrl . '?error=' . rawurlencode('This queue entry can no longer be cancelled online. Please ask a staff member for help.'));
+            Response::redirect($statusUrl);
+        } catch (Throwable $e) {
+            error_log('[Public Waitlist Cancel] ' . $e->getMessage());
+            Response::redirect($statusUrl . '?error=' . rawurlencode('We could not cancel your queue entry. Please ask a staff member for help.'));
+        }
+    }
+
     public function status(Request $request, array $params): void
     {
         $linkToken = strtolower(trim((string)($params['token'] ?? '')));
@@ -52,6 +71,6 @@ class PublicWaitlistController
         if (!$status) {
             Response::notFound('This waiting-list status link is invalid or no longer active.');
         }
-        Response::render('public_waitlist/status', ['waitlistStatus' => $status, 'linkToken' => $linkToken, 'trackingToken' => $trackingToken], 'none');
+        Response::render('public_waitlist/status', ['waitlistStatus' => $status, 'linkToken' => $linkToken, 'trackingToken' => $trackingToken, 'csrf_token' => CSRF::getToken(), 'error' => trim((string)$request->get('error', ''))], 'none');
     }
 }
