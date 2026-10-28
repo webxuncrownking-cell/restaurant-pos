@@ -33,8 +33,7 @@ class InventoryController
                     (SELECT COUNT(*) FROM ingredient_unit_conversions WHERE ingredient_id = i.id AND restaurant_id = i.restaurant_id) as packaging_count
              FROM ingredients i
              WHERE i.restaurant_id = ?" . ($search !== '' ? " AND (i.name LIKE ? OR i.sku LIKE ? OR i.base_unit LIKE ?)" : "") . "
-             ORDER BY (i.current_stock <= i.minimum_stock_alert) DESC, i.name ASC
-             LIMIT 500";
+             ORDER BY (i.current_stock <= i.minimum_stock_alert) DESC, i.name ASC";
         $params = [$restaurantId];
         if ($search !== '') {
             $like = '%' . $search . '%';
