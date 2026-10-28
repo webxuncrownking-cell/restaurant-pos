@@ -1,9 +1,8 @@
 name: Deploy Restaurant POS to Live Domain
 
 on:
-  push:
-    branches:
-      - main
+  # Production deploys are performed manually over SSH/rsync.
+  # Keep this FTPS workflow manual-only to prevent an unexpected deploy on merge.
   workflow_dispatch:
 
 permissions:
