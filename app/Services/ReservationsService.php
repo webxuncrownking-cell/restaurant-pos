@@ -285,7 +285,7 @@ class ReservationsService
 
         Database::query(
             "UPDATE reservations SET status = ?, updated_at = CURRENT_TIMESTAMP
-             WHERE restaurant_id = ? AND id = ? AND status = 'booked'",
+             WHERE restaurant_id = ? AND id = ? AND status IN ('pending','booked')",
             [$targetStatus, $restaurantId, $reservationId]
         );
     }
