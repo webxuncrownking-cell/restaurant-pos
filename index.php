@@ -51,6 +51,7 @@ use App\Controllers\BillingController;
 use App\Controllers\RestaurantSettingsController;
 use App\Controllers\KitchenController;
 use App\Controllers\ReservationsController;
+use App\Controllers\PublicWaitlistController;
 use App\Controllers\BillsController;
 use App\Controllers\ExpenseController;
 use App\Controllers\TimePricingController;
