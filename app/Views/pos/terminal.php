@@ -330,6 +330,25 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   }
 
 
+
+  /* POS is intentionally light-only; keep the shared application footer light too. */
+  html[data-theme="dark"] body:has(.pos-workspace),
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-catalog-panel {
+    background:#f4f6fa!important;
+    color:#192335!important;
+  }
+  html[data-theme="dark"] .app-footer {
+    background:#ffffff!important;
+    color:#738096!important;
+    border-top:1px solid #e3e8f0!important;
+    box-shadow:none!important;
+  }
+  html[data-theme="dark"] .app-footer,
+  html[data-theme="dark"] .app-footer * {
+    color:#738096!important;
+  }
+
 </style>
 
 <!-- Modern POS Header Bar -->
