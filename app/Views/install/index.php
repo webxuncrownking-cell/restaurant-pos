@@ -1,4 +1,36 @@
-<div class="container py-5">
+
+<style>
+/* Diagnostics page: readable contrast in both themes. */
+.install-page, body:has(.install-page) { color:#253248; }
+body:has(.install-page) { background:#f3f6fb!important; }
+body:has(.install-page) .container { max-width:1120px; }
+body:has(.install-page) h2.text-dark,
+body:has(.install-page) h6.text-dark { color:#17243a!important; }
+body:has(.install-page) .card { overflow:hidden; border:1px solid #dfe6f0!important; background:#fff!important; box-shadow:0 10px 28px rgba(22,40,70,.055)!important; }
+body:has(.install-page) .card-header { background:#f8faff!important; border-bottom:1px solid #e3eaf4!important; }
+body:has(.install-page) .card-header .card-title { color:#243650!important; }
+body:has(.install-page) .list-group-item { background:#fff!important; color:#27364c!important; border-color:#e4eaf2!important; }
+body:has(.install-page) .text-secondary,
+body:has(.install-page) .text-muted { color:#68778d!important; }
+body:has(.install-page) .card-footer { background:#f5f8fc!important; border-top:1px solid #e3eaf4!important; }
+body:has(.install-page) .btn { border-radius:10px; font-weight:700; }
+body:has(.install-page) code { color:#2755a7; background:#edf3ff; padding:2px 5px; border-radius:5px; }
+body:has(.install-page) .bg-dark.text-light { background:#111c2e!important; }
+html[data-theme="dark"] body:has(.install-page) { background:#0b1220!important; color:#e7edf7!important; }
+html[data-theme="dark"] body:has(.install-page) h2.text-dark,
+html[data-theme="dark"] body:has(.install-page) h6.text-dark { color:#e7edf7!important; }
+html[data-theme="dark"] body:has(.install-page) .card { background:#152238!important; border-color:#2b3b54!important; }
+html[data-theme="dark"] body:has(.install-page) .card-header { background:#1c2b42!important; border-color:#2b3b54!important; }
+html[data-theme="dark"] body:has(.install-page) .card-header .card-title,
+html[data-theme="dark"] body:has(.install-page) .list-group-item { color:#e7edf7!important; }
+html[data-theme="dark"] body:has(.install-page) .list-group-item { background:#152238!important; border-color:#2b3b54!important; }
+html[data-theme="dark"] body:has(.install-page) .text-secondary,
+html[data-theme="dark"] body:has(.install-page) .text-muted { color:#a8b7cc!important; }
+html[data-theme="dark"] body:has(.install-page) .card-footer { background:#111d30!important; border-color:#2b3b54!important; }
+html[data-theme="dark"] body:has(.install-page) code { color:#b7d0ff; background:#243650; }
+</style>
+
+<div class="container py-5 install-page">
   <div class="row justify-content-center">
     <div class="col-12 col-lg-8">
 
