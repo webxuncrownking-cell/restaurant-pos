@@ -228,13 +228,13 @@ final class PublicReservationService
     {
         $r=Database::fetchOne("SELECT r.*,s.name AS restaurant_name FROM reservations r JOIN restaurants s ON s.id=r.restaurant_id WHERE r.restaurant_id=? AND r.id=? AND r.status='booked' AND r.public_token IS NOT NULL LIMIT 1",[$restaurantId,$reservationId]);
         if(!$r) return ['email'=>false];
-        $when=date('D, M j, Y \\a\\t g:i A',strtotime((string)$r['reservation_at']));
+        $when=date('D, M j, Y \a\t g:i A',strtotime((string)$r['reservation_at']));
         $subject='Reservation confirmed - '.$r['restaurant_name'];
-        $body="Hello {$r['customer_name']},\\n\\nYour reservation at {$r['restaurant_name']} is confirmed for {$when} for {$r['party_size']} guest(s).\\n\\nYou can check your reservation status using the reservation status link provided when you booked. If you need to make changes, please contact the restaurant.";
+        $body="Hello {$r['customer_name']},\n\nYour reservation at {$r['restaurant_name']} is confirmed for {$when} for {$r['party_size']} guest(s).\n\nYou can check your reservation status using the reservation status link provided when you booked. If you need to make changes, please contact the restaurant.";
         $emailSent=false;
         if(!empty($r['customer_email']) && filter_var($r['customer_email'],FILTER_VALIDATE_EMAIL)) {
             $host=(string)(parse_url(defined('BASE_URL')?BASE_URL:'',PHP_URL_HOST) ?: 'localhost');
-            $emailSent=@mail((string)$r['customer_email'],$subject,$body,"From: no-reply@{$host}\\r\\nContent-Type: text/plain; charset=UTF-8");
+            $emailSent=@mail((string)$r['customer_email'],$subject,$body,"From: no-reply@{$host}\\r\nContent-Type: text/plain; charset=UTF-8");
         }
         Database::query("UPDATE reservations SET notification_email_sent=? WHERE restaurant_id=? AND id=?",[$emailSent?1:0,$restaurantId,$reservationId]);
         return ['email'=>$emailSent];
