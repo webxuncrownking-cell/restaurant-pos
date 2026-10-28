@@ -147,7 +147,7 @@ final class PublicReservationService
             $free = 0;
             foreach ($tables as $table) {
                 if ($slot->getTimestamp() <= time() + 2 * 3600 && in_array((string)$table['status'], ['occupied','cleaning'], true)) continue;
-                $candidates = Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id = ? AND table_id = ? AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
+                $candidates = Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id = ? AND (table_id = ? OR table_id IS NULL) AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
                     [(int)$restaurant['restaurant_id'],(int)$table['id'],$end->format('Y-m-d H:i:s'),$slot->modify('-480 minutes')->format('Y-m-d H:i:s')]);
                 $conflict = false;
                 foreach ($candidates as $candidate) {
@@ -195,7 +195,7 @@ final class PublicReservationService
             $chosen=null;
             foreach($tables as $table) {
                 if($start->getTimestamp() <= time() + 2 * 3600 && in_array((string)$table['status'], ['occupied','cleaning'], true)) continue;
-                $candidates=Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id=? AND table_id=? AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
+                $candidates=Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id=? AND (table_id=? OR table_id IS NULL) AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
                     [$restaurantId,(int)$table['id'],$end->format('Y-m-d H:i:s'),$start->modify('-480 minutes')->format('Y-m-d H:i:s')]);
                 $conflict=false;
                 foreach($candidates as $candidate) {
