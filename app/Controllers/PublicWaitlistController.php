@@ -52,6 +52,6 @@ class PublicWaitlistController
         if (!$status) {
             Response::notFound('This waiting-list status link is invalid or no longer active.');
         }
-        Response::render('public_waitlist/status', ['status' => $status, 'linkToken' => $linkToken, 'trackingToken' => $trackingToken], 'none');
+        Response::render('public_waitlist/status', ['waitlistStatus' => $status, 'linkToken' => $linkToken, 'trackingToken' => $trackingToken], 'none');
     }
 }
