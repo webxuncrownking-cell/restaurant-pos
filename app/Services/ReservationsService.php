@@ -23,7 +23,7 @@ class ReservationsService
         try {
             $pdo = Database::getInstance();
             if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
-                $rows = Database::fetchAll("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('reservations', 'waitlist_entries')");
+                $rows = Database::fetchAll("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('reservations', 'waitlist_entries', 'waitlist_public_links')");
                 return count($rows) === 3;
             }
             $rows = Database::fetchAll(
