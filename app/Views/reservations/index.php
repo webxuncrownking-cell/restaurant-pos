@@ -46,6 +46,17 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
   .res-inline-table { min-width:145px; max-width:190px; }
   .res-inline-table .form-select { min-height:34px; font-size:.75rem; padding-top:5px; padding-bottom:5px; }
   @media(max-width:850px) { .res-page { padding:16px; } .res-card-body { padding:15px; } .res-card-head { padding:15px; } }
+
+  .sf-search-panel{display:block;width:100%;margin:18px 0;padding:18px 20px;background:#fff;border:1px solid #e3e9f2;border-radius:16px;box-shadow:0 3px 12px rgba(15,23,42,.035);}
+  .sf-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;width:100%;}
+  .sf-search-field{display:block;min-width:0;width:100%;margin:0;}
+  .sf-search-label{display:block;margin:0 0 7px;color:#344054;font-size:.86rem;font-weight:700;line-height:1.3;}
+  .sf-search-input{display:block;width:100%;min-width:0;height:44px;padding:10px 13px;border:1px solid #d5deea;border-radius:10px;background:#fff;color:#172033;font:inherit;font-size:.92rem;box-shadow:inset 0 1px 2px rgba(16,24,40,.025);}
+  .sf-search-input:focus{outline:0;border-color:#6ea3f8;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+  .sf-search-actions{display:flex;align-items:center;gap:8px;}
+  .sf-search-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 17px;border-radius:10px;white-space:nowrap;font-size:.9rem;font-weight:700;}
+  .sf-search-hint{margin:6px 0 0;color:#8491a5;font-size:.76rem;line-height:1.4;}
+  @media(max-width:600px){.sf-search-panel{padding:14px;border-radius:13px}.sf-search-row{grid-template-columns:minmax(0,1fr);gap:10px}.sf-search-actions{justify-content:flex-start}.sf-search-actions .btn{flex:1}}
 </style>
 
 <div class="res-page">
@@ -209,15 +220,17 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
       </div>
     </div>
 
-    <form method="get" action="<?= BASE_URL ?>/reservations" class="res-card mt-4 p-3">
-      <div class="d-flex flex-wrap gap-2 align-items-end">
-        <div class="flex-grow-1" style="min-width:240px">
-          <label for="reservationSearch" class="form-label fw-semibold mb-1">Search reservations</label>
-          <input id="reservationSearch" class="form-control" type="search" name="search" value="<?= htmlspecialchars((string)($search ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Guest, phone, status, notes, date, or reservation ID">
-          <div class="res-help mt-1">Search can include older reservations, not only upcoming bookings.</div>
+    <form method="get" action="<?= BASE_URL ?>/reservations" class="sf-search-panel">
+      <div class="sf-search-row">
+        <div class="sf-search-field">
+          <label for="reservationSearch" class="sf-search-label">Search reservations</label>
+          <input id="reservationSearch" class="sf-search-input" type="search" name="search" value="<?= htmlspecialchars((string)($search ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Guest name, phone, status, date, or reservation ID">
+          <p class="sf-search-hint">Search includes older reservations as well as upcoming bookings.</p>
         </div>
-        <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
-        <?php if (!empty($search)): ?><a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/reservations">Clear</a><?php endif; ?>
+        <div class="sf-search-actions">
+          <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i>Search</button>
+          <?php if (!empty($search)): ?><a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/reservations">Clear</a><?php endif; ?>
+        </div>
       </div>
     </form>
 
