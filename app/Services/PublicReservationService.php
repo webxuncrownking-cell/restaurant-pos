@@ -139,13 +139,14 @@ final class PublicReservationService
         $close = new DateTimeImmutable($date.' '.substr((string)$hours['close_time'],0,5));
         $lastStart = $close->modify('-'.$duration.' minutes');
         if ($lastStart < $open) return [];
-        $tables = Database::fetchAll("SELECT id, capacity FROM restaurant_tables WHERE restaurant_id = ? AND deleted_at IS NULL AND is_active = 1 AND capacity >= ? AND status NOT IN ('occupied','cleaning') ORDER BY capacity ASC", [(int)$restaurant['restaurant_id'],$partySize]);
+        $tables = Database::fetchAll("SELECT id, capacity, status FROM restaurant_tables WHERE restaurant_id = ? AND deleted_at IS NULL AND is_active = 1 AND capacity >= ? ORDER BY capacity ASC", [(int)$restaurant['restaurant_id'],$partySize]);
         $slots = [];
         for ($slot=$open; $slot <= $lastStart; $slot=$slot->modify('+'.$interval.' minutes')) {
             if ($slot < new DateTimeImmutable('now')) continue;
             $end = $slot->modify('+'.$duration.' minutes');
             $free = 0;
             foreach ($tables as $table) {
+                if ($slot->getTimestamp() <= time() + 2 * 3600 && in_array((string)$table['status'], ['occupied','cleaning'], true)) continue;
                 $candidates = Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id = ? AND table_id = ? AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
                     [(int)$restaurant['restaurant_id'],(int)$table['id'],$end->format('Y-m-d H:i:s'),$slot->modify('-480 minutes')->format('Y-m-d H:i:s')]);
                 $conflict = false;
@@ -190,9 +191,10 @@ final class PublicReservationService
             $pdo->beginTransaction();
             // Serialize concurrent public bookings for this restaurant before the final conflict check.
             if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql') $pdo->query('SELECT id FROM restaurants WHERE id='.(int)$restaurantId.' FOR UPDATE')->fetch();
-            $tables=Database::fetchAll("SELECT id,capacity FROM restaurant_tables WHERE restaurant_id=? AND deleted_at IS NULL AND is_active=1 AND capacity>=? AND status NOT IN ('occupied','cleaning') ORDER BY capacity ASC",[$restaurantId,$party]);
+            $tables=Database::fetchAll("SELECT id,capacity,status FROM restaurant_tables WHERE restaurant_id=? AND deleted_at IS NULL AND is_active=1 AND capacity>=? ORDER BY capacity ASC",[$restaurantId,$party]);
             $chosen=null;
             foreach($tables as $table) {
+                if($start->getTimestamp() <= time() + 2 * 3600 && in_array((string)$table['status'], ['occupied','cleaning'], true)) continue;
                 $candidates=Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id=? AND table_id=? AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
                     [$restaurantId,(int)$table['id'],$end->format('Y-m-d H:i:s'),$start->modify('-480 minutes')->format('Y-m-d H:i:s')]);
                 $conflict=false;
