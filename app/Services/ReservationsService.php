@@ -241,7 +241,7 @@ class ReservationsService
 
     public static function updateReservationStatus(int $restaurantId, int $reservationId, int $userId, string $targetStatus, ?int $tableId = null): void
     {
-        if (!in_array($targetStatus, ['seated', 'cancelled', 'no_show'], true)) {
+        if (!in_array($targetStatus, ['booked', 'seated', 'cancelled', 'no_show'], true)) {
             throw new InvalidArgumentException('Choose a valid reservation action.');
         }
         $reservation = Database::fetchOne(
@@ -252,7 +252,7 @@ class ReservationsService
             throw new InvalidArgumentException('Only booked reservations can be changed.');
         }
 
-        if ($targetStatus === 'seated') {
+        if ($targetStatus === 'booked') {\n            Database::query(\"UPDATE reservations SET status = 'booked', updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ? AND status = 'pending'\", [$restaurantId, $reservationId]);\n            return;\n        }\n\n        if ($targetStatus === 'seated') {
             $chosenTableId = $tableId ?? (!empty($reservation['table_id']) ? (int)$reservation['table_id'] : null);
             if (!$chosenTableId) throw new InvalidArgumentException('Choose a table before seating this reservation.');
             $table = self::getBookableTable($restaurantId, $chosenTableId, (int)$reservation['party_size'], time(), true);
