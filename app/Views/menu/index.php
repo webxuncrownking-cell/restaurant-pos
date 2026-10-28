@@ -2,6 +2,17 @@
 <?php include APP_ROOT . '/app/Views/layouts/navbar.php'; ?>
 
 <style>
+  .sf-search-panel{display:block;width:100%;margin:18px 0;padding:18px 20px;background:#fff;border:1px solid #e3e9f2;border-radius:16px;box-shadow:0 3px 12px rgba(15,23,42,.035);}
+  .sf-search-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;width:100%;}
+  .sf-search-field{display:block;min-width:0;width:100%;margin:0;}
+  .sf-search-label{display:block;margin:0 0 7px;color:#344054;font-size:.86rem;font-weight:700;line-height:1.3;}
+  .sf-search-input{display:block;width:100%;min-width:0;height:44px;padding:10px 13px;border:1px solid #d5deea;border-radius:10px;background:#fff;color:#172033;font:inherit;font-size:.92rem;box-shadow:inset 0 1px 2px rgba(16,24,40,.025);}
+  .sf-search-input:focus{outline:0;border-color:#6ea3f8;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+  .sf-search-actions{display:flex;align-items:center;gap:8px;}
+  .sf-search-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 17px;border-radius:10px;white-space:nowrap;font-size:.9rem;font-weight:700;}
+  .sf-search-hint{margin:6px 0 0;color:#8491a5;font-size:.76rem;line-height:1.4;}
+  @media(max-width:600px){.sf-search-panel{padding:14px;border-radius:13px}.sf-search-row{grid-template-columns:minmax(0,1fr);gap:10px}.sf-search-actions{justify-content:flex-start}.sf-search-actions .btn{flex:1}}
+
   /* Fixed photo frame: absolutely constrain the image box, not just its crop mode. */
   .menu-product-photo {
     position:relative;
@@ -201,15 +212,17 @@
     </div>
   </div>
 
-  <form method="get" action="<?= BASE_URL ?>/menu" class="card border-0 shadow-sm rounded-4 mb-3">
-    <div class="card-body d-flex flex-wrap gap-2 align-items-end">
-      <?php if ($selectedCat !== null): ?><input type="hidden" name="category_id" value="<?= (int)$selectedCat ?>"><?php endif; ?>
-      <div class="flex-grow-1" style="min-width:220px">
-        <label for="menuSearch" class="form-label small fw-semibold">Search menu catalog</label>
-        <input id="menuSearch" class="form-control" type="search" name="search" value="<?= htmlspecialchars((string)($search ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Menu item, SKU, or category">
+  <form method="get" action="<?= BASE_URL ?>/menu" class="sf-search-panel">
+    <?php if ($selectedCat !== null): ?><input type="hidden" name="category_id" value="<?= (int)$selectedCat ?>"><?php endif; ?>
+    <div class="sf-search-row">
+      <div class="sf-search-field">
+        <label for="menuSearch" class="sf-search-label">Search menu catalog</label>
+        <input id="menuSearch" class="sf-search-input" type="search" name="search" value="<?= htmlspecialchars((string)($search ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Menu item, SKU, or category">
       </div>
-      <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
-      <?php if (!empty($search)): ?><a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/menu<?= $selectedCat !== null ? '?category_id='.(int)$selectedCat : '' ?>">Clear</a><?php endif; ?>
+      <div class="sf-search-actions">
+        <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i>Search</button>
+        <?php if (!empty($search)): ?><a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/menu<?= $selectedCat !== null ? '?category_id='.(int)$selectedCat : '' ?>">Clear</a><?php endif; ?>
+      </div>
     </div>
   </form>
 
