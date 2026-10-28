@@ -148,6 +148,11 @@ $router->post('/order/{token}/submit', [QROrderController::class, 'submit']);
 $router->get('/order/{token}/track/{trackingToken}', [QROrderController::class, 'trackStatus']);
 $router->get('/order/{token}/track/{trackingToken}/status.json', [QROrderController::class, 'trackStatusJson']);
 
+// Public self-service waiting list opened by the restaurant's QR code.
+$router->get('/waitlist/{token}', [PublicWaitlistController::class, 'show']);
+$router->post('/waitlist/{token}/join', [PublicWaitlistController::class, 'join']);
+$router->get('/waitlist/{token}/status/{trackingToken}', [PublicWaitlistController::class, 'status']);
+
 // Front-of-house reservations and waiting-list routes
 $router->get('/reservations', [ReservationsController::class, 'index']);
 $router->post('/reservations/migrate', [ReservationsController::class, 'migrate']);
