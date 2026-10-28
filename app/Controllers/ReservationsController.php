@@ -34,6 +34,7 @@ class ReservationsController
         // Response::render() signature. This view includes its own header/navbar/footer.
         $viewData = [
             'schema_ready' => $ready,
+            'public_waitlist_token' => $ready ? ReservationsService::getOrCreatePublicWaitlistLink($restaurantId) : '',
             'reservations' => $ready ? ReservationsService::getReservations($restaurantId) : [],
             'waitlist' => $ready ? ReservationsService::getWaitlist($restaurantId) : [],
             'tables' => TableService::getTables($restaurantId),
