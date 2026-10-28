@@ -352,10 +352,10 @@ class ReservationsService
     public static function getOrCreatePublicWaitlistLink(int $restaurantId): string
     {
         $row = Database::fetchOne(
-            "SELECT public_token FROM waitlist_public_links WHERE restaurant_id = ? AND is_active = 1 LIMIT 1",
+            "SELECT public_token, is_active FROM waitlist_public_links WHERE restaurant_id = ? LIMIT 1",
             [$restaurantId]
         );
-        if ($row && preg_match('/^[a-f0-9]{64}$/', (string)$row['public_token'])) {
+        if ($row && (int)$row['is_active'] === 1 && preg_match('/^[a-f0-9]{64}$/', (string)$row['public_token'])) {
             return (string)$row['public_token'];
         }
         $token = bin2hex(random_bytes(32));
