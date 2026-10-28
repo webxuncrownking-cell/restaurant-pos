@@ -106,8 +106,7 @@ class ReservationsController
             ReservationsService::updateReservationStatus($restaurantId, (int)$reservationId, (int)Auth::id(), $target, $tableId ? (int)$tableId : null);
             if ($target === 'booked') {
                 $sent = PublicReservationService::notifyConfirmed($restaurantId, (int)$reservationId);
-                $channels = []; if ($sent['email']) $channels[] = 'email'; if ($sent['sms']) $channels[] = 'SMS';
-                Session::setFlash('success', 'Reservation confirmed.' . ($channels ? ' Notification sent by ' . implode(' and ', $channels) . '.' : ' Customer notifications were not sent; check email/SMS gateway configuration.'));
+                Session::setFlash('success', 'Reservation confirmed.' . ($sent['email'] ? ' Confirmation email sent.' : ' Confirmation email was not sent; check the hosting email configuration and customer email address.'));
             } else {
                 $messages = ['seated' => 'Guest seated and table marked occupied.', 'cancelled' => 'Reservation cancelled.', 'no_show' => 'Reservation marked as no-show.'];
                 Session::setFlash('success', $messages[$target] ?? 'Reservation updated.');
