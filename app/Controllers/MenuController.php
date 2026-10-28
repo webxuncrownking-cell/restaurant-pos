@@ -30,7 +30,8 @@ class MenuController
         $restaurantId = (int)$restaurant['id'];
         $categories = MenuService::getCategories($restaurantId, false);
         $selectedCat = $request->get('category_id') ? (int)$request->get('category_id') : null;
-        $products = MenuService::getProducts($restaurantId, $selectedCat, false);
+        $search = trim((string)$request->get('search', ''));
+        $products = MenuService::getProducts($restaurantId, $selectedCat, false, $search);
 
         Response::view('menu/index', [
             'pageTitle'    => 'Menu Management',
@@ -38,6 +39,7 @@ class MenuController
             'categories'   => $categories,
             'products'     => $products,
             'selectedCat'  => $selectedCat,
+            'search'       => $search,
             'product_image_column_ready' => $this->hasProductImageColumn(),
             'csrf_token'   => CSRF::generate()
         ]);
