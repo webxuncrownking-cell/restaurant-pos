@@ -454,13 +454,16 @@ class ReservationsService
             );
             $position = (int)($ahead['total'] ?? 0);
         }
+        $estimatedWait = $entry['status'] === 'waiting'
+            ? min(360, max(0, ($position - 1) * 15))
+            : (int)$entry['estimated_wait_minutes'];
         return [
             'restaurant_name' => (string)$restaurant['restaurant_name'],
             'customer_name' => (string)$entry['customer_name'],
             'party_size' => (int)$entry['party_size'],
             'status' => (string)$entry['status'],
             'position' => $position,
-            'estimated_wait_minutes' => (int)$entry['estimated_wait_minutes'],
+            'estimated_wait_minutes' => $estimatedWait,
             'created_at' => (string)$entry['created_at'],
             'seated_at' => $entry['seated_at'] ?? null
         ];
