@@ -85,6 +85,29 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
       </form>
     </div>
   <?php else: ?>
+    <?php
+      $publicWaitlistUrl = BASE_URL . '/waitlist/' . rawurlencode((string)($public_waitlist_token ?? ''));
+      $qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=' . rawurlencode($publicWaitlistUrl);
+    ?>
+    <section class="res-card mb-4" style="padding:20px">
+      <div class="d-flex flex-wrap align-items-center gap-4">
+        <div style="flex:0 0 150px;text-align:center">
+          <img src="<?= htmlspecialchars($qrImageUrl, ENT_QUOTES, 'UTF-8') ?>" alt="QR code for customer self-service waiting list" width="150" height="150" loading="lazy" style="display:block;width:150px;height:150px;border:1px solid #e4eaf2;border-radius:12px;background:#fff;padding:6px;margin:0 auto">
+          <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="window.print()">Print QR</button>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <div class="res-kicker">Customer self-service</div>
+          <h2 class="res-section-title" style="font-size:1.15rem;margin:5px 0 8px">Let walk-in guests join by QR code</h2>
+          <p class="res-subtitle mb-3">Display this QR code at your entrance or reception. Guests scan it, enter their details, and receive a private page to check their queue position. Their entries appear in the live waiting list below.</p>
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a class="btn btn-primary" href="<?= htmlspecialchars($publicWaitlistUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener"><i class="bi bi-qr-code-scan me-1"></i> Preview guest page</a>
+            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(<?= htmlspecialchars(json_encode($publicWaitlistUrl, JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>).then(()=>{this.textContent='Link copied';}).catch(()=>window.prompt('Copy this waiting-list link:', <?= htmlspecialchars(json_encode($publicWaitlistUrl, JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8') ?>));"><i class="bi bi-copy me-1"></i> Copy link</button>
+          </div>
+          <p class="res-help mt-2">Keep the link public only for this restaurant. Queue status pages use separate private tracking tokens.</p>
+        </div>
+      </div>
+    </section>
+
     <div class="row g-3 mb-4">
       <div class="col-6 col-xl-3">
         <div class="res-metric"><span class="res-icon"><i class="bi bi-calendar-event"></i></span><div><strong><?= count(array_filter($reservations, static fn(array $r): bool => $r['status'] === 'booked')) ?></strong><span>Booked reservations</span></div></div>
