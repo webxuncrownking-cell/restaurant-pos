@@ -299,6 +299,36 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     .pos-clear-ticket, .pos-checkout-btn { min-height: 48px; }
   }
 
+
+  /* POS terminal visual refinement: stronger hierarchy, intentional image fallbacks, calmer surfaces. */
+  .pos-header { min-height:68px; padding:10px 18px; background:rgba(255,255,255,.97); }
+  .pos-catalog-panel { padding:18px 20px!important; }
+  .pos-ticket-panel { box-shadow:-10px 0 28px rgba(15,23,42,.045); }
+  .pos-search-group .form-control, .pos-search-group .form-select { min-height:48px; font-size:.9rem; }
+  .product-card { min-height:250px; padding:12px!important; border-radius:18px!important; box-shadow:0 5px 18px rgba(24,39,75,.055); }
+  .product-image-wrap { aspect-ratio: 5 / 3; margin-bottom:12px; border-radius:13px; background:linear-gradient(135deg,#e7efff 0%,#f2f6ff 48%,#e2f3f0 100%); color:#5277b8; }
+  .product-image-wrap i { display:grid; place-items:center; width:52px; height:52px; border:1px solid rgba(255,255,255,.8); border-radius:17px; background:rgba(255,255,255,.72); color:#5277b8; font-size:1.65rem; box-shadow:0 6px 18px rgba(49,83,140,.08); }
+  .product-image-wrap.is-fallback { background:linear-gradient(135deg,#e6efff 0%,#f1f5ff 52%,#e0f2ef 100%); }
+  .product-image-wrap.is-fallback::after { content:"PHOTO NOT ADDED"; position:absolute; bottom:10px; left:0; right:0; text-align:center; font-size:.55rem; font-weight:850; letter-spacing:.13em; color:#7890b7; }
+  .product-card .product-category-tag { border-radius:999px; padding:5px 8px; font-size:.65rem; }
+  .product-card .product-title { font-size:.94rem; line-height:1.4; min-height:2.6em; }
+  .product-card .product-price { font-size:1.08rem; }
+  .product-card .product-add-icon { width:34px; height:34px; border-radius:11px; }
+  .pos-ticket-panel .pos-order-type-switcher { padding:12px!important; }
+  .ticket-items { padding:14px!important; background:#f5f7fb; }
+  .ticket-item-card { padding:14px!important; border-radius:15px!important; }
+  .pos-ticket-summary { padding:16px!important; }
+  .pos-ticket-summary #ticketTotal { font-size:1.8rem!important; }
+  @media (max-width: 767.98px) {
+    .pos-header { padding:8px 10px; }
+    .pos-catalog-panel { height:auto; min-height:0; padding:14px 12px!important; }
+    .pos-ticket-panel { height:auto; min-height:460px; border-left:0; border-top:1px solid var(--terminal-line); }
+    .product-card { min-height:220px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .product-card, .category-pill, .pos-order-type, .pos-checkout-btn { transition:none!important; }
+  }
+
 </style>
 
 <!-- Modern POS Header Bar -->
