@@ -146,9 +146,14 @@ final class PublicReservationService
             $end = $slot->modify('+'.$duration.' minutes');
             $free = 0;
             foreach ($tables as $table) {
-                $conflict = Database::fetchOne("SELECT id FROM reservations WHERE restaurant_id = ? AND table_id = ? AND status IN ('pending','booked','seated')
-                    AND reservation_at < ? AND DATE_ADD(reservation_at, INTERVAL duration_minutes MINUTE) > ? LIMIT 1",
-                    [(int)$restaurant['restaurant_id'],(int)$table['id'],$end->format('Y-m-d H:i:s'),$slot->format('Y-m-d H:i:s')]);
+                $candidates = Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id = ? AND table_id = ? AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
+                    [(int)$restaurant['restaurant_id'],(int)$table['id'],$end->format('Y-m-d H:i:s'),$slot->modify('-480 minutes')->format('Y-m-d H:i:s')]);
+                $conflict = false;
+                foreach ($candidates as $candidate) {
+                    $existingStart = strtotime((string)$candidate['reservation_at']);
+                    $existingEnd = $existingStart + (int)$candidate['duration_minutes'] * 60;
+                    if ($existingStart < $end->getTimestamp() && $existingEnd > $slot->getTimestamp()) { $conflict = true; break; }
+                }
                 if (!$conflict) { $free++; break; }
             }
             if ($free > 0) $slots[] = $slot->format('H:i');
@@ -188,9 +193,14 @@ final class PublicReservationService
             $tables=Database::fetchAll("SELECT id,capacity FROM restaurant_tables WHERE restaurant_id=? AND deleted_at IS NULL AND is_active=1 AND capacity>=? AND status NOT IN ('occupied','cleaning') ORDER BY capacity ASC",[$restaurantId,$party]);
             $chosen=null;
             foreach($tables as $table) {
-                $conflict=Database::fetchOne("SELECT id FROM reservations WHERE restaurant_id=? AND table_id=? AND status IN ('pending','booked','seated')
-                    AND reservation_at < ? AND DATE_ADD(reservation_at, INTERVAL duration_minutes MINUTE) > ? LIMIT 1",
-                    [$restaurantId,(int)$table['id'],$end->format('Y-m-d H:i:s'),$start->format('Y-m-d H:i:s')]);
+                $candidates=Database::fetchAll("SELECT reservation_at,duration_minutes FROM reservations WHERE restaurant_id=? AND table_id=? AND status IN ('pending','booked','seated') AND reservation_at < ? AND reservation_at >= ?",
+                    [$restaurantId,(int)$table['id'],$end->format('Y-m-d H:i:s'),$start->modify('-480 minutes')->format('Y-m-d H:i:s')]);
+                $conflict=false;
+                foreach($candidates as $candidate) {
+                    $existingStart=strtotime((string)$candidate['reservation_at']);
+                    $existingEnd=$existingStart+(int)$candidate['duration_minutes']*60;
+                    if($existingStart<$end->getTimestamp() && $existingEnd>$start->getTimestamp()){$conflict=true;break;}
+                }
                 if(!$conflict){$chosen=(int)$table['id'];break;}
             }
             if(!$chosen) throw new InvalidArgumentException('That time was just booked by another customer. Please choose another available time.');
