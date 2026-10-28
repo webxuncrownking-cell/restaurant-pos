@@ -248,11 +248,12 @@ class ReservationsService
             "SELECT * FROM reservations WHERE restaurant_id = ? AND id = ?",
             [$restaurantId, $reservationId]
         );
-        if (!$reservation || $reservation['status'] !== 'booked') {
-            throw new InvalidArgumentException('Only booked reservations can be changed.');
+        if (!$reservation || !in_array((string)$reservation['status'], ['pending', 'booked'], true) || ($reservation['status'] === 'pending' && !in_array($targetStatus, ['booked', 'cancelled'], true))) {
+            throw new InvalidArgumentException('Only pending or booked reservations can be changed.');
         }
 
         if ($targetStatus === 'booked') {
+            if ($reservation['status'] !== 'pending') throw new InvalidArgumentException('This reservation is already confirmed.');
             Database::query("UPDATE reservations SET status = 'booked', updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ? AND status = 'pending'", [$restaurantId, $reservationId]);
             return;
         }
