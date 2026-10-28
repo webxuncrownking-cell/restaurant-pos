@@ -58,7 +58,7 @@ class MenuService
             array_push($params, $like, $like, $like);
         }
 
-        $sql .= " ORDER BY c.sort_order ASC, p.name ASC LIMIT 500";
+        $sql .= " ORDER BY c.sort_order ASC, p.name ASC";
         $products = Database::fetchAll($sql, $params);
 
         // Enrich with variants and estimated food cost
