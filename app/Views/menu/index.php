@@ -213,7 +213,7 @@
     </div>
   </form>
 
-  <div class="d-flex flex-wrap gap-2 mb-4 pb-2 border-bottom>
+  <div class="d-flex flex-wrap gap-2 mb-4 pb-2 border-bottom">
     <a href="<?= BASE_URL ?>/menu" class="btn btn-sm <?= $selectedCat === null ? 'btn-dark' : 'btn-outline-secondary' ?>">
       All Categories <span class="badge bg-secondary ms-1"><?= count($products) ?></span>
     </a>
