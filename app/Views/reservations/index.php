@@ -65,7 +65,8 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
       <p class="res-subtitle">Plan upcoming bookings, organize walk-ins, and seat guests from one place.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="<?= BASE_URL ?>/reservations/online-booking" class="btn btn-outline-primary"><i class="bi bi-globe me-1"></i> Online booking</a>\n      <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
+      <a href="<?= BASE_URL ?>/reservations/online-booking" class="btn btn-outline-primary"><i class="bi bi-globe me-1"></i> Online booking</a>
+      <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
       <a href="<?= BASE_URL ?>/pos" class="btn btn-primary"><i class="bi bi-display me-1"></i> POS Terminal</a>
     </div>
   </section>
