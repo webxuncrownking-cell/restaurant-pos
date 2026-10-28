@@ -209,6 +209,18 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
       </div>
     </div>
 
+    <form method="get" action="<?= BASE_URL ?>/reservations" class="res-card mt-4 p-3">
+      <div class="d-flex flex-wrap gap-2 align-items-end">
+        <div class="flex-grow-1" style="min-width:240px">
+          <label for="reservationSearch" class="form-label fw-semibold mb-1">Search reservations</label>
+          <input id="reservationSearch" class="form-control" type="search" name="search" value="<?= htmlspecialchars((string)($search ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Guest, phone, status, notes, date, or reservation ID">
+          <div class="res-help mt-1">Search can include older reservations, not only upcoming bookings.</div>
+        </div>
+        <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
+        <?php if (!empty($search)): ?><a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/reservations">Clear</a><?php endif; ?>
+      </div>
+    </form>
+
     <section class="res-card mt-4">
       <div class="res-card-head">
         <div class="d-flex align-items-center gap-3"><span class="res-icon"><i class="bi bi-calendar2-week"></i></span><div><h2 class="res-section-title">Upcoming reservations</h2><p class="res-help">Bookings in the previous 24 hours and next 14 days. Confirm pending online requests, seat guests, cancel, or mark no-show.</p></div></div>

@@ -35,7 +35,8 @@ class MenuService
     public static function getProducts(
         int $restaurantId, 
         ?int $categoryId = null, 
-        bool $activeOnly = true
+        bool $activeOnly = true,
+        string $search = ''
     ): array {
         $sql = "SELECT p.*, c.name as category_name
                 FROM products p
@@ -50,6 +51,11 @@ class MenuService
 
         if ($activeOnly) {
             $sql .= " AND p.is_active = 1";
+        }
+        if ($search !== '') {
+            $sql .= " AND (p.name LIKE ? OR p.sku LIKE ? OR c.name LIKE ?)";
+            $like = '%' . $search . '%';
+            array_push($params, $like, $like, $like);
         }
 
         $sql .= " ORDER BY c.sort_order ASC, p.name ASC";

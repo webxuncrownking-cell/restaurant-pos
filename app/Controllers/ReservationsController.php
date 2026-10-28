@@ -30,13 +30,15 @@ class ReservationsController
             Response::redirect('/dashboard');
         }
 
+        $search = trim((string)$request->get('search', ''));
         $ready = ReservationsService::schemaReady();
         // Render directly because some existing XAMPP installations use a legacy
         // Response::render() signature. This view includes its own header/navbar/footer.
         $viewData = [
             'schema_ready' => $ready,
             'public_waitlist_token' => $ready ? ReservationsService::getOrCreatePublicWaitlistLink($restaurantId) : '',
-            'reservations' => $ready ? ReservationsService::getReservations($restaurantId) : [],
+            'reservations' => $ready ? ReservationsService::getReservations($restaurantId, $search) : [],
+            'search' => $search,
             'waitlist' => $ready ? ReservationsService::getWaitlist($restaurantId) : [],
             'tables' => TableService::getTables($restaurantId),
             'flashes' => Session::getFlashes(),

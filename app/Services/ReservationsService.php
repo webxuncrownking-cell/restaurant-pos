@@ -157,19 +157,23 @@ class ReservationsService
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
-    public static function getReservations(int $restaurantId): array
+    public static function getReservations(int $restaurantId, string $search = ''): array
     {
-        return Database::fetchAll(
-            "SELECT r.*, t.table_number, t.name AS table_name
-             FROM reservations r
-             LEFT JOIN restaurant_tables t ON t.restaurant_id = r.restaurant_id AND t.id = r.table_id
-             WHERE r.restaurant_id = ?
-               AND r.reservation_at >= ?
-               AND r.reservation_at < ?
-             ORDER BY r.reservation_at ASC, r.id ASC
-             LIMIT 250",
-            [$restaurantId, date('Y-m-d H:i:s', time() - 86400), date('Y-m-d H:i:s', time() + 14 * 86400)]
-        );
+        $sql = "SELECT r.*, t.table_number, t.name AS table_name
+                FROM reservations r
+                LEFT JOIN restaurant_tables t ON t.restaurant_id = r.restaurant_id AND t.id = r.table_id
+                WHERE r.restaurant_id = ?";
+        $params = [$restaurantId];
+        if ($search !== '') {
+            $sql .= " AND (r.customer_name LIKE ? OR COALESCE(r.phone, '') LIKE ? OR COALESCE(r.status, '') LIKE ? OR COALESCE(r.notes, '') LIKE ? OR CAST(r.id AS CHAR) LIKE ? OR r.reservation_at LIKE ?)";
+            $like = '%' . $search . '%';
+            array_push($params, $like, $like, $like, $like, $like, $like);
+        } else {
+            $sql .= " AND r.reservation_at >= ? AND r.reservation_at < ?";
+            array_push($params, date('Y-m-d H:i:s', time() - 86400), date('Y-m-d H:i:s', time() + 14 * 86400));
+        }
+        $sql .= " ORDER BY r.reservation_at DESC, r.id DESC LIMIT 250";
+        return Database::fetchAll($sql, $params);
     }
 
     public static function getWaitlist(int $restaurantId): array

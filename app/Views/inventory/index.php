@@ -47,6 +47,17 @@
     </div>
   <?php endif; ?>
 
+  <form method="get" action="<?= BASE_URL ?>/inventory" class="card border-0 shadow-sm rounded-4 mb-3">
+    <div class="card-body d-flex flex-wrap gap-2 align-items-end">
+      <div class="flex-grow-1" style="min-width:220px">
+        <label for="inventorySearch" class="form-label small fw-semibold">Search inventory</label>
+        <input id="inventorySearch" class="form-control" type="search" name="search" value="<?= htmlspecialchars((string)($search ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Ingredient, SKU, or unit">
+      </div>
+      <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i>Search</button>
+      <?php if (!empty($search)): ?><a class="btn btn-outline-secondary" href="<?= BASE_URL ?>/inventory">Clear</a><?php endif; ?>
+    </div>
+  </form>
+
   <!-- Ingredients Table -->
   <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
