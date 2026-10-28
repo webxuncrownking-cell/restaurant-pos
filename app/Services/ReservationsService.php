@@ -23,14 +23,14 @@ class ReservationsService
         try {
             $pdo = Database::getInstance();
             if ($pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') {
-                $rows = Database::fetchAll("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('reservations', 'waitlist_entries')");
-                return count($rows) === 2;
+                $rows = Database::fetchAll("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('reservations', 'waitlist_entries', 'waitlist_public_links')");
+                return count($rows) === 3;
             }
             $rows = Database::fetchAll(
                 "SELECT table_name FROM information_schema.tables
-                 WHERE table_schema = DATABASE() AND table_name IN ('reservations', 'waitlist_entries')"
+                 WHERE table_schema = DATABASE() AND table_name IN ('reservations', 'waitlist_entries', 'waitlist_public_links')"
             );
-            return count($rows) === 2;
+            return count($rows) === 3;
         } catch (Throwable $e) {
             return false;
         }
@@ -78,6 +78,18 @@ class ReservationsService
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )");
             $pdo->exec("CREATE INDEX IF NOT EXISTS idx_waitlist_tenant_status ON waitlist_entries (restaurant_id, status, created_at)");
+            $columns = Database::fetchAll("PRAGMA table_info('waitlist_entries')");
+            if (!in_array('public_tracking_token', array_column($columns, 'name'), true)) {
+                $pdo->exec("ALTER TABLE waitlist_entries ADD COLUMN public_tracking_token TEXT NULL");
+            }
+            $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS uq_waitlist_public_tracking_token ON waitlist_entries(public_tracking_token)");
+            $pdo->exec("CREATE TABLE IF NOT EXISTS waitlist_public_links (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                restaurant_id INTEGER NOT NULL UNIQUE,
+                public_token TEXT NOT NULL UNIQUE,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )");
             return;
         }
 
@@ -122,6 +134,26 @@ class ReservationsService
             CONSTRAINT fk_waitlist_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants (id) ON DELETE RESTRICT,
             CONSTRAINT fk_waitlist_table FOREIGN KEY (restaurant_id, table_id) REFERENCES restaurant_tables (restaurant_id, id) ON DELETE RESTRICT,
             CONSTRAINT fk_waitlist_created_by FOREIGN KEY (restaurant_id, created_by_user_id) REFERENCES users (restaurant_id, id) ON DELETE RESTRICT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $column = Database::fetchOne("SELECT COUNT(*) AS total FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'waitlist_entries' AND column_name = 'public_tracking_token'");
+        if ((int)($column['total'] ?? 0) === 0) {
+            $pdo->exec("ALTER TABLE waitlist_entries ADD COLUMN public_tracking_token CHAR(64) NULL");
+        }
+        $index = Database::fetchOne("SELECT COUNT(*) AS total FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'waitlist_entries' AND index_name = 'uq_waitlist_public_tracking_token'");
+        if ((int)($index['total'] ?? 0) === 0) {
+            $pdo->exec("CREATE UNIQUE INDEX uq_waitlist_public_tracking_token ON waitlist_entries(public_tracking_token)");
+        }
+        $pdo->exec("CREATE TABLE IF NOT EXISTS waitlist_public_links (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            restaurant_id INT UNSIGNED NOT NULL,
+            public_token CHAR(64) NOT NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_waitlist_public_restaurant (restaurant_id),
+            UNIQUE KEY uq_waitlist_public_token (public_token),
+            CONSTRAINT fk_waitlist_public_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE RESTRICT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
@@ -315,6 +347,126 @@ class ReservationsService
              WHERE restaurant_id = ? AND id = ? AND status = 'waiting'",
             [$targetStatus, $restaurantId, $entryId]
         );
+    }
+
+    public static function getOrCreatePublicWaitlistLink(int $restaurantId): string
+    {
+        $row = Database::fetchOne(
+            "SELECT public_token, is_active FROM waitlist_public_links WHERE restaurant_id = ? LIMIT 1",
+            [$restaurantId]
+        );
+        if ($row && (int)$row['is_active'] === 1 && preg_match('/^[a-f0-9]{64}$/', (string)$row['public_token'])) {
+            return (string)$row['public_token'];
+        }
+        $token = bin2hex(random_bytes(32));
+        if ($row) {
+            Database::query(
+                "UPDATE waitlist_public_links SET public_token = ?, is_active = 1 WHERE restaurant_id = ?",
+                [$token, $restaurantId]
+            );
+        } else {
+            Database::query(
+                "INSERT INTO waitlist_public_links (restaurant_id, public_token, is_active) VALUES (?, ?, 1)",
+                [$restaurantId, $token]
+            );
+        }
+        return $token;
+    }
+
+    public static function getPublicWaitlistRestaurant(string $token): ?array
+    {
+        if (!preg_match('/^[a-f0-9]{64}$/i', $token)) return null;
+        return Database::fetchOne(
+            "SELECT r.id AS restaurant_id, r.name AS restaurant_name, r.logo_path
+             FROM waitlist_public_links l
+             JOIN restaurants r ON r.id = l.restaurant_id
+             WHERE l.public_token = ? AND l.is_active = 1
+               AND r.status = 'active' AND r.deleted_at IS NULL
+             LIMIT 1",
+            [strtolower($token)]
+        );
+    }
+
+    public static function createPublicWaitlistEntry(string $linkToken, array $input): array
+    {
+        $restaurant = self::getPublicWaitlistRestaurant($linkToken);
+        if (!$restaurant) throw new InvalidArgumentException('This waiting-list link is invalid or no longer active.');
+        if (trim((string)($input['website'] ?? '')) !== '') {
+            throw new InvalidArgumentException('Unable to submit the request. Please try again.');
+        }
+
+        $name = trim((string)($input['customer_name'] ?? ''));
+        $phone = trim((string)($input['phone'] ?? ''));
+        $partySize = filter_var($input['party_size'] ?? null, FILTER_VALIDATE_INT);
+        $notes = trim((string)($input['notes'] ?? ''));
+        if ($name === '' || mb_strlen($name) > 120) throw new InvalidArgumentException('Enter your name (up to 120 characters).');
+        if (!is_int($partySize) || $partySize < 1 || $partySize > 30) throw new InvalidArgumentException('Party size must be between 1 and 30 guests.');
+        if ($phone === '' || mb_strlen($phone) > 30) throw new InvalidArgumentException('Enter a valid contact number (up to 30 characters).');
+        if (mb_strlen($notes) > 500) throw new InvalidArgumentException('Special requests must be 500 characters or fewer.');
+
+        // Prevent accidental repeated submissions from creating duplicate queue entries.
+        $recentSince = date('Y-m-d H:i:s', time() - 120);
+        $recent = Database::fetchOne(
+            "SELECT id FROM waitlist_entries
+             WHERE restaurant_id = ? AND status = 'waiting' AND phone = ?
+               AND created_at >= ?
+             LIMIT 1",
+            [(int)$restaurant['restaurant_id'], $phone, $recentSince]
+        );
+        if ($recent) throw new InvalidArgumentException('You already have an active waiting-list entry. Please ask staff if you need help.');
+
+        $token = bin2hex(random_bytes(32));
+        $ahead = Database::fetchOne(
+            "SELECT COUNT(*) AS total FROM waitlist_entries WHERE restaurant_id = ? AND status = 'waiting'",
+            [(int)$restaurant['restaurant_id']]
+        );
+        $estimate = min(360, max(0, (int)($ahead['total'] ?? 0) * 15));
+        Database::query(
+            "INSERT INTO waitlist_entries
+                (restaurant_id, customer_name, phone, party_size, estimated_wait_minutes, status, notes, public_tracking_token)
+             VALUES (?, ?, ?, ?, ?, 'waiting', ?, ?)",
+            [(int)$restaurant['restaurant_id'], $name, $phone, $partySize, $estimate, $notes !== '' ? $notes : null, $token]
+        );
+        $id = (int)Database::lastInsertId();
+        $position = (int)($ahead['total'] ?? 0) + 1;
+        return ['tracking_token' => $token, 'position' => $position, 'estimated_wait_minutes' => $estimate, 'entry_id' => $id];
+    }
+
+    public static function getPublicWaitlistStatus(string $linkToken, string $trackingToken): ?array
+    {
+        $restaurant = self::getPublicWaitlistRestaurant($linkToken);
+        if (!$restaurant || !preg_match('/^[a-f0-9]{64}$/i', $trackingToken)) return null;
+        $entry = Database::fetchOne(
+            "SELECT id, customer_name, party_size, status, estimated_wait_minutes, created_at, seated_at
+             FROM waitlist_entries
+             WHERE restaurant_id = ? AND public_tracking_token = ?
+             LIMIT 1",
+            [(int)$restaurant['restaurant_id'], strtolower($trackingToken)]
+        );
+        if (!$entry) return null;
+        $position = 0;
+        if ($entry['status'] === 'waiting') {
+            $ahead = Database::fetchOne(
+                "SELECT COUNT(*) AS total FROM waitlist_entries
+                 WHERE restaurant_id = ? AND status = 'waiting'
+                   AND (created_at < ? OR (created_at = ? AND id <= ?))",
+                [(int)$restaurant['restaurant_id'], $entry['created_at'], $entry['created_at'], (int)$entry['id']]
+            );
+            $position = (int)($ahead['total'] ?? 0);
+        }
+        $estimatedWait = $entry['status'] === 'waiting'
+            ? min(360, max(0, ($position - 1) * 15))
+            : (int)$entry['estimated_wait_minutes'];
+        return [
+            'restaurant_name' => (string)$restaurant['restaurant_name'],
+            'customer_name' => (string)$entry['customer_name'],
+            'party_size' => (int)$entry['party_size'],
+            'status' => (string)$entry['status'],
+            'position' => $position,
+            'estimated_wait_minutes' => $estimatedWait,
+            'created_at' => (string)$entry['created_at'],
+            'seated_at' => $entry['seated_at'] ?? null
+        ];
     }
 
     private static function getBookableTable(int $restaurantId, int $tableId, int $partySize, int $when, bool $mustBeCurrentlyAvailable = false): ?array
