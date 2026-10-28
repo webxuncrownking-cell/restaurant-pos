@@ -21,7 +21,6 @@ final class PublicReservationService
             self::addSqliteColumn('reservations', 'customer_email', 'TEXT NULL');
             self::addSqliteColumn('reservations', 'public_token', 'TEXT NULL');
             self::addSqliteColumn('reservations', 'notification_email_sent', 'INTEGER NOT NULL DEFAULT 0');
-            self::addSqliteColumn('reservations', 'notification_sms_sent', 'INTEGER NOT NULL DEFAULT 0');
             $pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS uq_reservations_public_token ON reservations(public_token)");
             return;
         }
@@ -54,7 +53,6 @@ final class PublicReservationService
             'customer_email' => 'VARCHAR(254) NULL',
             'public_token' => 'CHAR(64) NULL',
             'notification_email_sent' => 'TINYINT(1) NOT NULL DEFAULT 0',
-            'notification_sms_sent' => 'TINYINT(1) NOT NULL DEFAULT 0',
         ];
         foreach ($add as $name => $definition) {
             if (!in_array($name, $known, true)) $pdo->exec("ALTER TABLE reservations ADD COLUMN {$name} {$definition}");
@@ -229,26 +227,16 @@ final class PublicReservationService
     public static function notifyConfirmed(int $restaurantId,int $reservationId): array
     {
         $r=Database::fetchOne("SELECT r.*,s.name AS restaurant_name FROM reservations r JOIN restaurants s ON s.id=r.restaurant_id WHERE r.restaurant_id=? AND r.id=? AND r.status='booked' AND r.public_token IS NOT NULL LIMIT 1",[$restaurantId,$reservationId]);
-        if(!$r) return ['email'=>false,'sms'=>false];
+        if(!$r) return ['email'=>false];
         $when=date('D, M j, Y \a\t g:i A',strtotime((string)$r['reservation_at']));
         $subject='Reservation confirmed - '.$r['restaurant_name'];
-        $body="Hello {$r['customer_name']},\n\nYour reservation at {$r['restaurant_name']} is confirmed for {$when} for {$r['party_size']} guest(s).\n\nIf you need to make changes, please contact the restaurant.";
-        $emailSent=false; $smsSent=false;
+        $body="Hello {$r['customer_name']},\n\nYour reservation at {$r['restaurant_name']} is confirmed for {$when} for {$r['party_size']} guest(s).\n\nYou can check your reservation status using the reservation status link provided when you booked. If you need to make changes, please contact the restaurant.";
+        $emailSent=false;
         if(!empty($r['customer_email']) && filter_var($r['customer_email'],FILTER_VALIDATE_EMAIL)) {
             $host=(string)(parse_url(defined('BASE_URL')?BASE_URL:'',PHP_URL_HOST) ?: 'localhost');
             $emailSent=@mail((string)$r['customer_email'],$subject,$body,"From: no-reply@{$host}\r\nContent-Type: text/plain; charset=UTF-8");
         }
-        $sid=(string)getenv('SERVEFLOW_TWILIO_ACCOUNT_SID');
-        $secret=(string)getenv('SERVEFLOW_TWILIO_AUTH_TOKEN');
-        $from=(string)getenv('SERVEFLOW_TWILIO_FROM_NUMBER');
-        if($sid!=='' && $secret!=='' && $from!=='' && !empty($r['phone']) && function_exists('curl_init')) {
-            $payload=http_build_query(['To'=>(string)$r['phone'],'From'=>$from,'Body'=>$body]);
-            $ch=curl_init('https://api.twilio.com/2010-04-01/Accounts/'.rawurlencode($sid).'/Messages.json');
-            curl_setopt_array($ch,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$payload,CURLOPT_USERPWD=>$sid.':'.$secret,CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>10]);
-            $response=curl_exec($ch); $status=(int)curl_getinfo($ch,CURLINFO_HTTP_CODE); curl_close($ch);
-            $smsSent=$response!==false && $status>=200 && $status<300;
-        }
-        Database::query("UPDATE reservations SET notification_email_sent=?,notification_sms_sent=? WHERE restaurant_id=? AND id=?",[$emailSent?1:0,$smsSent?1:0,$restaurantId,$reservationId]);
-        return ['email'=>$emailSent,'sms'=>$smsSent];
+        Database::query("UPDATE reservations SET notification_email_sent=? WHERE restaurant_id=? AND id=?",[$emailSent?1:0,$restaurantId,$reservationId]);
+        return ['email'=>$emailSent];
     }
 }

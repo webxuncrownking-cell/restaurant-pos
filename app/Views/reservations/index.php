@@ -239,7 +239,7 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
                         <?php endforeach; ?>
                       </select>
                       <div class="d-flex gap-1 flex-wrap">
-                        <?php if ($reservation['status'] === 'pending'): ?><button class="btn btn-primary btn-sm" name="status" value="booked" type="submit">Confirm &amp; notify</button><?php else: ?><button class="btn btn-success btn-sm" name="status" value="seated" type="submit">Seat</button><?php endif; ?>
+                        <?php if ($reservation['status'] === 'pending'): ?><button class="btn btn-primary btn-sm" name="status" value="booked" type="submit">Confirm &amp; email</button><?php else: ?><button class="btn btn-success btn-sm" name="status" value="seated" type="submit">Seat</button><?php endif; ?>
                         <button class="btn btn-outline-secondary btn-sm" name="status" value="no_show" type="submit">No-show</button>
                         <button class="btn btn-outline-danger btn-sm" name="status" value="cancelled" type="submit">Cancel</button>
                       </div>
