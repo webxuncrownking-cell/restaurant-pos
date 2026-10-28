@@ -234,7 +234,7 @@ final class PublicReservationService
         $emailSent=false;
         if(!empty($r['customer_email']) && filter_var($r['customer_email'],FILTER_VALIDATE_EMAIL)) {
             $host=(string)(parse_url(defined('BASE_URL')?BASE_URL:'',PHP_URL_HOST) ?: 'localhost');
-            $emailSent=@mail((string)$r['customer_email'],$subject,$body,"From: no-reply@{$host}\\r\nContent-Type: text/plain; charset=UTF-8");
+            $emailSent=@mail((string)$r['customer_email'],$subject,$body,"From: no-reply@{$host}\r\nContent-Type: text/plain; charset=UTF-8");
         }
         Database::query("UPDATE reservations SET notification_email_sent=? WHERE restaurant_id=? AND id=?",[$emailSent?1:0,$restaurantId,$reservationId]);
         return ['email'=>$emailSent];
