@@ -65,6 +65,7 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
       <p class="res-subtitle">Plan upcoming bookings, organize walk-ins, and seat guests from one place.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+      <a href="<?= BASE_URL ?>/reservations/online-booking" class="btn btn-outline-primary"><i class="bi bi-globe me-1"></i> Online booking</a>
       <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
       <a href="<?= BASE_URL ?>/pos" class="btn btn-primary"><i class="bi bi-display me-1"></i> POS Terminal</a>
     </div>
@@ -210,7 +211,7 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
 
     <section class="res-card mt-4">
       <div class="res-card-head">
-        <div class="d-flex align-items-center gap-3"><span class="res-icon"><i class="bi bi-calendar2-week"></i></span><div><h2 class="res-section-title">Upcoming reservations</h2><p class="res-help">Bookings in the previous 24 hours and next 14 days. Seat, cancel, or mark no-show.</p></div></div>
+        <div class="d-flex align-items-center gap-3"><span class="res-icon"><i class="bi bi-calendar2-week"></i></span><div><h2 class="res-section-title">Upcoming reservations</h2><p class="res-help">Bookings in the previous 24 hours and next 14 days. Confirm pending online requests, seat guests, cancel, or mark no-show.</p></div></div>
       </div>
       <?php if (empty($reservations)): ?>
         <div class="res-list-empty"><i class="bi bi-calendar-x"></i>No reservations in this period yet.</div>
@@ -227,7 +228,7 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
                 <td><?= !empty($reservation['table_number']) ? htmlspecialchars('#' . $reservation['table_number'] . ' · ' . $reservation['table_name'], ENT_QUOTES, 'UTF-8') : '<span class="text-secondary">Unassigned</span>' ?></td>
                 <td><span class="res-status <?= htmlspecialchars((string)$reservation['status'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(str_replace('_',' ',(string)$reservation['status']), ENT_QUOTES, 'UTF-8') ?></span></td>
                 <td class="res-actions">
-                  <?php if ($reservation['status'] === 'booked'): ?>
+                  <?php if (in_array($reservation['status'], ['pending','booked'], true)): ?>
                     <form method="POST" action="<?= BASE_URL ?>/reservations/action" class="d-flex flex-column gap-2">
                       <?= \App\Core\CSRF::formField() ?>
                       <input type="hidden" name="reservation_id" value="<?= (int)$reservation['id'] ?>">
@@ -238,7 +239,7 @@ $availableTables = array_values(array_filter($tables ?? [], static fn(array $tab
                         <?php endforeach; ?>
                       </select>
                       <div class="d-flex gap-1 flex-wrap">
-                        <button class="btn btn-success btn-sm" name="status" value="seated" type="submit">Seat</button>
+                        <?php if ($reservation['status'] === 'pending'): ?><button class="btn btn-primary btn-sm" name="status" value="booked" type="submit">Confirm &amp; notify</button><?php else: ?><button class="btn btn-success btn-sm" name="status" value="seated" type="submit">Seat</button><?php endif; ?>
                         <button class="btn btn-outline-secondary btn-sm" name="status" value="no_show" type="submit">No-show</button>
                         <button class="btn btn-outline-danger btn-sm" name="status" value="cancelled" type="submit">Cancel</button>
                       </div>

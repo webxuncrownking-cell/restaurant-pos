@@ -241,15 +241,21 @@ class ReservationsService
 
     public static function updateReservationStatus(int $restaurantId, int $reservationId, int $userId, string $targetStatus, ?int $tableId = null): void
     {
-        if (!in_array($targetStatus, ['seated', 'cancelled', 'no_show'], true)) {
+        if (!in_array($targetStatus, ['booked', 'seated', 'cancelled', 'no_show'], true)) {
             throw new InvalidArgumentException('Choose a valid reservation action.');
         }
         $reservation = Database::fetchOne(
             "SELECT * FROM reservations WHERE restaurant_id = ? AND id = ?",
             [$restaurantId, $reservationId]
         );
-        if (!$reservation || $reservation['status'] !== 'booked') {
-            throw new InvalidArgumentException('Only booked reservations can be changed.');
+        if (!$reservation || !in_array((string)$reservation['status'], ['pending', 'booked'], true) || ($reservation['status'] === 'pending' && !in_array($targetStatus, ['booked', 'cancelled'], true))) {
+            throw new InvalidArgumentException('Only pending or booked reservations can be changed.');
+        }
+
+        if ($targetStatus === 'booked') {
+            if ($reservation['status'] !== 'pending') throw new InvalidArgumentException('This reservation is already confirmed.');
+            Database::query("UPDATE reservations SET status = 'booked', updated_at = CURRENT_TIMESTAMP WHERE restaurant_id = ? AND id = ? AND status = 'pending'", [$restaurantId, $reservationId]);
+            return;
         }
 
         if ($targetStatus === 'seated') {
@@ -279,7 +285,7 @@ class ReservationsService
 
         Database::query(
             "UPDATE reservations SET status = ?, updated_at = CURRENT_TIMESTAMP
-             WHERE restaurant_id = ? AND id = ? AND status = 'booked'",
+             WHERE restaurant_id = ? AND id = ? AND status IN ('pending','booked')",
             [$targetStatus, $restaurantId, $reservationId]
         );
     }

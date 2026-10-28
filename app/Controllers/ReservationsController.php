@@ -14,6 +14,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Core\TenantContext;
 use App\Services\ReservationsService;
+use App\Services\PublicReservationService;
 use App\Services\TableService;
 use InvalidArgumentException;
 use Throwable;
@@ -60,7 +61,8 @@ class ReservationsController
 
         try {
             ReservationsService::ensureSchema();
-            Session::setFlash('success', 'Reservations and waiting-list tables are ready. Existing restaurant, menu, and sales data was not changed.');
+            PublicReservationService::ensureSchema();
+            Session::setFlash('success', 'Reservations, waiting-list, and online booking tables are ready. Existing restaurant, menu, and sales data was not changed.');
         } catch (Throwable $e) {
             error_log('[Reservations Migration] ' . $e->getMessage());
             Session::setFlash('danger', 'Unable to create reservations tables. Check database permissions and the PHP error log.');
@@ -102,8 +104,14 @@ class ReservationsController
                 throw new InvalidArgumentException('Choose a valid reservation and table.');
             }
             ReservationsService::updateReservationStatus($restaurantId, (int)$reservationId, (int)Auth::id(), $target, $tableId ? (int)$tableId : null);
-            $messages = ['seated' => 'Guest seated and table marked occupied.', 'cancelled' => 'Reservation cancelled.', 'no_show' => 'Reservation marked as no-show.'];
-            Session::setFlash('success', $messages[$target] ?? 'Reservation updated.');
+            if ($target === 'booked') {
+                $sent = PublicReservationService::notifyConfirmed($restaurantId, (int)$reservationId);
+                $channels = []; if ($sent['email']) $channels[] = 'email'; if ($sent['sms']) $channels[] = 'SMS';
+                Session::setFlash('success', 'Reservation confirmed.' . ($channels ? ' Notification sent by ' . implode(' and ', $channels) . '.' : ' Customer notifications were not sent; check email/SMS gateway configuration.'));
+            } else {
+                $messages = ['seated' => 'Guest seated and table marked occupied.', 'cancelled' => 'Reservation cancelled.', 'no_show' => 'Reservation marked as no-show.'];
+                Session::setFlash('success', $messages[$target] ?? 'Reservation updated.');
+            }
         } catch (InvalidArgumentException $e) {
             Session::setFlash('warning', $e->getMessage());
         } catch (Throwable $e) {
