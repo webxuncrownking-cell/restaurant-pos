@@ -130,14 +130,15 @@ final class PublicReservationService
         $day = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
         if (!$day || $day->format('Y-m-d') !== $date || $day < new DateTimeImmutable('today') || $day > (new DateTimeImmutable('today'))->modify('+90 days')) return [];
         $hours = self::getHours((int)$restaurant['restaurant_id'])[(int)$day->format('w')];
-        if ((int)$hours['is_closed'] === 1) return [];
+        if ((int)$hours['is_closed'] === 1) throw new InvalidArgumentException('The restaurant is closed on this date. Please choose another date.');
         $duration = (int)$hours['duration_minutes'];
         $interval = (int)$hours['slot_interval'];
         $open = new DateTimeImmutable($date.' '.substr((string)$hours['open_time'],0,5));
         $close = new DateTimeImmutable($date.' '.substr((string)$hours['close_time'],0,5));
         $lastStart = $close->modify('-'.$duration.' minutes');
-        if ($lastStart < $open) return [];
+        if ($lastStart < $open) throw new InvalidArgumentException('The restaurant hours are shorter than the configured reservation duration. Please contact the restaurant.');
         $tables = Database::fetchAll("SELECT id, capacity, status FROM restaurant_tables WHERE restaurant_id = ? AND deleted_at IS NULL AND is_active = 1 AND capacity >= ? ORDER BY capacity ASC", [(int)$restaurant['restaurant_id'],$partySize]);
+        if (!$tables) throw new InvalidArgumentException('There are no active tables with enough capacity for this party size. Please contact the restaurant.');
         $slots = [];
         for ($slot=$open; $slot <= $lastStart; $slot=$slot->modify('+'.$interval.' minutes')) {
             if ($slot < new DateTimeImmutable('now')) continue;
