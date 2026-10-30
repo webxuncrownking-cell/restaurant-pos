@@ -155,6 +155,134 @@ class BillService
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
+    /**
+     * Retrieve open bills with tenant-scoped search, filters, and pagination.
+     */
+    public static function getOpenBillsPage(
+        int $restaurantId,
+        array $filters = [],
+        int $page = 1,
+        int $perPage = 20
+    ): array {
+        if ($restaurantId <= 0) {
+            throw new InvalidArgumentException('A valid restaurant workspace is required.');
+        }
+
+        $page = max(1, $page);
+        $perPage = max(1, min(100, $perPage));
+
+        $search = trim((string)($filters['search'] ?? ''));
+        $paymentStatus = (string)($filters['payment_status'] ?? '');
+        $dateFrom = (string)($filters['date_from'] ?? '');
+        $dateTo = (string)($filters['date_to'] ?? '');
+
+        $where = [
+            'o.restaurant_id = ?',
+            "o.payment_status IN ('unpaid','partially_paid')",
+            "o.order_status NOT IN ('cancelled')"
+        ];
+        $params = [$restaurantId];
+
+        if ($paymentStatus === 'unpaid' || $paymentStatus === 'partially_paid') {
+            $where[] = 'o.payment_status = ?';
+            $params[] = $paymentStatus;
+        }
+
+        if ($search !== '') {
+            $where[] = "(
+                o.order_number LIKE ?
+                OR CAST(o.id AS CHAR) LIKE ?
+                OR CAST(t.table_number AS CHAR) LIKE ?
+                OR t.name LIKE ?
+                OR u.full_name LIKE ?
+            )";
+            $term = '%' . $search . '%';
+            array_push($params, $term, $term, $term, $term, $term);
+        }
+
+        $validDate = static function (string $value): bool {
+            $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+            return $date !== false && $date->format('Y-m-d') === $value;
+        };
+
+        if ($dateFrom !== '' && $validDate($dateFrom)) {
+            $where[] = 'o.created_at >= ?';
+            $params[] = $dateFrom . ' 00:00:00';
+        }
+
+        if ($dateTo !== '' && $validDate($dateTo)) {
+            $where[] = 'o.created_at <= ?';
+            $params[] = $dateTo . ' 23:59:59';
+        }
+
+        $fromSql = "
+            FROM orders o
+            LEFT JOIN restaurant_tables t
+                ON t.restaurant_id = o.restaurant_id AND t.id = o.table_id
+            LEFT JOIN users u
+                ON u.restaurant_id = o.restaurant_id AND u.id = o.cashier_id
+            WHERE " . implode(' AND ', $where);
+
+        $total = (int)Database::fetchColumn(
+            "SELECT COUNT(*) " . $fromSql,
+            $params
+        );
+
+        $totalPages = max(1, (int)ceil($total / $perPage));
+        $page = min($page, $totalPages);
+        $offset = ($page - 1) * $perPage;
+
+        $bills = Database::fetchAll(
+            "SELECT o.id, o.order_number, o.order_type, o.order_status, o.payment_status,
+                    o.total_amount, o.created_at, o.table_id,
+                    t.table_number, t.name AS table_name,
+                    u.full_name AS cashier_name,
+                    COALESCE((
+                        SELECT SUM(p.amount)
+                        FROM payments p
+                        WHERE p.restaurant_id = o.restaurant_id
+                          AND p.order_id = o.id
+                          AND p.is_verified = 1
+                    ), 0) AS amount_paid
+            " . $fromSql . "
+            ORDER BY o.created_at ASC, o.id ASC
+            LIMIT " . (int)$perPage . " OFFSET " . (int)$offset,
+            $params
+        );
+
+        foreach ($bills as &$bill) {
+            $bill['total_amount'] = round((float)$bill['total_amount'], 2);
+            $bill['amount_paid'] = round((float)$bill['amount_paid'], 2);
+            $bill['balance_due'] = max(
+                0,
+                round($bill['total_amount'] - $bill['amount_paid'], 2)
+            );
+
+            $bill['items'] = Database::fetchAll(
+                "SELECT id, product_name, variant_name, quantity, unit_price,
+                        subtotal, special_instructions
+                 FROM order_items
+                 WHERE restaurant_id = ? AND order_id = ?
+                 ORDER BY id ASC",
+                [$restaurantId, (int)$bill['id']]
+            );
+
+            $bill['splits'] = self::getSplits(
+                $restaurantId,
+                (int)$bill['id']
+            );
+        }
+        unset($bill);
+
+        return [
+            'bills' => $bills,
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total_pages' => $totalPages
+        ];
+    }
+
     public static function getOpenBills(int $restaurantId): array
     {
         $bills = Database::fetchAll(

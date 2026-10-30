@@ -30,11 +30,39 @@ class BillsController
         }
 
         $schemaReady = BillService::schemaReady();
+
+        $filters = [
+            'search' => trim((string)$request->get('search', '')),
+            'payment_status' => (string)$request->get('payment_status', ''),
+            'date_from' => (string)$request->get('date_from', ''),
+            'date_to' => (string)$request->get('date_to', ''),
+        ];
+
+        $requestedPage = filter_var(
+            $request->get('page', 1),
+            FILTER_VALIDATE_INT
+        );
+        $page = ($requestedPage !== false && $requestedPage !== null)
+            ? max(1, (int)$requestedPage)
+            : 1;
+
+        $pagination = $schemaReady
+            ? BillService::getOpenBillsPage($restaurantId, $filters, $page, 20)
+            : [
+                'bills' => [],
+                'total' => 0,
+                'page' => 1,
+                'per_page' => 20,
+                'total_pages' => 1,
+            ];
+
         // Render directly because some existing XAMPP installations use a legacy
         // Response::render() signature. This view includes its own header/navbar/footer.
         $viewData = [
             'schema_ready' => $schemaReady,
-            'bills' => $schemaReady ? BillService::getOpenBills($restaurantId) : [],
+            'bills' => $pagination['bills'],
+            'pagination' => $pagination,
+            'filters' => $filters,
             'flashes' => Session::getFlashes(),
             'title' => 'Open Bills & Split Payments - Restaurant POS',
         ];
