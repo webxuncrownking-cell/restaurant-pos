@@ -45,6 +45,75 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
   .bill-empty h2 { color:#243047; font-weight:850; font-size:1rem; }
   .bill-empty p { color:#718096; margin:0; font-size:.84rem; }
   .bill-label-help { color:#8794a7; font-size:.72rem; margin-top:5px; }
+
+  .bills-filter-panel {
+    background:var(--bs-body-bg,#fff);
+    border:1px solid #e2e8f0;
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:20px;
+    box-shadow:0 4px 14px rgba(15,23,42,.035);
+  }
+  .bills-filter-panel .form-label {
+    color:#64748b;
+    font-size:.78rem;
+    font-weight:750;
+    margin-bottom:6px;
+  }
+  .bills-filter-panel .form-control,
+  .bills-filter-panel .form-select {
+    min-height:44px;
+    border-radius:9px;
+  }
+  .bills-filter-actions {
+    display:flex;
+    align-items:end;
+    gap:8px;
+  }
+  .bills-pagination {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    margin:22px 0;
+  }
+  .bills-pagination a,
+  .bills-pagination span {
+    display:inline-flex;
+    min-width:40px;
+    min-height:40px;
+    align-items:center;
+    justify-content:center;
+    padding:7px 12px;
+    border:1px solid #e2e8f0;
+    border-radius:9px;
+    background:#fff;
+    color:#475569;
+    text-decoration:none;
+    font-size:.85rem;
+    font-weight:750;
+  }
+  .bills-pagination a.btn-primary {
+    background:#2563eb;
+    border-color:#2563eb;
+    color:#fff;
+  }
+  .bills-pagination .disabled {
+    opacity:.45;
+    pointer-events:none;
+  }
+  .bills-results-meta {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin:0 0 14px;
+    color:#718096;
+    font-size:.84rem;
+  }
+
   @media(max-width:720px) {
     .bills-page { padding:15px; }
     .bill-card-head,.bill-body { padding:15px; }
@@ -102,6 +171,51 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
       <a href="<?= BASE_URL ?>/tables" class="btn btn-outline-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Floor Plan</a>
     </div>
   </section>
+<?php if (!empty($schema_ready)): ?>
+  <form method="GET" action="<?= BASE_URL ?>/bills" class="bills-filter-panel">
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-lg-4">
+        <label class="form-label" for="bill-search">Search open bills</label>
+        <div class="input-group">
+          <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
+          <input type="search" class="form-control" id="bill-search" name="search"
+            value="<?= htmlspecialchars((string)($filters['search'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
+            placeholder="Order number, table, cashier...">
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-2">
+        <label class="form-label" for="bill-payment-status">Payment status</label>
+        <select class="form-select" id="bill-payment-status" name="payment_status">
+          <option value="">All open bills</option>
+          <option value="unpaid" <?= ($filters['payment_status'] ?? '') === 'unpaid' ? 'selected' : '' ?>>Unpaid</option>
+          <option value="partially_paid" <?= ($filters['payment_status'] ?? '') === 'partially_paid' ? 'selected' : '' ?>>Partially paid</option>
+        </select>
+      </div>
+      <div class="col-6 col-sm-3 col-lg-2">
+        <label class="form-label" for="bill-date-from">From date</label>
+        <input type="date" class="form-control" id="bill-date-from" name="date_from"
+          value="<?= htmlspecialchars((string)($filters['date_from'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+      </div>
+      <div class="col-6 col-sm-3 col-lg-2">
+        <label class="form-label" for="bill-date-to">To date</label>
+        <input type="date" class="form-control" id="bill-date-to" name="date_to"
+          value="<?= htmlspecialchars((string)($filters['date_to'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+      </div>
+      <div class="col-12 col-lg-2">
+        <div class="bills-filter-actions">
+          <button type="submit" class="btn btn-primary flex-grow-1">
+            <i class="bi bi-search me-1"></i> Search
+          </button>
+          <a href="<?= BASE_URL ?>/bills" class="btn btn-outline-secondary"
+             title="Clear filters" aria-label="Clear filters">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </form>
+<?php endif; ?>
+
 
   <?php if (empty($schema_ready)): ?>
     <div class="alert alert-warning border-0 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3" role="alert">
@@ -117,13 +231,54 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
         <button type="submit" class="btn btn-warning fw-semibold"><i class="bi bi-database-gear me-1"></i> Apply Open Bills Update</button>
       </form>
     </div>
-  <?php elseif (empty($bills)): ?>
-    <div class="bill-empty">
-      <i class="bi bi-check2-circle"></i>
-      <h2>No outstanding bills</h2>
-      <p>Use “Send to Kitchen / Save Open Bill” in the POS to create a dine-in order that can be paid later or split among guests.</p>
-    </div>
   <?php else: ?>
+    <?php
+      $totalBills = (int)($pagination['total'] ?? 0);
+      $currentPage = (int)($pagination['page'] ?? 1);
+      $perPage = (int)($pagination['per_page'] ?? 20);
+      $totalPages = (int)($pagination['total_pages'] ?? 1);
+      $firstBill = $totalBills > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
+      $lastBill = min($totalBills, $currentPage * $perPage);
+
+      $billPageFilters = [
+        'search' => (string)($filters['search'] ?? ''),
+        'payment_status' => (string)($filters['payment_status'] ?? ''),
+        'date_from' => (string)($filters['date_from'] ?? ''),
+        'date_to' => (string)($filters['date_to'] ?? ''),
+      ];
+
+      $billPageUrl = static function (int $targetPage) use ($billPageFilters): string {
+        return BASE_URL . '/bills?' . http_build_query(
+          array_merge($billPageFilters, ['page' => $targetPage])
+        );
+      };
+
+      $startPage = max(1, $currentPage - 2);
+      $endPage = min($totalPages, $currentPage + 2);
+
+      $hasBillFilters = (
+        $billPageFilters['search'] !== '' ||
+        $billPageFilters['payment_status'] !== '' ||
+        $billPageFilters['date_from'] !== '' ||
+        $billPageFilters['date_to'] !== ''
+      );
+    ?>
+    <div class="bills-results-meta">
+      Showing <?= $firstBill ?>–<?= $lastBill ?> of <?= $totalBills ?> open bills
+    </div>
+
+    <?php if (empty($bills)): ?>
+      <div class="bill-empty">
+        <i class="bi bi-<?= $hasBillFilters ? 'search' : 'check2-circle' ?>"></i>
+        <h2><?= $hasBillFilters ? 'No bills match your filters' : 'No outstanding bills' ?></h2>
+        <p><?= $hasBillFilters
+          ? 'Try changing your search or filters to find matching open bills.'
+          : 'Use “Send to Kitchen / Save Open Bill” in the POS to create a dine-in order that can be paid later or split among guests.' ?></p>
+        <?php if ($hasBillFilters): ?>
+          <a href="<?= BASE_URL ?>/bills" class="btn btn-outline-primary mt-2">Clear filters</a>
+        <?php endif; ?>
+      </div>
+    <?php else: ?>
     <?php foreach ($bills as $bill): ?>
       <article class="bill-card">
         <header class="bill-card-head">
@@ -280,6 +435,43 @@ $money = static fn(float $amount): string => '₱' . number_format($amount, 2);
         </div>
       </article>
     <?php endforeach; ?>
+
+    <?php if ($totalPages > 1): ?>
+      <nav class="bills-pagination" aria-label="Open bills pages">
+        <a class="btn btn-outline-secondary <?= $currentPage <= 1 ? 'disabled' : '' ?>"
+           href="<?= htmlspecialchars($billPageUrl(max(1, $currentPage - 1)), ENT_QUOTES, 'UTF-8') ?>"
+           <?= $currentPage <= 1 ? 'aria-disabled="true" tabindex="-1"' : '' ?>>
+          <i class="bi bi-chevron-left"></i> Previous
+        </a>
+
+        <div class="bills-pagination-pages">
+          <?php if ($startPage > 1): ?>
+            <a class="btn btn-outline-secondary" href="<?= htmlspecialchars($billPageUrl(1), ENT_QUOTES, 'UTF-8') ?>">1</a>
+            <?php if ($startPage > 2): ?><span class="bills-pagination-ellipsis">…</span><?php endif; ?>
+          <?php endif; ?>
+
+          <?php for ($pageNumber = $startPage; $pageNumber <= $endPage; $pageNumber++): ?>
+            <a class="btn <?= $pageNumber === $currentPage ? 'btn-primary' : 'btn-outline-secondary' ?>"
+               href="<?= htmlspecialchars($billPageUrl($pageNumber), ENT_QUOTES, 'UTF-8') ?>"
+               <?= $pageNumber === $currentPage ? 'aria-current="page"' : '' ?>>
+              <?= $pageNumber ?>
+            </a>
+          <?php endfor; ?>
+
+          <?php if ($endPage < $totalPages): ?>
+            <?php if ($endPage < $totalPages - 1): ?><span class="bills-pagination-ellipsis">…</span><?php endif; ?>
+            <a class="btn btn-outline-secondary" href="<?= htmlspecialchars($billPageUrl($totalPages), ENT_QUOTES, 'UTF-8') ?>"><?= $totalPages ?></a>
+          <?php endif; ?>
+        </div>
+
+        <a class="btn btn-outline-secondary <?= $currentPage >= $totalPages ? 'disabled' : '' ?>"
+           href="<?= htmlspecialchars($billPageUrl(min($totalPages, $currentPage + 1)), ENT_QUOTES, 'UTF-8') ?>"
+           <?= $currentPage >= $totalPages ? 'aria-disabled="true" tabindex="-1"' : '' ?>>
+          Next <i class="bi bi-chevron-right"></i>
+        </a>
+      </nav>
+    <?php endif; ?>
+    <?php endif; ?>
   <?php endif; ?>
 </div>
 <script>
