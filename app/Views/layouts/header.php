@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,22 +43,13 @@
     $primaryColor = $restaurant['pos_primary_color'] ?? '#2563eb';
     $secondaryColor = $restaurant['pos_secondary_color'] ?? '#059669';
   ?>
-<script id="serveflow-theme-prepaint">
+<script id="serveflow-sidebar-prepaint">
 (function () {
-  var root = document.documentElement;
   try {
-    var savedTheme = localStorage.getItem('serveflow-theme');
-    // The default is light, so the first paint matches the footer's default instead of flashing dark.
-    root.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'light');
     if (localStorage.getItem('serveflow-sidebar-collapsed') === '1') {
-      root.setAttribute('data-sidebar-collapsed', 'true');
-    } else {
-      root.removeAttribute('data-sidebar-collapsed');
+      document.documentElement.setAttribute('data-sidebar-collapsed', 'true');
     }
-  } catch (e) {
-    root.setAttribute('data-theme', 'light');
-    root.removeAttribute('data-sidebar-collapsed');
-  }
+  } catch (e) {}
 })();
 </script>
   <style>
@@ -606,17 +597,6 @@
     body.sidebar-collapsed .app-sidebar-collapse-toggle { left:calc(var(--app-sidebar-collapsed-width) - 16px); }
     body.sidebar-collapsed .app-sidebar-collapse-toggle .bi { transform:none; }
     .app-topbar-left { gap:12px; }
-    .app-theme-switch { display:inline-flex; align-items:center; gap:9px; padding:6px 10px; border:1px solid #dce3ed; border-radius:999px; background:#fff; color:#475569; cursor:pointer; user-select:none; white-space:nowrap; }
-    .app-theme-switch input { position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
-    .app-theme-switch-track { position:relative; width:38px; height:22px; flex:0 0 38px; border-radius:999px; background:#cbd5e1; box-shadow:inset 0 0 0 1px rgba(15,23,42,.08); transition:background .18s ease; }
-    .app-theme-switch-track::after { content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(15,23,42,.25); transition:transform .18s ease; }
-    .app-theme-switch input:checked + .app-theme-switch-track { background:#2563eb; }
-    .app-theme-switch input:checked + .app-theme-switch-track::after { transform:translateX(16px); }
-    .app-theme-switch input:focus-visible + .app-theme-switch-track { outline:3px solid rgba(37,99,235,.35); outline-offset:3px; }
-    .app-theme-switch-label { font-size:.8rem; font-weight:650; }
-    html[data-theme="dark"] .app-theme-switch { color:#e5ebf5; background:#202d42; border-color:#3a4960; }
-    html[data-theme="dark"] .app-theme-switch-track { background:#52627a; }
-    html[data-theme="dark"] .app-theme-switch input:checked + .app-theme-switch-track { background:#3b82f6; }
 
     /* More complete dark-mode support for common Bootstrap and custom page surfaces. */
     html[data-theme="dark"] .app-main .container,
@@ -653,7 +633,6 @@
     html[data-theme="dark"] .app-main .alert-warning { color:#fde68a; background:#493718; border-color:#806027; }
     html[data-theme="dark"] .app-main .alert-info { color:#bae6fd; background:#12364a; border-color:#245b77; }
     @media (max-width:991.98px) { .app-sidebar-collapse-toggle { display:none!important; } }
-    @media (max-width:575.98px) { .app-theme-switch { padding:5px 7px; gap:6px; } .app-theme-switch-label { display:none; } }
 
 
     /* Avoid a light-theme flash while the saved theme is being applied. */
@@ -719,7 +698,6 @@
       height:40px; margin:0 12px 0 0; padding:0 16px; border:0; border-right:1px solid #d7e0ec;
       background:#eef2f7; color:#334155; font:inherit; cursor:pointer;
     }
-    @media (prefers-reduced-motion:reduce) { .app-nav-link,.app-sidebar,.app-sidebar-collapse-toggle,.app-theme-switch-track { transition:none!important; } }
 
 
     /* Stable initial layout: restore the saved sidebar state before first paint. */
@@ -1379,6 +1357,34 @@
     html[data-theme="dark"] .app-main .expiry-metric-label,
     html[data-theme="dark"] .app-main .expiry-subtext { color:#aebed3 !important; }
     html[data-theme="dark"] .app-main .expiry-waste-form .form-label { color:#dce7f7 !important; }
+
+  
+    /* Fixed ServeFlow workspace appearance: no runtime theme switching. */
+    :root { --app-sidebar-width:280px; --app-sidebar-collapsed-width:76px; }
+    .app-sidebar {
+      padding:20px 13px 16px; color:#526176; background:#f8fafd;
+      border-right:1px solid #e4eaf2; box-shadow:4px 0 18px rgba(20,34,54,.035);
+    }
+    .app-brand { padding:0 8px 18px; margin-bottom:18px; color:#1b2940; border-bottom-color:#e4eaf2; }
+    .app-brand-mark { color:var(--pos-primary); background:#fff; border-color:#dfe6f0; }
+    .app-brand-copy small { color:#8390a4; }
+    .app-nav-heading { margin-left:9px; color:#98a3b3; font-size:.66rem; letter-spacing:.12em; }
+    .app-nav-link { min-height:43px; padding:9px 11px; margin:2px 0; color:#56657a; font-size:.88rem; border-radius:10px; }
+    .app-nav-link i { width:19px; color:#7f8da2; font-size:1rem; }
+    .app-nav-link:hover { color:#1e3150; background:#edf2f8; transform:none; }
+    .app-nav-link.active { color:#1d4ed8; background:#e8f0ff; box-shadow:inset 3px 0 var(--pos-primary); }
+    .app-nav-link.active i { color:var(--pos-primary); }
+    .app-nav-link-primary { color:#1d4ed8; background:#edf4ff; font-weight:750; }
+    .app-nav-link-primary i { color:#2563eb; }
+    .app-sidebar-bottom { border-top-color:#e4eaf2; }
+    .app-sidebar-version { color:#9aa5b5; }
+    .app-topbar { min-height:72px; padding-left:24px; padding-right:24px; }
+    .app-main { background:#f5f7fb; }
+    .app-page-context small { color:#8491a5; }
+    .app-topbar-pos { background:var(--pos-primary); border-color:var(--pos-primary); }
+    .app-topbar-pos:hover { filter:brightness(.94); }
+    @media (max-width:991.98px) { :root { --app-sidebar-width:280px; } .app-topbar { padding-left:16px; padding-right:16px; } }
+    @media (max-width:575.98px) { .app-topbar { min-height:66px; } }
 
   </style>
 </head>
