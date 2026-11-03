@@ -14,6 +14,7 @@ use App\Core\Session;
 use App\Core\Auth;
 use App\Core\Database;
 use App\Core\TenantContext;
+use App\Services\ReportService;
 
 class DashboardController
 {
@@ -76,6 +77,14 @@ class DashboardController
             $data['grace_days'] = TenantContext::getGraceDaysRemaining();
             $data['is_sub_valid'] = TenantContext::isSubscriptionValid();
 
+            $data['sales_today'] = 0.0;
+            $data['average_order_value_today'] = 0.0;
+            $data['orders_today'] = 0;
+            $data['active_orders'] = 0;
+            $data['open_bills_count'] = 0;
+            $data['recent_orders'] = [];
+            $data['low_stock_items'] = [];
+
             try {
                 $data['tables_count'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM restaurant_tables WHERE restaurant_id = ? AND deleted_at IS NULL", [$restaurantId])['c'] ?? 0);
                 $data['products_count'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM products WHERE restaurant_id = ? AND is_active = 1", [$restaurantId])['c'] ?? 0);
@@ -86,7 +95,58 @@ class DashboardController
                 // Low stock alerts count
                 $data['low_stock_count'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM ingredients WHERE restaurant_id = ? AND current_stock <= minimum_stock_alert AND is_active = 1", [$restaurantId])['c'] ?? 0);
 
-                // Fetch registered devices for this tenant
+                $today = date('Y-m-d');
+                $todayKpis = ReportService::getKpiSummary($restaurantId, $today, $today);
+                $data['sales_today'] = (float)($todayKpis['gross_sales'] ?? 0);
+                $data['average_order_value_today'] = (float)($todayKpis['average_order_value'] ?? 0);
+
+                $orderActivity = Database::fetchOne(
+                    "SELECT COUNT(*) AS orders_today,
+                            COALESCE(SUM(CASE WHEN order_status IN ('pending', 'preparing', 'ready', 'served') THEN 1 ELSE 0 END), 0) AS active_orders
+                     FROM orders
+                     WHERE restaurant_id = ? AND DATE(created_at) = ? AND order_status <> 'cancelled'",
+                    [$restaurantId, $today]
+                );
+                $data['orders_today'] = (int)($orderActivity['orders_today'] ?? 0);
+                $data['active_orders'] = (int)($orderActivity['active_orders'] ?? 0);
+
+                $data['open_bills_count'] = (int)(Database::fetchOne(
+                    "SELECT COUNT(*) AS c
+                     FROM orders
+                     WHERE restaurant_id = ?
+                       AND payment_status IN ('unpaid', 'partially_paid')
+                       AND order_status <> 'cancelled'",
+                    [$restaurantId]
+                )['c'] ?? 0);
+
+                $data['recent_orders'] = Database::fetchAll(
+                    "SELECT o.id, o.order_number, o.order_type, o.order_status, o.payment_status,
+                            o.total_amount, o.created_at,
+                            t.table_number, t.name AS table_name,
+                            u.full_name AS cashier_name
+                     FROM orders o
+                     LEFT JOIN restaurant_tables t
+                       ON t.restaurant_id = o.restaurant_id AND t.id = o.table_id
+                     LEFT JOIN users u
+                       ON u.restaurant_id = o.restaurant_id AND u.id = o.cashier_id
+                     WHERE o.restaurant_id = ? AND o.order_status <> 'cancelled'
+                     ORDER BY o.created_at DESC, o.id DESC
+                     LIMIT 8",
+                    [$restaurantId]
+                );
+
+                $data['low_stock_items'] = Database::fetchAll(
+                    "SELECT name, current_stock, minimum_stock_alert, base_unit
+                     FROM ingredients
+                     WHERE restaurant_id = ?
+                       AND is_active = 1
+                       AND current_stock <= minimum_stock_alert
+                     ORDER BY current_stock ASC, name ASC
+                     LIMIT 6",
+                    [$restaurantId]
+                );
+
+                // Fetch registered devices for this tenant (retained for other dashboard extensions).
                 $data['devices'] = Database::fetchAll("SELECT * FROM pos_devices WHERE restaurant_id = ? ORDER BY id ASC", [$restaurantId]);
             } catch (\Throwable $e) {
                 $data['db_error'] = $e->getMessage();
