@@ -2230,6 +2230,15 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
   .pos-header .dropdown-menu .dropdown-item.text-danger i { color:#dc2626 !important; }
   .pos-header .dropdown-menu .dropdown-divider { border-color:#e5eaf1 !important; }
 }
+
+/* Prevent a second, pseudo-element network dot; use the real status indicator only. */
+@media (max-width: 767.98px) {
+  #posNetworkStatus::before,
+  #posNetworkStatus::after {
+    content:none !important;
+    display:none !important;
+  }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
