@@ -173,7 +173,7 @@
         </a>
         <a class="sf-quick-card" href="<?= BASE_URL ?>/bills">
           <span class="sf-quick-icon"><i class="bi bi-receipt-cutoff"></i></span>
-          <span><strong>Orders</strong><small>Review open bills and payments</small></span>
+          <span><strong>Orders &amp; Bills</strong><small>Review unpaid bills and payments</small></span>
           <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
         </a>
         <a class="sf-quick-card" href="<?= BASE_URL ?>/inventory">
@@ -192,7 +192,7 @@
         <section class="sf-panel">
           <div class="sf-panel-heading">
             <div><h3>Recent orders</h3><p>Latest non-cancelled orders across your restaurant.</p></div>
-            <a href="<?= BASE_URL ?>/bills">View orders <i class="bi bi-arrow-right"></i></a>
+            <a href="<?= BASE_URL ?>/bills">View open bills <i class="bi bi-arrow-right"></i></a>
           </div>
           <div class="table-responsive">
             <table class="table align-middle mb-0 sf-orders-table">
