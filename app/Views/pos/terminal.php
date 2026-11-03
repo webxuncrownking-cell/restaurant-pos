@@ -2124,11 +2124,116 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
   .pos-header-actions { gap:3px !important; }
   #posNetworkStatus { padding:5px 6px !important; }
 }
+
+/* POS mobile header corrections: one Back control, clear status, visible cashier menu. */
+@media (max-width: 767.98px) {
+  /* The shared layout Back button is retained; remove the duplicate view-level button. */
+  .pos-terminal-back { display:none !important; }
+
+  #posNetworkStatus {
+    width:30px !important;
+    min-width:30px !important;
+    max-width:30px !important;
+    height:30px !important;
+    min-height:30px !important;
+    padding:0 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    overflow:hidden !important;
+    border:0 !important;
+    border-radius:50% !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    font-size:0 !important;
+  }
+  #posNetworkText { display:none !important; }
+  #posNetworkStatus .pos-status-dot {
+    display:block !important;
+    width:11px !important;
+    height:11px !important;
+    min-width:11px !important;
+    border-radius:50% !important;
+    background:#22c55e !important;
+    box-shadow:0 0 0 4px rgba(34,197,94,.18) !important;
+  }
+  #posNetworkStatus.offline .pos-status-dot {
+    background:#f59e0b !important;
+    box-shadow:0 0 0 4px rgba(245,158,11,.2) !important;
+  }
+
+  .pos-header .pos-cashier-btn {
+    width:38px !important;
+    min-width:38px !important;
+    max-width:38px !important;
+    height:38px !important;
+    min-height:38px !important;
+    padding:3px !important;
+    overflow:visible !important;
+  }
+  .pos-header .pos-cashier-avatar {
+    display:grid !important;
+    place-items:center !important;
+    width:29px !important;
+    height:29px !important;
+    border-radius:8px !important;
+    background:#fff !important;
+    color:#087fc2 !important;
+  }
+  .pos-header .pos-cashier-avatar i {
+    display:inline-block !important;
+    color:#087fc2 !important;
+    font-size:1.15rem !important;
+    line-height:1 !important;
+    visibility:visible !important;
+    opacity:1 !important;
+  }
+
+  .pos-header .dropdown { position:relative !important; }
+  .pos-header .dropdown-menu {
+    position:absolute !important;
+    z-index:3000 !important;
+    min-width:220px !important;
+    margin-top:8px !important;
+    padding:8px !important;
+    background:#fff !important;
+    color:#344054 !important;
+    border:1px solid #e2e8f0 !important;
+    border-radius:14px !important;
+    box-shadow:0 18px 48px rgba(15,23,42,.22) !important;
+  }
+  .pos-header .dropdown-menu .dropdown-header {
+    display:block !important;
+    padding:9px 11px !important;
+    color:#64748b !important;
+    font-size:.72rem !important;
+    font-weight:800 !important;
+    white-space:normal !important;
+  }
+  .pos-header .dropdown-menu .dropdown-item {
+    display:flex !important;
+    align-items:center !important;
+    min-height:42px !important;
+    padding:10px 11px !important;
+    color:#344054 !important;
+    background:transparent !important;
+    font-size:.86rem !important;
+    white-space:normal !important;
+  }
+  .pos-header .dropdown-menu .dropdown-item i { color:#64748b !important; }
+  .pos-header .dropdown-menu .dropdown-item:hover,
+  .pos-header .dropdown-menu .dropdown-item:focus {
+    color:#087fc2 !important;
+    background:#eff6ff !important;
+  }
+  .pos-header .dropdown-menu .dropdown-item.text-danger,
+  .pos-header .dropdown-menu .dropdown-item.text-danger i { color:#dc2626 !important; }
+  .pos-header .dropdown-menu .dropdown-divider { border-color:#e5eaf1 !important; }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
 <header class="pos-header d-flex flex-wrap justify-content-between align-items-center gap-3 no-print">
-  <a id="posTerminalBack" class="pos-terminal-back" href="<?= BASE_URL ?>/dashboard" aria-label="Back to dashboard"><i class="bi bi-arrow-left"></i></a>
 <div class="pos-brand-lockup">
     
     <span class="pos-brand-mark">
