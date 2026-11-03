@@ -43,25 +43,7 @@
     $primaryColor = $restaurant['pos_primary_color'] ?? '#2563eb';
     $secondaryColor = $restaurant['pos_secondary_color'] ?? '#059669';
   ?>
-<script id="serveflow-theme-prepaint">
-(function () {
-  var root = document.documentElement;
-  try {
-    var savedTheme = localStorage.getItem('serveflow-theme');
-    // The default is light, so the first paint matches the footer's default instead of flashing dark.
-    root.setAttribute('data-theme', savedTheme === 'dark' ? 'dark' : 'light');
-    if (localStorage.getItem('serveflow-sidebar-collapsed') === '1') {
-      root.setAttribute('data-sidebar-collapsed', 'true');
-    } else {
-      root.removeAttribute('data-sidebar-collapsed');
-    }
-  } catch (e) {
-    root.setAttribute('data-theme', 'light');
-    root.removeAttribute('data-sidebar-collapsed');
-  }
-})();
-</script>
-  <style>
+<style>
     :root {
       --pos-primary: <?= htmlspecialchars((string)$primaryColor, ENT_QUOTES, 'UTF-8') ?>;
       --pos-secondary: <?= htmlspecialchars((string)$secondaryColor, ENT_QUOTES, 'UTF-8') ?>;
@@ -1380,6 +1362,674 @@
     html[data-theme="dark"] .app-main .expiry-subtext { color:#aebed3 !important; }
     html[data-theme="dark"] .app-main .expiry-waste-form .form-label { color:#dce7f7 !important; }
 
-  </style>
+  
+    /* ServeFlow simplified app workspace */
+    .app-shell { min-height:100vh; width:100%; }
+    .app-main { margin-left:0 !important; min-height:100vh; width:100%; }
+    .app-topbar {
+      position:sticky; top:0; z-index:1020; min-height:72px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:18px; padding:12px 30px;
+      color:#fff; background:#1769d2; border:0;
+      box-shadow:0 3px 14px rgba(15,45,90,.15);
+    }
+    .app-topbar-left { display:flex; align-items:center; gap:18px; min-width:0; }
+    .app-header-brand { display:flex; align-items:center; gap:11px; color:#fff; text-decoration:none; min-width:0; }
+    .app-header-brand:hover { color:#fff; }
+    .app-header-brand img { width:40px; height:40px; object-fit:contain; border-radius:10px; background:#fff; padding:3px; }
+    .app-header-brand-icon { width:40px; height:40px; display:grid; place-items:center; border-radius:11px; background:rgba(255,255,255,.16); font-size:1.2rem; }
+    .app-header-brand-copy { display:flex; flex-direction:column; min-width:0; line-height:1.2; }
+    .app-header-brand-copy strong { font-size:.92rem; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .app-header-brand-copy small { margin-top:4px; color:rgba(255,255,255,.72); font-size:.66rem; letter-spacing:.04em; }
+    .app-header-divider { height:32px; width:1px; background:rgba(255,255,255,.24); }
+    .app-page-context strong { color:#fff; font-size:1rem; font-weight:700; }
+    .app-topbar-actions { display:flex; align-items:center; justify-content:flex-end; gap:12px; }
+    .header-subscription { color:#fff; font-size:.72rem; font-weight:700; white-space:nowrap; }
+    .header-subscription-warning { color:#fff2c6; }
+    .app-user-button { display:flex; align-items:center; gap:9px; padding:6px 10px; color:#fff; background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.22); border-radius:11px; max-width:255px; }
+    .app-user-button:hover { background:rgba(255,255,255,.2); }
+    .app-user-avatar { width:30px; height:30px; display:grid; place-items:center; color:#1769d2; background:#fff; border-radius:9px; }
+    .app-user-copy { display:flex; flex-direction:column; text-align:left; min-width:0; line-height:1.15; }
+    .app-user-copy strong { color:#fff; font-size:.74rem; font-weight:750; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .app-user-copy small { color:rgba(255,255,255,.72); font-size:.66rem; margin-top:4px; }
+    .user-chevron { color:rgba(255,255,255,.8); }
+    .app-footer { margin-top:auto; }
+    .dashboard-welcome { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; }
+    .dashboard-eyebrow { color:#1769d2; font-size:.68rem; font-weight:800; letter-spacing:.12em; }
+    .dashboard-welcome h1 { margin:5px 0 4px; color:#172033; font-size:1.7rem; font-weight:800; letter-spacing:-.04em; }
+    .dashboard-welcome p,.dashboard-section-heading p,.recent-heading p { margin:0; color:#7b8798; font-size:.82rem; }
+    .dashboard-date { color:#64748b; font-size:.78rem; font-weight:650; white-space:nowrap; }
+    .dashboard-section-heading,.recent-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .dashboard-section-heading h2,.recent-heading h2 { margin:0 0 3px; color:#1d2939; font-size:1.05rem; font-weight:800; }
+    .dashboard-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:15px; }
+    .dashboard-kpi { display:flex; align-items:center; gap:14px; min-width:0; padding:19px; background:#fff; border:1px solid #e8edf5; border-radius:16px; box-shadow:0 4px 16px rgba(15,23,42,.035); }
+    .kpi-icon { flex:0 0 46px; width:46px; height:46px; display:grid; place-items:center; border-radius:14px; font-size:1.25rem; }
+    .kpi-blue { color:#1769d2; background:#eaf2ff; }
+    .kpi-green { color:#159568; background:#e8f8f0; }
+    .kpi-orange { color:#d97706; background:#fff4e5; }
+    .kpi-purple { color:#8255ce; background:#f2ebff; }
+    .kpi-copy { display:flex; flex-direction:column; min-width:0; }
+    .kpi-copy span { color:#718096; font-size:.75rem; font-weight:650; }
+    .kpi-copy strong { margin-top:4px; color:#172033; font-size:1.28rem; font-weight:850; white-space:nowrap; }
+    .kpi-copy small { margin-top:3px; color:#98a2b3; font-size:.67rem; }
+    .dashboard-main-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(320px,.9fr); gap:22px; align-items:start; }
+    .management-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+    .management-tile { display:flex; align-items:center; gap:13px; min-width:0; min-height:105px; padding:17px; color:#172033; text-decoration:none; background:#fff; border:1px solid #e8edf5; border-radius:16px; box-shadow:0 4px 16px rgba(15,23,42,.035); transition:transform .16s ease,box-shadow .16s ease; }
+    .management-tile:hover { color:#172033; transform:translateY(-2px); box-shadow:0 9px 24px rgba(15,23,42,.08); }
+    .management-icon { flex:0 0 47px; width:47px; height:47px; display:grid; place-items:center; border-radius:14px; font-size:1.25rem; }
+    .management-text { display:flex; flex-direction:column; min-width:0; }
+    .management-text strong { font-size:.86rem; font-weight:800; }
+    .management-text small { margin-top:5px; color:#8591a2; font-size:.69rem; line-height:1.4; }
+    .management-arrow { margin-left:auto; align-self:flex-start; color:#a0aaba; }
+    .tile-blue .management-icon { color:#1769d2; background:#eaf2ff; }
+    .tile-orange .management-icon { color:#d97706; background:#fff4e5; }
+    .tile-purple .management-icon { color:#8255ce; background:#f2ebff; }
+    .tile-green .management-icon { color:#159568; background:#e8f8f0; }
+    .tile-teal .management-icon { color:#0d9488; background:#e5f8f6; }
+    .tile-indigo .management-icon { color:#4f46e5; background:#eeedff; }
+    .tile-slate .management-icon { color:#475569; background:#eef2f6; }
+    .dashboard-recent { min-width:0; padding:19px; background:#fff; border:1px solid #e8edf5; border-radius:16px; box-shadow:0 4px 16px rgba(15,23,42,.035); }
+    .recent-heading a { color:#1769d2; font-size:.75rem; font-weight:750; text-decoration:none; white-space:nowrap; }
+    .recent-order { display:flex; align-items:center; gap:11px; padding:13px 0; border-bottom:1px solid #eef1f5; }
+    .recent-order:last-child { border-bottom:0; }
+    .recent-order-icon { flex:0 0 36px; width:36px; height:36px; display:grid; place-items:center; color:#1769d2; background:#edf4ff; border-radius:11px; }
+    .recent-order-info { display:flex; flex:1; flex-direction:column; min-width:0; }
+    .recent-order-info strong { color:#273449; font-size:.77rem; font-weight:800; }
+    .recent-order-info small { margin-top:4px; color:#8994a5; font-size:.65rem; line-height:1.4; }
+    .recent-order-total { display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+    .recent-order-total strong { color:#172033; font-size:.76rem; white-space:nowrap; }
+    .order-status { padding:3px 7px; border-radius:999px; color:#64748b; background:#f1f5f9; font-size:.6rem; font-weight:750; white-space:nowrap; }
+    .status-paid { color:#13835d; background:#e8f8f0; }
+    .status-unpaid { color:#b45309; background:#fff4e5; }
+    .status-partially_paid { color:#1769d2; background:#eaf2ff; }
+    .recent-empty { display:flex; flex-direction:column; align-items:center; gap:7px; padding:35px 12px; color:#98a2b3; text-align:center; }
+    .recent-empty i { font-size:1.8rem; }
+    .recent-empty strong { color:#475569; font-size:.82rem; }
+    .recent-empty span { font-size:.7rem; }
+    @media(max-width:1199px) {
+      .dashboard-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .dashboard-main-grid { grid-template-columns:1fr; }
+    }
+    @media(max-width:650px) {
+      .app-topbar { min-height:64px; padding:10px 14px; }
+      .app-topbar-left { gap:10px; }
+      .app-header-brand img,.app-header-brand-icon { width:35px; height:35px; }
+      .app-header-brand-copy strong { max-width:135px; font-size:.8rem; }
+      .app-header-brand-copy small,.app-header-divider,.app-page-context,.header-subscription,.app-user-copy,.user-chevron { display:none; }
+      .app-user-button { padding:5px; }
+      .dashboard-welcome { align-items:flex-start; flex-direction:column; }
+      .dashboard-welcome h1 { font-size:1.4rem; }
+      .dashboard-kpis { gap:9px; }
+      .dashboard-kpi { gap:9px; padding:12px; }
+      .kpi-icon { flex-basis:36px; width:36px; height:36px; font-size:1rem; }
+      .kpi-copy strong { font-size:1rem; }
+      .kpi-copy span { font-size:.68rem; }
+      .kpi-copy small { font-size:.59rem; }
+      .management-grid { grid-template-columns:1fr; }
+      .management-tile { min-height:83px; padding:13px; }
+      .dashboard-recent { padding:14px; }
+    }
+
+
+/* ServeFlow visual polish: readable dashboard typography */
+html {
+    font-size: 16px;
+}
+
+body {
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.dashboard-eyebrow {
+    font-size: .78rem;
+}
+
+.dashboard-welcome h1 {
+    font-size: 1.85rem;
+}
+
+.dashboard-welcome p,
+.dashboard-section-heading p,
+.recent-heading p {
+    font-size: .92rem;
+}
+
+.dashboard-date {
+    font-size: .88rem;
+}
+
+.dashboard-section-heading h2,
+.recent-heading h2 {
+    font-size: 1.18rem;
+}
+
+.kpi-copy span {
+    font-size: .88rem;
+}
+
+.kpi-copy strong {
+    font-size: 1.42rem;
+}
+
+.kpi-copy small {
+    font-size: .78rem;
+}
+
+.management-text strong {
+    font-size: 1rem;
+}
+
+.management-text small {
+    font-size: .82rem;
+}
+
+.recent-heading a {
+    font-size: .88rem;
+}
+
+.recent-order-info strong {
+    font-size: .9rem;
+}
+
+.recent-order-info small {
+    font-size: .78rem;
+}
+
+.recent-order-total strong {
+    font-size: .88rem;
+}
+
+.order-status {
+    font-size: .72rem;
+}
+
+.recent-empty strong {
+    font-size: .95rem;
+}
+
+.recent-empty span {
+    font-size: .82rem;
+}
+
+@media (max-width: 650px) {
+    .dashboard-welcome h1 {
+        font-size: 1.55rem;
+    }
+
+    .kpi-copy strong {
+        font-size: 1.12rem;
+    }
+
+    .kpi-copy span {
+        font-size: .76rem;
+    }
+
+    .kpi-copy small {
+        font-size: .7rem;
+    }
+
+    .management-text strong {
+        font-size: .95rem;
+    }
+
+    .management-text small {
+        font-size: .78rem;
+    }
+}
+
+
+/* ServeFlow dashboard: final readability and icon consistency pass */
+.dashboard-welcome h1 {
+    font-size: 1.9rem !important;
+    line-height: 1.25;
+    letter-spacing: -.035em;
+}
+
+.dashboard-welcome p,
+.dashboard-section-heading p,
+.recent-heading p {
+    font-size: .95rem !important;
+    line-height: 1.5;
+}
+
+.dashboard-eyebrow {
+    font-size: .78rem !important;
+}
+
+.dashboard-date {
+    font-size: .9rem !important;
+}
+
+.dashboard-section-heading h2,
+.recent-heading h2 {
+    font-size: 1.2rem !important;
+}
+
+.dashboard-kpi {
+    gap: 16px;
+    padding: 21px !important;
+}
+
+.kpi-icon {
+    flex-basis: 50px;
+    width: 50px;
+    height: 50px;
+    font-size: 1.4rem !important;
+}
+
+.kpi-copy span {
+    font-size: .9rem !important;
+}
+
+.kpi-copy strong {
+    font-size: 1.55rem !important;
+    line-height: 1.25;
+}
+
+.kpi-copy small {
+    font-size: .82rem !important;
+}
+
+.management-tile {
+    min-height: 112px !important;
+    padding: 19px !important;
+    gap: 15px;
+}
+
+.management-icon {
+    flex-basis: 50px !important;
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 1.4rem !important;
+    color: #1769d2 !important;
+    background: #eaf2ff !important;
+}
+
+/* One consistent icon palette across all management tiles. */
+.tile-blue .management-icon,
+.tile-orange .management-icon,
+.tile-purple .management-icon,
+.tile-green .management-icon,
+.tile-teal .management-icon,
+.tile-indigo .management-icon,
+.tile-slate .management-icon {
+    color: #1769d2 !important;
+    background: #eaf2ff !important;
+}
+
+.management-text strong {
+    font-size: 1.05rem !important;
+    line-height: 1.35;
+}
+
+.management-text small {
+    font-size: .88rem !important;
+    line-height: 1.45;
+}
+
+.management-arrow {
+    font-size: 1rem;
+}
+
+.dashboard-recent {
+    padding: 21px !important;
+}
+
+.recent-order {
+    padding: 15px 0 !important;
+}
+
+.recent-order-icon {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+}
+
+.recent-order-info strong {
+    font-size: .94rem !important;
+}
+
+.recent-order-info small {
+    font-size: .83rem !important;
+}
+
+.recent-order-total strong {
+    font-size: .92rem !important;
+}
+
+.order-status {
+    font-size: .75rem !important;
+    padding: 4px 8px;
+}
+
+.recent-empty strong {
+    font-size: 1rem !important;
+}
+
+.recent-empty span {
+    font-size: .85rem !important;
+}
+
+/* Keep the compact header readable. */
+.app-header-brand-copy strong {
+    font-size: 1rem !important;
+}
+
+.app-header-brand-copy small {
+    font-size: .76rem !important;
+}
+
+.app-page-context strong {
+    font-size: 1.08rem !important;
+}
+
+.app-user-copy strong {
+    font-size: .86rem !important;
+}
+
+.app-user-copy small {
+    font-size: .75rem !important;
+}
+
+@media (max-width: 650px) {
+    .dashboard-welcome h1 {
+        font-size: 1.6rem !important;
+    }
+
+    .dashboard-kpi {
+        padding: 13px !important;
+    }
+
+    .kpi-copy strong {
+        font-size: 1.18rem !important;
+    }
+
+    .management-tile {
+        min-height: 92px !important;
+        padding: 14px !important;
+    }
+
+    .management-text strong {
+        font-size: .98rem !important;
+    }
+
+    .management-text small {
+        font-size: .82rem !important;
+    }
+
+    .recent-order-info strong {
+        font-size: .86rem !important;
+    }
+}
+
+
+/* ServeFlow app-wide layout and navigation polish */
+.app-main,
+.app-main > .container,
+.app-main > .container-fluid,
+.app-main .container,
+.app-main .container-fluid {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.app-main {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.app-main > .container,
+.app-main > .container-fluid {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+
+.app-back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    margin-right: 4px;
+    color: #fff;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 10px;
+    font-size: .95rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.app-back-button:hover {
+    color: #fff;
+    background: rgba(255,255,255,.25);
+}
+
+.app-topbar-left,
+.pos-brand-lockup {
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-welcome h1 {
+    font-size: 2rem !important;
+}
+
+.dashboard-section-heading h2,
+.recent-heading h2 {
+    font-size: 1.25rem !important;
+}
+
+.management-tile {
+    min-height: 116px !important;
+    padding: 21px !important;
+}
+
+.management-text strong {
+    font-size: 1.12rem !important;
+}
+
+.management-text small {
+    font-size: .92rem !important;
+}
+
+/* Distinct management tile colors */
+.tile-blue .management-icon {
+    color: #1769d2 !important;
+    background: #eaf2ff !important;
+}
+
+.tile-orange .management-icon {
+    color: #d97706 !important;
+    background: #fff1dc !important;
+}
+
+.tile-purple .management-icon {
+    color: #8255ce !important;
+    background: #f2ebff !important;
+}
+
+.tile-green .management-icon {
+    color: #159568 !important;
+    background: #e5f8ef !important;
+}
+
+.tile-teal .management-icon {
+    color: #0d9488 !important;
+    background: #e0f7f5 !important;
+}
+
+.tile-indigo .management-icon {
+    color: #4f46e5 !important;
+    background: #eeedff !important;
+}
+
+.tile-slate .management-icon {
+    color: #475569 !important;
+    background: #eef2f6 !important;
+}
+
+@media(max-width:650px) {
+    .app-main > .container,
+    .app-main > .container-fluid {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .app-back-button {
+        width: 38px;
+        min-width: 38px;
+        padding: 0;
+        font-size: 0;
+    }
+
+    .app-back-button i {
+        font-size: 1rem;
+    }
+
+    .dashboard-welcome h1 {
+        font-size: 1.65rem !important;
+    }
+}
+
+/* Previous mobile KPI rule replaced */
+
+/* Mobile: stack Today's Snapshot KPI cards vertically */
+@media (max-width: 767px) {
+    .dashboard-kpis,
+    .dashboard-kpi-grid,
+    .kpi-grid,
+    .snapshot-grid,
+    .dashboard-metrics {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .dashboard-kpis,
+    .dashboard-kpi-grid,
+    .kpi-grid,
+    .snapshot-grid,
+    .dashboard-metrics {
+        width: 100% !important;
+    }
+}
+
+
+/* Today's Snapshot: one KPI card per row on mobile only */
+@media (max-width: 767px) {
+    .dashboard-kpis {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+
+/* Featured POS Terminal management tile */
+.management-tile[href$="/pos"],
+.management-tile[href$="/pos/"] {
+    grid-column: 1 / -1 !important;
+    min-height: 145px !important;
+    padding: 28px 30px !important;
+    background: linear-gradient(120deg, #1769d2, #2456b8) !important;
+    border: 0 !important;
+    box-shadow: 0 8px 22px rgba(23,105,210,.18) !important;
+    color: #fff !important;
+}
+
+.management-tile[href$="/pos"] .management-icon,
+.management-tile[href$="/pos/"] .management-icon {
+    width: 66px !important;
+    height: 66px !important;
+    flex-basis: 66px !important;
+    font-size: 1.9rem !important;
+    color: #1769d2 !important;
+    background: #fff !important;
+    border-radius: 18px !important;
+}
+
+.management-tile[href$="/pos"] .management-text strong,
+.management-tile[href$="/pos/"] .management-text strong {
+    color: #fff !important;
+    font-size: 1.45rem !important;
+}
+
+.management-tile[href$="/pos"] .management-text small,
+.management-tile[href$="/pos/"] .management-text small {
+    color: rgba(255,255,255,.85) !important;
+    font-size: 1rem !important;
+}
+
+.management-tile[href$="/pos"] .management-arrow,
+.management-tile[href$="/pos/"] .management-arrow {
+    color: #fff !important;
+    font-size: 1.35rem !important;
+}
+
+.management-tile[href$="/pos"]:hover,
+.management-tile[href$="/pos/"]:hover {
+    background: linear-gradient(120deg, #1259bd, #1d479f) !important;
+    transform: translateY(-2px);
+}
+
+@media(max-width:767px) {
+    .management-tile[href$="/pos"],
+    .management-tile[href$="/pos/"] {
+        min-height: 120px !important;
+        padding: 20px !important;
+    }
+
+    .management-tile[href$="/pos"] .management-text strong,
+    .management-tile[href$="/pos/"] .management-text strong {
+        font-size: 1.2rem !important;
+    }
+}
+
+</style>
+
+<script>
+(function () {
+    function installServeFlowBackButton() {
+        if (/\/dashboard\/?$/.test(window.location.pathname)) return;
+
+        const target =
+            document.querySelector('.pos-brand-lockup') ||
+            document.querySelector('.app-topbar-left');
+
+        if (!target || target.querySelector('.app-back-button')) return;
+
+        const back = document.createElement('a');
+        back.className = 'app-back-button';
+        back.href = '<?= BASE_URL ?>/dashboard';
+        back.setAttribute('aria-label', 'Back');
+        back.innerHTML = '<i class="bi bi-arrow-left"></i><span>Back</span>';
+
+        back.addEventListener('click', function (event) {
+            try {
+                const previous = document.referrer
+                    ? new URL(document.referrer)
+                    : null;
+
+                if (previous && previous.origin === window.location.origin) {
+                    event.preventDefault();
+                    window.history.back();
+                }
+            } catch (error) {}
+        });
+
+        target.insertBefore(back, target.firstChild);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', installServeFlowBackButton);
+    } else {
+        installServeFlowBackButton();
+    }
+})();
+</script>
+
 </head>
 <body>

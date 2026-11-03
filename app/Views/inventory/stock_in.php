@@ -41,7 +41,7 @@
                 <div class="form-check border p-3 rounded flex-grow-1 ps-4">
                   <input class="form-check-input" type="radio" name="mode" id="modeBase" value="base" onchange="toggleMode()">
                   <label class="form-check-label fw-semibold" for="modeBase">
-                    <i class="bi bi-scale text-success me-1"></i> By Base Quantity
+                    <i class="bi bi-boxes text-success me-1"></i> By Base Quantity
                     <div class="text-muted small fw-normal">Direct entry in grams, liters, or pieces</div>
                   </label>
                 </div>
@@ -81,7 +81,7 @@
 
             <!-- Direct Base Unit Section (Hidden by default) -->
             <div id="baseSection" class="p-3 bg-light rounded-3 mb-4 d-none">
-              <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-scale me-1"></i>Direct Quantity Stock In</h6>
+              <h6 class="fw-semibold text-secondary mb-3"><i class="bi bi-boxes me-1"></i>Direct Quantity Stock In</h6>
               <div class="row g-3 mb-3">
                 <div class="col-12 col-md-6">
                   <label for="ingredient_id" class="form-label small fw-semibold">Ingredient</label>

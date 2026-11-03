@@ -10,6 +10,7 @@
     <?php endforeach; ?>
   <?php endif; ?>
 
+  <?php if ($is_platform): ?>
   <!-- Welcome Banner -->
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <div>
@@ -45,7 +46,9 @@
     </div>
   </div>
 
-  <?php if ($is_platform && empty($_SESSION['restaurant_id'])): ?>
+    <?php endif; ?>
+
+<?php if ($is_platform && empty($_SESSION['restaurant_id'])): ?>
     <!-- PLATFORM SUPERADMIN VIEW -->
     <div class="row g-3 mb-4" id="platform-analytics">
       <div class="col-12 col-sm-6 col-xl-4">
@@ -118,144 +121,214 @@
     </div>
 
   <?php else: ?>
-    <!-- TENANT STAFF VIEW -->
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-lg-3">
-        <div class="card card-metric p-3 bg-white">
-          <div class="d-flex align-items-center gap-3">
-            <div class="p-3 bg-warning bg-opacity-10 text-warning-emphasis rounded-3">
-              <i class="bi bi-grid-3x3-gap fs-3"></i>
-            </div>
-            <div>
-              <span class="text-muted small fw-medium">Dining Tables</span>
-              <h3 class="fw-bold mb-0 text-dark"><?= $tables_count ?? 0 ?></h3>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-lg-3">
-        <div class="card card-metric p-3 bg-white">
-          <div class="d-flex align-items-center gap-3">
-            <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3">
-              <i class="bi bi-cup-hot fs-3"></i>
-            </div>
-            <div>
-              <span class="text-muted small fw-medium">Menu Products</span>
-              <h3 class="fw-bold mb-0 text-dark"><?= $products_count ?? 0 ?></h3>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-lg-3">
-        <div class="card card-metric p-3 bg-white">
-          <div class="d-flex align-items-center gap-3">
-            <div class="p-3 bg-success bg-opacity-10 text-success rounded-3">
-              <i class="bi bi-egg-fried fs-3"></i>
-            </div>
-            <div>
-              <span class="text-muted small fw-medium">Raw Ingredients</span>
-              <h3 class="fw-bold mb-0 text-dark"><?= $ingredients_count ?? 0 ?></h3>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-6 col-lg-3">
-        <div class="card card-metric p-3 bg-white">
-          <div class="d-flex align-items-center gap-3">
-            <div class="p-3 bg-info bg-opacity-10 text-info rounded-3">
-              <i class="bi bi-tablet-landscape fs-3"></i>
-            </div>
-            <div>
-              <span class="text-muted small fw-medium">Registered POS</span>
-              <h3 class="fw-bold mb-0 text-dark"><?= $devices_count ?? 0 ?></h3>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- TENANT APP DASHBOARD -->
+    <?php
+      $currency = (string)($restaurant['currency_symbol'] ?? '₱');
+      $money = static function ($amount) use ($currency): string {
+          return $currency . number_format((float)$amount, 2);
+      };
+      $tiles = [
+          [
+              'label' => 'POS Terminal',
+              'description' => 'Take orders and process sales',
+              'route' => '/pos',
+              'icon' => 'bi-shop-window',
+              'color' => 'blue',
+              'allowed' => \App\Core\Auth::can('pos.create_order')
+          ],
+          [
+              'label' => 'View Orders & Bills',
+              'description' => 'Review orders and collect payments',
+              'route' => '/bills',
+              'icon' => 'bi-receipt',
+              'color' => 'orange',
+              'allowed' => \App\Core\Auth::can('pos.process_payment')
+          ],
+          [
+              'label' => 'Product List',
+              'description' => 'Manage menu items and products',
+              'route' => '/menu',
+              'icon' => 'bi-cup-hot',
+              'color' => 'purple',
+              'allowed' => \App\Core\Auth::can('menu.manage_catalog')
+          ],
+          [
+              'label' => 'Analytics',
+              'description' => 'Track sales and business performance',
+              'route' => '/reports',
+              'icon' => 'bi-graph-up-arrow',
+              'color' => 'green',
+              'allowed' => \App\Core\Auth::can('reports.view_sales')
+          ],
+          [
+              'label' => 'Inventory',
+              'description' => 'Monitor stock and ingredients',
+              'route' => '/inventory',
+              'icon' => 'bi-box-seam',
+              'color' => 'teal',
+              'allowed' => \App\Core\Auth::can('inventory.view_stock')
+          ],
+          [
+              'label' => 'Kitchen Display',
+              'description' => 'View and update kitchen orders',
+              'route' => '/kitchen',
+              'icon' => 'bi-fire',
+              'color' => 'orange',
+              'allowed' => (
+                  in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true)
+                  || \App\Core\Auth::can('kitchen.view_kds')
+              )
+          ],
+          [
+              'label' => 'Cashier Shifts',
+              'description' => 'Manage cashier shifts and cash flow',
+              'route' => '/shifts',
+              'icon' => 'bi-safe2',
+              'color' => 'indigo',
+              'allowed' => \App\Core\Auth::can('shifts.open_close')
+          ],
+          [
+              'label' => 'Settings',
+              'description' => 'Restaurant details and preferences',
+              'route' => '/settings',
+              'icon' => 'bi-gear',
+              'color' => 'slate',
+              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
+          ],
+      ];
+      $visibleTiles = array_values(array_filter($tiles, static fn($tile) => $tile['allowed']));
+    ?>
 
-    <!-- Registered Devices & Offline Sync Readiness Card -->
-    <div class="row g-4 mb-4">
-      <div class="col-12 col-lg-7">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-          <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0 fw-semibold text-secondary">
-              <i class="bi bi-tablet me-2 text-primary"></i> Registered POS Devices (Offline Capable)
-            </h5>
-            <span class="badge bg-light text-dark border"><?= count($devices ?? []) ?> paired</span>
-          </div>
-          <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small text-uppercase text-muted">
-                  <tr>
-                    <th>Device Name</th>
-                    <th>Device UUID</th>
-                    <th>Status</th>
-                    <th>Last Sync</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php if (!empty($devices)): ?>
-                    <?php foreach ($devices as $dev): ?>
-                      <tr>
-                        <td class="fw-medium text-dark">
-                          <i class="bi bi-display me-1 text-muted"></i> <?= htmlspecialchars($dev['device_name']) ?>
-                        </td>
-                        <td><code class="small"><?= htmlspecialchars(substr($dev['device_uuid'], 0, 18)) ?>...</code></td>
-                        <td><span class="badge bg-success bg-opacity-25 text-success border border-success"><?= htmlspecialchars($dev['status']) ?></span></td>
-                        <td class="small text-muted"><?= htmlspecialchars($dev['last_sync_at'] ?? 'Never') ?></td>
-                      </tr>
-                    <?php endforeach; ?>
-                  <?php else: ?>
-                    <tr><td colspan="4" class="text-center text-muted py-4">No POS devices paired yet.</td></tr>
-                  <?php endif; ?>
-                </tbody>
-              </table>
-            </div>
-          </div>
+    <section class="dashboard-welcome mb-4">
+      <div>
+        <span class="dashboard-eyebrow">RESTAURANT WORKSPACE</span>
+        <h1>Today's overview</h1>
+        <p>Here's what's happening at <?= htmlspecialchars($restaurant['name'] ?? 'your restaurant') ?>.</p>
+      </div>
+      <div class="dashboard-date">
+        <i class="bi bi-calendar3"></i>
+        <?= date('l, F j, Y') ?>
+      </div>
+    </section>
+
+    <?php if (!empty($db_error)): ?>
+      <div class="alert alert-warning">
+        Dashboard information could not be fully loaded. Please check the application logs.
+      </div>
+    <?php endif; ?>
+
+    <section class="mb-4">
+      <div class="dashboard-section-heading">
+        <div>
+          <h2>Today's Snapshot</h2>
+          <p>Your restaurant's performance so far today</p>
         </div>
       </div>
 
-      <!-- Phase 1 Architecture Verification Summary -->
-      <div class="col-12 col-lg-5">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-          <div class="card-header bg-white py-3">
-            <h5 class="card-title mb-0 fw-semibold text-secondary">
-              <i class="bi bi-shield-check me-2 text-success"></i> Phase 1 Architecture Verification
-            </h5>
+      <div class="dashboard-kpis">
+        <article class="dashboard-kpi">
+          <div class="kpi-icon kpi-blue"><i class="bi bi-currency-exchange"></i></div>
+          <div class="kpi-copy">
+            <span>Sales Today</span>
+            <strong><?= htmlspecialchars($money($sales_today ?? 0)) ?></strong>
+            <small>Fully paid orders</small>
           </div>
-          <div class="card-body">
-            <ul class="list-group list-group-flush small">
-              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <span><i class="bi bi-check-circle-fill text-success me-2"></i>Multi-Tenant Composite Foreign Keys</span>
-                <span class="badge bg-success">Verified</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <span><i class="bi bi-check-circle-fill text-success me-2"></i>Base Recipe Uniqueness (NULL GenCol)</span>
-                <span class="badge bg-success">Verified</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <span><i class="bi bi-check-circle-fill text-success me-2"></i>PBKDF2 Staff Offline PIN Derivation</span>
-                <span class="badge bg-success">Verified</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <span><i class="bi bi-check-circle-fill text-success me-2"></i>Base-Unit Inventory Engine (g, ml, pcs)</span>
-                <span class="badge bg-success">Verified</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                <span><i class="bi bi-check-circle-fill text-success me-2"></i>Zero Cascade Soft-Delete Protection</span>
-                <span class="badge bg-success">Verified</span>
-              </li>
-            </ul>
-            <div class="mt-3 text-center">
-              <a href="<?= BASE_URL ?>/install/tests" class="btn btn-sm btn-outline-success w-100">
-                <i class="bi bi-play-circle me-1"></i> Run Automated Verification Tests
-              </a>
-            </div>
+        </article>
+
+        <article class="dashboard-kpi">
+          <div class="kpi-icon kpi-green"><i class="bi bi-graph-up-arrow"></i></div>
+          <div class="kpi-copy">
+            <span>Profit Today</span>
+            <strong><?= htmlspecialchars($money($profit_today ?? 0)) ?></strong>
+            <small>Estimated gross profit</small>
+          </div>
+        </article>
+
+        <article class="dashboard-kpi">
+          <div class="kpi-icon kpi-orange"><i class="bi bi-wallet2"></i></div>
+          <div class="kpi-copy">
+            <span>Debt Paid Today</span>
+            <strong><?= htmlspecialchars($money($debt_paid_today ?? 0)) ?></strong>
+            <small>Payments for previous orders</small>
+          </div>
+        </article>
+
+        <article class="dashboard-kpi">
+          <div class="kpi-icon kpi-purple"><i class="bi bi-receipt-cutoff"></i></div>
+          <div class="kpi-copy">
+            <span>Orders Today</span>
+            <strong><?= number_format((int)($orders_today ?? 0)) ?></strong>
+            <small>Excluding cancelled orders</small>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div class="dashboard-main-grid">
+      <section class="dashboard-management">
+        <div class="dashboard-section-heading">
+          <div>
+            <h2>Management</h2>
+            <p>Choose what you want to work on</p>
           </div>
         </div>
-      </div>
+
+        <div class="management-grid">
+          <?php foreach ($visibleTiles as $tile): ?>
+            <a class="management-tile tile-<?= htmlspecialchars($tile['color']) ?>"
+               href="<?= BASE_URL . $tile['route'] ?>">
+              <span class="management-icon"><i class="bi <?= htmlspecialchars($tile['icon']) ?>"></i></span>
+              <span class="management-text">
+                <strong><?= htmlspecialchars($tile['label']) ?></strong>
+                <small><?= htmlspecialchars($tile['description']) ?></small>
+              </span>
+              <i class="bi bi-arrow-up-right management-arrow"></i>
+            </a>
+          <?php endforeach; ?>
+        </div>
+      </section>
+
+      <section class="dashboard-recent">
+        <div class="recent-heading">
+          <div>
+            <h2>Recent Orders</h2>
+            <p>Latest restaurant transactions</p>
+          </div>
+          <?php if (\App\Core\Auth::can('pos.process_payment')): ?>
+            <a href="<?= BASE_URL ?>/bills">View all <i class="bi bi-arrow-right"></i></a>
+          <?php endif; ?>
+        </div>
+
+        <div class="recent-order-list">
+          <?php if (!empty($recent_orders)): ?>
+            <?php foreach ($recent_orders as $order): ?>
+              <div class="recent-order">
+                <div class="recent-order-icon"><i class="bi bi-receipt"></i></div>
+                <div class="recent-order-info">
+                  <strong><?= htmlspecialchars((string)($order['order_number'] ?? ('Order #' . $order['id']))) ?></strong>
+                  <small>
+                    <?= number_format((float)$order['item_count'], 0) ?> items
+                    · <?= htmlspecialchars(ucfirst(str_replace('_', ' ', (string)$order['order_type']))) ?>
+                    · <?= htmlspecialchars(date('M j, g:i A', strtotime($order['created_at']))) ?>
+                  </small>
+                </div>
+                <div class="recent-order-total">
+                  <strong><?= htmlspecialchars($money($order['total_amount'])) ?></strong>
+                  <span class="order-status status-<?= htmlspecialchars((string)$order['payment_status']) ?>">
+                    <?= htmlspecialchars(ucfirst(str_replace('_', ' ', (string)$order['payment_status']))) ?>
+                  </span>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div class="recent-empty">
+              <i class="bi bi-receipt"></i>
+              <strong>No orders yet</strong>
+              <span>New orders will appear here.</span>
+            </div>
+          <?php endif; ?>
+        </div>
+      </section>
     </div>
   <?php endif; ?>
 

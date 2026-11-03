@@ -113,122 +113,61 @@ $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
 $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Admin' : 'Staff');
 ?>
 <div class="app-shell">
-  <aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
-    <a class="app-brand" href="<?= BASE_URL ?>/dashboard" aria-label="<?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?> dashboard">
-      <span class="app-brand-mark">
-        <?php if ($logoUrl !== ''): ?>
-          <img src="<?= htmlspecialchars($logoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?> logo">
-        <?php else: ?>
-          <i class="bi bi-shop-window" aria-hidden="true"></i>
-        <?php endif; ?>
-      </span>
-      <span class="app-brand-copy">
-        <strong><?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?></strong>
-        <small title="<?= htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') ?>"><?= $restaurantTagline !== '' ? htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') : ($isPlatform && !$restaurant ? 'PLATFORM MANAGEMENT' : 'RESTAURANT WORKSPACE') ?></small>
-      </span>
-    </a>
-
-    <div class="app-sidebar-context">
-      <span class="context-dot" aria-hidden="true"></span>
-      <span><?= $isPlatform && !$restaurant ? 'Platform management' : 'Workspace is ready' ?></span>
-    </div>
-
-    <nav class="app-sidebar-nav">
-      <?php foreach ($navGroups as $groupLabel => $items): ?>
-        <div class="app-nav-group">
-          <div class="app-nav-heading"><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></div>
-          <?php foreach ($items as $item):
-            $itemPath = explode('#', (string)$item['route'], 2)[0];
-            $active = $currentPath === $itemPath || str_starts_with($currentPath, $itemPath . '/');
-          ?>
-            <a class="app-nav-link <?= $active ? 'active' : '' ?>"
-               href="<?= BASE_URL . $item['route'] ?>"
-               title="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>"
-               aria-label="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>"
-               <?= $active ? 'aria-current="page"' : '' ?>>
-              <i class="bi <?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i>
-              <span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
-            </a>
-          <?php endforeach; ?>
-        </div>
-      <?php endforeach; ?>
-    </nav>
-
-    <div class="app-sidebar-bottom">
-      <?php if (!$isPlatform && \App\Core\Auth::can('pos.create_order')): ?>
-      <a class="app-sidebar-pos" href="<?= BASE_URL ?>/pos" title="Open POS Terminal" aria-label="Open POS Terminal">
-        <span class="pos-icon"><i class="bi bi-display" aria-hidden="true"></i></span>
-        <span class="flex-grow-1">
-          <strong>Open POS Terminal</strong>
-          <small>Go to cashier workspace</small>
-        </span>
-        <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-      </a>
-      <?php endif; ?>
-      <div class="app-sidebar-version">ServeFlow POS <span class="mx-1">·</span> Restaurant Management</div>
-    </div>
-  </aside>
-
-  <button type="button" class="app-sidebar-collapse-toggle" id="appSidebarCollapseToggle" aria-label="Collapse sidebar" aria-controls="appSidebar" aria-pressed="false" title="Collapse sidebar">
-    <i class="bi bi-chevron-double-left" aria-hidden="true"></i>
-  </button>
-  <button type="button" class="app-sidebar-backdrop" id="appSidebarBackdrop" aria-label="Close navigation menu"></button>
-
   <main class="app-main">
     <header class="app-topbar">
       <div class="app-topbar-left">
-        <button type="button" class="app-mobile-toggle" id="appSidebarToggle" aria-label="Open navigation menu" aria-controls="appSidebar" aria-expanded="false">
-          <i class="bi bi-list" aria-hidden="true"></i>
-        </button>
+        <a class="app-header-brand" href="<?= BASE_URL ?>/dashboard" aria-label="Dashboard">
+          <?php if ($logoUrl !== ''): ?>
+            <img src="<?= htmlspecialchars($logoUrl, ENT_QUOTES, 'UTF-8') ?>"
+                 alt="<?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?>">
+          <?php else: ?>
+            <span class="app-header-brand-icon"><i class="bi bi-shop-window"></i></span>
+          <?php endif; ?>
+          <span class="app-header-brand-copy">
+            <strong><?= htmlspecialchars((string)$restaurantName, ENT_QUOTES, 'UTF-8') ?></strong>
+            <?php if ($restaurantTagline !== ''): ?>
+              <small><?= htmlspecialchars($restaurantTagline, ENT_QUOTES, 'UTF-8') ?></small>
+            <?php else: ?>
+              <small><?= $isPlatform && !$restaurant ? 'PLATFORM MANAGEMENT' : 'RESTAURANT WORKSPACE' ?></small>
+            <?php endif; ?>
+          </span>
+        </a>
+        <span class="app-header-divider"></span>
         <div class="app-page-context">
-          <small><?= $isPlatform && !$restaurant ? 'PLATFORM OVERVIEW' : 'RESTAURANT MANAGEMENT' ?></small>
           <strong><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></strong>
         </div>
       </div>
 
       <div class="app-topbar-actions">
-        <label class="app-theme-switch" for="appThemeToggle" title="Switch between light and dark appearance">
-          <i class="bi bi-sun" aria-hidden="true"></i>
-          <input type="checkbox" id="appThemeToggle" role="switch" aria-label="Dark mode" aria-checked="false">
-          <span class="app-theme-switch-track" aria-hidden="true"></span>
-          <i class="bi bi-moon-stars" aria-hidden="true"></i>
-        </label>
-        <span class="status-pill app-connectivity"><span class="context-dot" aria-hidden="true"></span> Online</span>
         <?php if ($restaurant): ?>
           <?php if ($isSubValid): ?>
-            <span class="status-pill d-none d-xl-inline-flex bg-primary bg-opacity-10 text-primary border border-primary-subtle">
-              <i class="bi bi-shield-check me-1" aria-hidden="true"></i> Subscription Active
-            </span>
+            <span class="header-subscription"><i class="bi bi-shield-check"></i> Subscription Active</span>
           <?php else: ?>
-            <span class="status-pill d-none d-xl-inline-flex bg-warning bg-opacity-10 text-dark border border-warning-subtle">
-              <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i> Grace Period: <?= (int)$graceDays ?>d left
+            <span class="header-subscription header-subscription-warning">
+              <i class="bi bi-exclamation-triangle"></i> Grace Period: <?= (int)$graceDays ?>d left
             </span>
           <?php endif; ?>
         <?php endif; ?>
 
-        <?php if (!$isPlatform && \App\Core\Auth::can('pos.create_order')): ?>
-        <a href="<?= BASE_URL ?>/pos" class="app-topbar-pos">
-          <i class="bi bi-display" aria-hidden="true"></i><span>POS Terminal</span>
-        </a>
-        <?php endif; ?>
-
         <?php if ($user): ?>
           <div class="dropdown">
-            <button class="app-user-button" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Open user menu">
-              <span class="app-user-avatar"><i class="bi bi-person-fill" aria-hidden="true"></i></span>
+            <button class="app-user-button" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="app-user-avatar"><i class="bi bi-person-fill"></i></span>
               <span class="app-user-copy">
                 <strong><?= htmlspecialchars((string)($user['full_name'] ?? $user['username'] ?? 'User'), ENT_QUOTES, 'UTF-8') ?></strong>
                 <small><?= htmlspecialchars((string)$roleLabel, ENT_QUOTES, 'UTF-8') ?></small>
               </span>
-              <i class="bi bi-chevron-down user-chevron" aria-hidden="true"></i>
+              <i class="bi bi-chevron-down user-chevron"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 mt-2">
               <li><h6 class="dropdown-header">Signed in as <?= htmlspecialchars((string)($user['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h6></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2 text-secondary"></i>Change Password</a></li>
-              <?php if ($isPlatform): ?><li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li><?php endif; ?>
+              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2"></i>Change Password</a></li>
+              <?php if ($isPlatform): ?>
+                <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2"></i>System Diagnostics</a></li>
+              <?php endif; ?>
               <?php if ($canManageBranding): ?>
-                <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
+                <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
               <?php endif; ?>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item rounded-2 py-2 text-danger" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>

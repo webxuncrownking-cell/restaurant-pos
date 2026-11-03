@@ -417,14 +417,1597 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     .ticket-item-card .ticket-item-name { font-size:.98rem!important; }
   }
 
+
+  /* SERVEFLOW POS APP REDESIGN — PASS 1 */
+
+  .pos-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    min-height: 68px;
+    padding: 10px 22px;
+    background: rgba(255,255,255,.97);
+    border-bottom: 1px solid #e7ebf2;
+    box-shadow: 0 2px 10px rgba(15,23,42,.035);
+    backdrop-filter: blur(14px);
+  }
+
+  .pos-brand-lockup { gap: 12px; }
+  .pos-brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    background: #eff6ff;
+    color: #2563eb;
+    box-shadow: inset 0 0 0 1px #dbeafe;
+  }
+  .pos-brand-copy strong {
+    color: #172033;
+    font-size: .94rem;
+    letter-spacing: -.025em;
+  }
+  .pos-brand-copy small { color: #8792a5; }
+
+  .pos-device-badge {
+    padding: 6px 10px;
+    border: 1px solid #e7ebf2;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: .72rem;
+    font-weight: 700;
+  }
+
+  .pos-header-actions { gap: 8px; }
+  .pos-header .btn {
+    min-height: 40px;
+    border-radius: 10px;
+  }
+  .pos-sync-btn {
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    color: #2563eb;
+  }
+  .pos-icon-btn {
+    width: 40px;
+    border: 1px solid #e4e9f1;
+    background: #fff;
+    color: #64748b;
+  }
+  .pos-cashier-btn {
+    padding: 5px 11px 5px 6px;
+    border: 1px solid #e4e9f1;
+    background: #fff;
+    color: #344054;
+  }
+
+  .pos-workspace {
+    min-height: calc(100vh - 68px);
+    background: #f3f5f9;
+  }
+
+  @media (min-width: 1200px) {
+    .pos-workspace-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.72fr) minmax(370px, .88fr);
+      min-height: calc(100vh - 68px);
+    }
+    .pos-workspace-row > .pos-catalog-panel,
+    .pos-workspace-row > .pos-ticket-panel {
+      width: auto;
+      max-width: none;
+      min-width: 0;
+    }
+    .pos-catalog-panel {
+      height: calc(100vh - 68px);
+      min-height: 0;
+      overflow-y: auto;
+      padding: 22px 24px 30px !important;
+    }
+    .pos-ticket-panel {
+      position: sticky;
+      top: 68px;
+      height: calc(100vh - 68px);
+      min-height: 0;
+      overflow: hidden;
+      border-left: 1px solid #e5eaf1;
+      box-shadow: -8px 0 24px rgba(15,23,42,.035);
+    }
+  }
+
+  .pos-search-group {
+    min-height: 48px;
+    overflow: hidden;
+    border: 1px solid #dfe5ee;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(15,23,42,.025);
+  }
+  .pos-search-group:focus-within {
+    border-color: #93b4ff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.09);
+  }
+  .pos-search-group .input-group-text {
+    padding-left: 15px;
+    padding-right: 10px;
+    border: 0;
+    background: transparent;
+    color: #8491a5;
+  }
+  .pos-search-group .form-control,
+  .pos-search-group .form-select {
+    min-height: 46px;
+    border: 0;
+    background: transparent;
+    color: #263348;
+    box-shadow: none;
+    font-size: .88rem;
+  }
+  .pos-search-group .form-control::placeholder { color: #a0aabc; }
+
+  #posCustomerSelect,
+  #posLoyaltyRedeem {
+    min-height: 44px;
+    border-color: #dfe5ee;
+    border-radius: 10px;
+    color: #344054;
+    font-size: .84rem;
+  }
+
+  #categoryPillsContainer {
+    gap: 8px !important;
+    padding: 3px 1px 13px !important;
+    margin-bottom: 12px !important;
+  }
+  .category-pill {
+    min-height: 36px;
+    padding: 7px 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #fff;
+    color: #64748b;
+    font-size: .76rem;
+    font-weight: 750;
+    white-space: nowrap;
+    transition: .18s ease;
+  }
+  .category-pill:hover {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #2563eb;
+  }
+  .category-pill.active {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(37,99,235,.18);
+  }
+
+  #productsGrid {
+    --bs-gutter-x:  .85rem;
+    --bs-gutter-y:  .85rem;
+  }
+  @media (min-width: 1200px) {
+    #productsGrid > [class*="col-"] {
+      flex: 0 0 20%;
+      max-width: 20%;
+    }
+  }
+  @media (min-width: 1200px) and (max-width: 1450px) {
+    #productsGrid > [class*="col-"] {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+  }
+
+  .product-card {
+    min-height: 220px;
+    padding: 9px;
+    overflow: hidden;
+    border: 1px solid #e7ebf2;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 7px rgba(15,23,42,.035);
+    cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+  .product-card:hover {
+    transform: translateY(-2px);
+    border-color: #c8d8f5;
+    box-shadow: 0 9px 22px rgba(15,23,42,.085);
+  }
+  .product-image-wrap {
+    height: 126px;
+    margin: -1px -1px 11px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f1f4f8;
+  }
+  .product-image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .product-image-wrap.is-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b6c1d0;
+  }
+  .product-image-wrap.is-fallback i { font-size: 2rem; }
+  .product-category-tag {
+    color: #8a96a8;
+    font-size: .65rem;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: .045em;
+  }
+  .product-title {
+    color: #263348;
+    font-size: .82rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .product-price {
+    color: #1d4ed8;
+    font-size: .9rem;
+    font-weight: 850;
+  }
+  .product-add-icon {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .pos-ticket-panel {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+  }
+  .pos-order-type-switcher {
+    flex: 0 0 auto;
+    gap: 7px !important;
+    padding: 14px !important;
+    border-bottom: 1px solid #e9edf3 !important;
+    background: #fff;
+  }
+  .pos-order-type {
+    flex: 1;
+    min-height: 43px !important;
+    padding: 9px 7px !important;
+    border: 1px solid #e4e9f1 !important;
+    border-radius: 10px !important;
+    background: #f8fafc !important;
+    color: #64748b !important;
+    font-size: .78rem !important;
+    font-weight: 750 !important;
+  }
+  .pos-order-type.active {
+    border-color: #2563eb !important;
+    background: #eff6ff !important;
+    color: #2563eb !important;
+    box-shadow: inset 0 0 0 1px #2563eb;
+  }
+  .ticket-items {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 17px !important;
+    background: #f8fafc !important;
+  }
+  .pos-empty-cart {
+    padding: 45px 16px;
+    color: #8a96a8;
+    text-align: center;
+  }
+  .pos-empty-cart h5 {
+    margin-top: 12px;
+    color: #344054;
+    font-size: .98rem;
+    font-weight: 800;
+  }
+  .pos-empty-cart p {
+    max-width: 250px;
+    margin: 6px auto 0;
+    font-size: .8rem;
+    line-height: 1.5;
+  }
+  .pos-empty-icon {
+    display: inline-flex;
+    width: 58px;
+    height: 58px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: #edf3ff;
+    color: #5684db;
+    font-size: 1.5rem;
+  }
+
+  .pos-ticket-summary {
+    flex: 0 0 auto;
+    padding: 17px !important;
+    border-top: 1px solid #e7ebf2 !important;
+    background: #fff !important;
+    box-shadow: 0 -5px 16px rgba(15,23,42,.025);
+  }
+  .pos-ticket-summary #ticketTotal {
+    color: #1d4ed8 !important;
+    font-size: 1.9rem !important;
+    font-weight: 900 !important;
+  }
+  .pos-ticket-summary .pos-checkout-btn {
+    min-height: 49px;
+    border-radius: 11px !important;
+    background: #2563eb !important;
+    box-shadow: 0 4px 10px rgba(37,99,235,.18);
+    font-size: .9rem !important;
+    font-weight: 850 !important;
+  }
+  .pos-ticket-summary .pos-clear-ticket {
+    width: 46px;
+    min-height: 49px;
+    border-radius: 11px !important;
+  }
+  #saveOpenOrderBtn {
+    min-height: 43px;
+    border-radius: 10px;
+    font-size: .82rem;
+    font-weight: 750;
+  }
+
+  @media (max-width: 1199.98px) {
+    .pos-catalog-panel {
+      height: auto;
+      min-height: 0;
+      padding: 18px !important;
+    }
+    .pos-ticket-panel {
+      position: relative;
+      height: auto;
+      min-height: 520px;
+      border-top: 1px solid #e5eaf1;
+    }
+    .ticket-items { min-height: 220px; max-height: 48vh; }
+  }
+
+  @media (max-width: 767.98px) {
+    .pos-header {
+      position: relative;
+      padding: 10px 12px;
+    }
+    .pos-brand-lockup { gap: 8px; }
+    .pos-device-badge { display: none; }
+    .pos-header-actions {
+      width: 100%;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+    .pos-catalog-panel { padding: 14px 11px !important; }
+    #productsGrid > [class*="col-"] {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    .product-card { min-height: 195px; }
+    .product-image-wrap { height: 105px; }
+    .product-title { font-size: .77rem; }
+    .pos-ticket-panel { min-height: 470px; }
+    .pos-ticket-summary { padding: 14px !important; }
+    .pos-ticket-summary #ticketTotal { font-size: 1.65rem !important; }
+  }
+
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-catalog-panel {
+    background: #111827 !important;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-header,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-panel,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-order-type-switcher,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-summary {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .product-card,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-search-group,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-icon-btn,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-cashier-btn {
+    background: #1f2937 !important;
+    border-color: #374151 !important;
+    color: #e5e7eb !important;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .product-title,
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-brand-copy strong {
+    color: #f3f4f6 !important;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .ticket-items {
+    background: #111827 !important;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .pos-empty-cart h5 {
+    color: #e5e7eb;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .category-pill {
+    background: #1f2937;
+    border-color: #374151;
+    color: #cbd5e1;
+  }
+  html[data-theme="dark"] body:has(.pos-workspace) .category-pill.active {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+  }
+
+
+/* =========================================================
+   SERVEFLOW POS — FINAL VISUAL OVERRIDES
+   One consistent light interface; preserve existing behavior.
+   ========================================================= */
+
+.pos-header {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    min-height: 68px;
+    padding: 10px 22px;
+    background: #1769d2 !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0 3px 14px rgba(15, 45, 90, .16);
+}
+
+.pos-header,
+.pos-header * {
+    color: #fff;
+}
+
+.pos-brand-mark {
+    background: rgba(255,255,255,.16) !important;
+    border: 1px solid rgba(255,255,255,.2);
+}
+
+.pos-device-badge,
+.pos-network-status,
+.pos-sync-btn,
+.pos-icon-btn,
+.pos-cashier-btn {
+    color: #fff !important;
+}
+
+.pos-sync-btn,
+.pos-icon-btn,
+.pos-cashier-btn {
+    background: rgba(255,255,255,.13) !important;
+    border: 1px solid rgba(255,255,255,.24) !important;
+}
+
+.pos-workspace {
+    background: #f3f6fb !important;
+    color: #1c2b41 !important;
+    padding: 18px !important;
+}
+
+.pos-catalog-panel,
+.pos-ticket-panel {
+    background: #fff !important;
+    color: #1c2b41 !important;
+    border: 1px solid #e5eaf2 !important;
+    border-radius: 14px;
+}
+
+.pos-catalog-panel {
+    padding: 20px !important;
+}
+
+.pos-ticket-panel {
+    padding: 0 !important;
+    box-shadow: 0 5px 24px rgba(25, 45, 75, .07);
+}
+
+.pos-search-group .form-control,
+.pos-search-group .form-select {
+    min-height: 46px;
+    border-color: #dce3ed;
+    border-radius: 9px;
+    background: #fff !important;
+    color: #26364c !important;
+}
+
+.category-pill {
+    border-radius: 8px !important;
+    padding: 9px 15px !important;
+    background: #fff !important;
+    color: #526176 !important;
+    border: 1px solid #e0e6ef !important;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.category-pill.active {
+    background: #1769d2 !important;
+    border-color: #1769d2 !important;
+    color: #fff !important;
+}
+
+.pos-order-type-switcher {
+    background: #fff !important;
+    border-bottom: 1px solid #e8edf4;
+    border-radius: 14px 14px 0 0;
+}
+
+.pos-order-type {
+    min-height: 48px !important;
+    border-radius: 8px !important;
+    font-weight: 650;
+}
+
+.pos-order-type.active {
+    background: #1769d2 !important;
+    border-color: #1769d2 !important;
+    color: #fff !important;
+}
+
+#productsGrid {
+    row-gap: 16px;
+}
+
+#productsGrid > [class*="col-"] {
+    display: flex;
+}
+
+.product-card {
+    width: 100%;
+    min-height: 0 !important;
+    padding: 10px !important;
+    background: #fff !important;
+    color: #1c2b41 !important;
+    border: 1px solid #e6ebf2 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(20, 40, 70, .045) !important;
+    transition: box-shadow .18s ease, transform .18s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 18px rgba(20, 40, 70, .09) !important;
+}
+
+.product-image-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    height: auto !important;
+    overflow: hidden;
+    margin-bottom: 10px;
+    border-radius: 9px;
+    background: #f0f3f8;
+}
+
+.product-image-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-image-wrap.is-fallback {
+    display: grid;
+    place-items: center;
+}
+
+.product-image-wrap.is-fallback i {
+    display: block;
+    color: #9aa9bd;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+
+.product-image-wrap.is-fallback::after {
+    content: "IMAGE NOT AVAILABLE";
+    position: absolute;
+    bottom: 8px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #8997aa;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .06em;
+}
+
+.product-category-tag {
+    background: #eef4fc !important;
+    color: #42658f !important;
+    border-radius: 5px !important;
+    font-size: 10px !important;
+}
+
+.product-title {
+    min-height: 0 !important;
+    font-size: .9rem !important;
+    line-height: 1.35 !important;
+    color: #25354b !important;
+}
+
+.product-price {
+    color: #1769d2 !important;
+    font-size: 1rem !important;
+    font-weight: 750;
+}
+
+.product-add-button {
+    display: flex;
+    width: 100%;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 9px;
+    border-radius: 7px;
+    background: #1769d2;
+    color: #fff !important;
+    font-size: .83rem;
+    font-weight: 700;
+}
+
+.product-card > div:last-child {
+    display: block !important;
+    border-top: 1px solid #edf0f5 !important;
+    padding-top: 10px;
+}
+
+.product-card > div:last-child .product-price {
+    display: block;
+}
+
+.ticket-items {
+    background: #f7f9fc !important;
+}
+
+.ticket-item-card {
+    background: #fff !important;
+    border: 1px solid #e6ebf2 !important;
+    border-radius: 10px !important;
+}
+
+.pos-ticket-summary {
+    background: #fff !important;
+    border-top: 1px solid #e8edf4;
+}
+
+.pos-ticket-summary #ticketTotal {
+    color: #1769d2 !important;
+    font-size: 1.8rem !important;
+    font-weight: 800;
+}
+
+.pos-checkout-btn {
+    min-height: 52px;
+    border-radius: 9px !important;
+    background: #1769d2 !important;
+    border-color: #1769d2 !important;
+    color: #fff !important;
+    font-weight: 750;
+}
+
+.pos-empty-cart {
+    color: #8390a3;
+}
+
+/* Wide screens: six products per row. */
+@media (min-width: 1600px) {
+    #productsGrid > [class*="col-"] {
+        flex: 0 0 16.666667%;
+        max-width: 16.666667%;
+    }
+}
+
+/* Desktop: four products per row. */
+@media (min-width: 992px) and (max-width: 1599.98px) {
+    #productsGrid > [class*="col-"] {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+}
+
+/* Tablet: three products per row. */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    #productsGrid > [class*="col-"] {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
+/* Mobile: two products per row and natural document scrolling. */
+@media (max-width: 575.98px) {
+    .pos-header {
+        padding: 9px 12px;
+    }
+
+    .pos-brand-copy strong {
+        max-width: 48vw;
+        font-size: .9rem;
+    }
+
+    .pos-header-actions {
+        gap: 5px;
+    }
+
+    .pos-workspace {
+        padding: 9px !important;
+    }
+
+    .pos-catalog-panel {
+        padding: 12px !important;
+    }
+
+    #productsGrid > [class*="col-"] {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    .product-card {
+        padding: 8px !important;
+    }
+
+    .product-title {
+        font-size: .82rem !important;
+    }
+
+    .pos-ticket-panel {
+        min-height: 0;
+        margin-top: 12px;
+    }
+}
+
+/* Keep the terminal light even if an old theme preference exists. */
+html[data-theme="dark"] body:has(.pos-workspace),
+html[data-theme="dark"] body:has(.pos-workspace) .pos-workspace,
+html[data-theme="dark"] body:has(.pos-workspace) .pos-catalog-panel,
+html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-panel,
+html[data-theme="dark"] body:has(.pos-workspace) .ticket-items {
+    background: #f3f6fb !important;
+    color: #1c2b41 !important;
+}
+
+html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-panel,
+html[data-theme="dark"] body:has(.pos-workspace) .pos-order-type-switcher,
+html[data-theme="dark"] body:has(.pos-workspace) .pos-ticket-summary,
+html[data-theme="dark"] body:has(.pos-workspace) .product-card {
+    background: #fff !important;
+    color: #1c2b41 !important;
+}
+
+
+/* ServeFlow POS visual polish: improve readability */
+.pos-brand-copy strong {
+    font-size: 1.08rem;
+}
+
+.pos-brand-copy small {
+    font-size: .72rem;
+}
+
+.pos-device-badge,
+.pos-network-status {
+    font-size: .82rem;
+}
+
+.pos-header .btn {
+    font-size: .88rem;
+}
+
+.category-pill {
+    font-size: .86rem;
+}
+
+.product-card .product-category-tag,
+.product-card .product-custom-tag {
+    font-size: .72rem;
+}
+
+.product-card .product-title {
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.product-card .product-price {
+    font-size: 1.1rem;
+}
+
+.pos-order-type {
+    font-size: .84rem !important;
+}
+
+.pos-search-group .form-control,
+.pos-search-group .form-select {
+    font-size: .95rem;
+}
+
+.ticket-item-card .ticket-item-name {
+    font-size: .95rem;
+}
+
+.ticket-item-card .ticket-item-price {
+    font-size: .95rem;
+}
+
+.ticket-item-card .ticket-item-meta,
+.ticket-item-card .ticket-addon-text {
+    font-size: .82rem;
+}
+
+.ticket-item-card .ticket-qty {
+    font-size: .9rem;
+}
+
+.pos-ticket-summary .form-select {
+    font-size: .84rem !important;
+}
+
+.pos-ticket-summary .pos-checkout-btn {
+    font-size: 1rem !important;
+}
+
+@media (max-width: 650px) {
+    .pos-brand-copy strong {
+        font-size: .95rem;
+    }
+
+    .product-card .product-title {
+        font-size: .94rem;
+    }
+
+    .category-pill {
+        font-size: .8rem;
+    }
+}
+
+
+/* ServeFlow POS: final workspace layout */
+.pos-workspace,
+.pos-workspace-row {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.pos-catalog-panel {
+    padding: 24px !important;
+}
+
+.pos-ticket-panel {
+    min-width: 0;
+}
+
+#productsGrid > [class*="col-"] {
+    flex: 0 0 25% !important;
+    width: 25% !important;
+    max-width: 25% !important;
+}
+
+.product-card {
+    min-height: 285px !important;
+    padding: 14px !important;
+}
+
+.product-image-wrap {
+    height: 145px !important;
+    aspect-ratio: auto !important;
+}
+
+.product-card .product-title {
+    font-size: 1rem !important;
+    line-height: 1.45 !important;
+}
+
+.product-card .product-price {
+    font-size: 1.15rem !important;
+}
+
+.product-card .product-category-tag,
+.product-card .product-custom-tag {
+    font-size: .75rem !important;
+}
+
+.product-card .product-add-icon {
+    width: 36px !important;
+    height: 36px !important;
+}
+
+.pos-header .btn,
+.category-pill,
+.pos-order-type {
+    font-size: .9rem !important;
+}
+
+.ticket-item-card .ticket-item-name,
+.ticket-item-card .ticket-item-price {
+    font-size: .98rem !important;
+}
+
+@media(max-width:1199px) {
+    #productsGrid > [class*="col-"] {
+        flex: 0 0 33.3333% !important;
+        width: 33.3333% !important;
+        max-width: 33.3333% !important;
+    }
+}
+
+@media(max-width:767px) {
+    #productsGrid > [class*="col-"] {
+        flex: 0 0 50% !important;
+        width: 50% !important;
+        max-width: 50% !important;
+    }
+
+    .pos-catalog-panel {
+        padding: 15px !important;
+    }
+
+    .product-card {
+        min-height: 225px !important;
+    }
+
+    .product-image-wrap {
+        height: 110px !important;
+    }
+}
+
+
+/* ServeFlow POS header and loyalty field correction */
+.pos-header {
+    min-height: 68px !important;
+    padding: 10px 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    background: #1769d2 !important;
+    border-bottom: 0 !important;
+    box-shadow: 0 3px 12px rgba(15, 45, 90, .16) !important;
+}
+
+.pos-brand-lockup {
+    gap: 12px !important;
+}
+
+.pos-brand-copy strong {
+    color: #fff !important;
+    font-size: 1.02rem !important;
+    letter-spacing: -.02em;
+}
+
+.pos-brand-copy small {
+    color: rgba(255,255,255,.78) !important;
+    font-size: .75rem !important;
+    letter-spacing: .07em;
+}
+
+.pos-header .app-back-button {
+    flex-shrink: 0;
+    color: #fff !important;
+    background: rgba(255,255,255,.14) !important;
+    border: 1px solid rgba(255,255,255,.3) !important;
+}
+
+.pos-header .app-back-button:hover {
+    background: rgba(255,255,255,.24) !important;
+}
+
+.pos-header .pos-device-badge {
+    color: #fff !important;
+    background: rgba(255,255,255,.15) !important;
+    border: 1px solid rgba(255,255,255,.22) !important;
+}
+
+.pos-header .pos-header-actions .btn {
+    min-height: 40px;
+    border-radius: 10px;
+}
+
+
+
+.redeem-loyalty-select,
+.redeem-loyalty-select:disabled {
+    background-color: #fff !important;
+    color: #475569 !important;
+    opacity: 1 !important;
+    border-color: #dce4ef !important;
+    cursor: default;
+}
+
+@media(max-width:767px) {
+    .pos-header {
+        padding: 9px 12px !important;
+        flex-wrap: wrap;
+    }
+
+    .pos-brand-copy strong {
+        font-size: .94rem !important;
+    }
+}
+
+
+/* ServeFlow POS header: clean branding and readable controls */
+.pos-header {
+    min-height: 68px !important;
+    padding: 10px 18px !important;
+    background: #1769d2 !important;
+    border: 0 !important;
+    box-shadow: 0 3px 12px rgba(15,45,90,.16) !important;
+}
+
+.pos-brand-lockup {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+}
+
+.pos-brand-copy strong {
+    color: #fff !important;
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+}
+
+.pos-brand-copy small {
+    color: rgba(255,255,255,.88) !important;
+    font-size: .76rem !important;
+    font-weight: 700 !important;
+    letter-spacing: .06em;
+}
+
+/* Remove the low-contrast device description from the header. */
+.pos-device-badge {
+    display: none !important;
+}
+
+/* Keep sync, online, download and account controls legible. */
+.pos-header-actions {
+    align-items: center !important;
+    gap: 9px !important;
+}
+
+.pos-header-actions .btn {
+    color: #fff !important;
+    background: rgba(255,255,255,.14) !important;
+    border: 1px solid rgba(255,255,255,.28) !important;
+}
+
+.pos-header .app-back-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    padding: 0 12px !important;
+    color: #fff !important;
+    background: rgba(255,255,255,.16) !important;
+    border: 1px solid rgba(255,255,255,.32) !important;
+    border-radius: 10px !important;
+    font-size: .9rem !important;
+    text-decoration: none !important;
+}
+
+.pos-header .app-back-button:hover {
+    color: #fff !important;
+    background: rgba(255,255,255,.25) !important;
+}
+
+.pos-brand-mark:empty {
+    display: none !important;
+}
+
+@media(max-width:767px) {
+    .pos-header {
+        padding: 9px 12px !important;
+    }
+
+    .pos-header .app-back-button {
+        min-width: 38px !important;
+        width: 38px !important;
+        padding: 0 !important;
+        font-size: 0 !important;
+    }
+
+    .pos-header .app-back-button i {
+        font-size: 1rem !important;
+    }
+}
+
+
+
+
+
+/* POS network status visibility correction */
+#posNetworkStatus {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex-shrink: 0 !important;
+    min-height: 36px;
+    padding: 6px 12px !important;
+    border-radius: 999px !important;
+    color: #fff !important;
+    background: rgba(255,255,255,.16) !important;
+    border: 1px solid rgba(255,255,255,.3) !important;
+    font-size: .82rem !important;
+    font-weight: 750 !important;
+    white-space: nowrap !important;
+}
+
+#posNetworkStatus i,
+#posNetworkStatus .bi {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.pos-header .pos-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 9px !important;
+}
+
+@media(max-width:767px) {
+    .pos-header .pos-header-actions {
+        flex-wrap: wrap !important;
+    }
+}
+
+
+/* Checkout / Menus workspace tabs */
+.pos-workspace-tabs {
+  display:none;
+  gap:8px;
+  padding:12px 16px;
+  background:#fff;
+  border-bottom:1px solid #e3e8f0;
+}
+.pos-workspace-tab {
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  flex:1 1 0;
+  min-height:48px;
+  padding:10px 16px;
+  border:1px solid #e1e7f0;
+  border-radius:12px;
+  background:#f5f7fb;
+  color:#64748b;
+  font-size:1rem;
+  font-weight:800;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.pos-workspace-tab i { font-size:1.15rem; }
+.pos-workspace-tab.active {
+  color:#fff;
+  background:var(--terminal-primary,#2563eb);
+  border-color:var(--terminal-primary,#2563eb);
+  box-shadow:0 4px 12px rgba(37,99,235,.16);
+}
+.pos-workspace-tab:focus-visible {
+  outline:3px solid rgba(37,99,235,.35);
+  outline-offset:2px;
+}
+.pos-tab-count {
+  display:inline-grid;
+  place-items:center;
+  min-width:23px;
+  height:23px;
+  padding:0 6px;
+  border-radius:999px;
+  background:rgba(255,255,255,.2);
+  color:inherit;
+  font-size:.75rem;
+}
+.pos-workspace-tab:not(.active) .pos-tab-count {
+  background:#e8edf5;
+  color:#475569;
+}
+.pos-tab-pane.pos-tab-hidden { display:none!important; }
+.pos-workspace-tabs + .pos-workspace {
+  min-height:calc(100vh - 140px);
+}
+@media(max-width:767.98px) {
+  .pos-workspace-tabs {
+    display:flex;
+    position:sticky;
+    top:0;
+    z-index:1005;
+    padding:10px 12px;
+    gap:8px;
+    box-shadow:0 3px 12px rgba(15,23,42,.045);
+  }
+  .pos-workspace-tab {
+    min-height:52px;
+    font-size:1rem;
+    border-radius:13px;
+  }
+  .pos-workspace-tabs + .pos-workspace { min-height:0; }
+  #posMenusPane, #posCheckoutPane {
+    width:100%!important;
+    max-width:100%!important;
+    flex:0 0 100%!important;
+  }
+}
+
+/* ServeFlow POS fullscreen checkout and compact mobile header */
+
+/* ServeFlow POS fullscreen checkout and compact mobile header */
+
+/* Desktop: keep the two-panel workspace filling the available screen. */
+@media (min-width: 768px) {
+    body:has(#posCheckoutPane) {
+        min-height: 100vh;
+    }
+
+    #posCheckoutPane,
+    #posMenusPane {
+        min-height: calc(100vh - 150px);
+    }
+
+    .pos-ticket-panel {
+        min-height: calc(100vh - 150px);
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+/* Mobile: use the viewport as the POS application workspace. */
+@media (max-width: 767.98px) {
+    body:has(#posCheckoutPane) {
+        min-height: 100dvh;
+    }
+
+    body:has(#posCheckoutPane) .app-footer,
+    body:has(#posCheckoutPane) footer {
+        display: none !important;
+    }
+
+    #posCheckoutPane {
+        min-height: calc(100dvh - 180px) !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #posCheckoutPane .pos-ticket-panel {
+        min-height: calc(100dvh - 180px) !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Keep the ticket panel tall; allow the item list to scroll. */
+    .pos-ticket-panel > .card {
+        min-height: calc(100dvh - 180px);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pos-ticket-panel .ticket-items,
+    .pos-ticket-panel .cart-items,
+    .pos-ticket-panel .order-items {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    /* One-line mobile header. */
+    .pos-header {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 7px !important;
+        min-height: 64px !important;
+        padding: 7px 9px !important;
+        overflow: hidden;
+    }
+
+    .pos-brand-lockup {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        gap: 7px !important;
+        overflow: hidden;
+    }
+
+    .pos-brand-copy {
+        min-width: 0 !important;
+        overflow: hidden;
+    }
+
+    .pos-brand-copy strong {
+        display: block !important;
+        max-width: 145px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: .88rem !important;
+    }
+
+    .pos-brand-copy small {
+        display: none !important;
+    }
+
+    .pos-header-actions {
+        display: flex !important;
+        flex: 0 0 auto !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 4px !important;
+        min-width: 0 !important;
+    }
+
+    .pos-header-actions .btn {
+        min-width: 34px !important;
+        min-height: 36px !important;
+        padding: 5px 7px !important;
+        font-size: .75rem !important;
+        white-space: nowrap !important;
+    }
+
+    #posNetworkStatus {
+        min-height: 34px !important;
+        padding: 5px 8px !important;
+        font-size: .72rem !important;
+    }
+
+    .pos-header-actions .dropdown-toggle {
+        max-width: 44px !important;
+        overflow: hidden !important;
+    }
+
+    .pos-header-actions .dropdown-toggle .user-name,
+    .pos-header-actions .dropdown-toggle .user-role {
+        display: none !important;
+    }
+}
+
+/* Very narrow phones: prioritize the brand and essential status controls. */
+@media (max-width: 420px) {
+    .pos-header {
+        gap: 5px !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    .pos-brand-copy strong {
+        max-width: 105px;
+        font-size: .78rem !important;
+    }
+
+    .pos-header .app-back-button {
+        width: 34px !important;
+        min-width: 34px !important;
+        height: 34px !important;
+    }
+
+    .pos-header-actions .btn {
+        min-width: 31px !important;
+        padding: 4px 5px !important;
+    }
+
+    #posNetworkStatus {
+        width: 31px !important;
+        min-width: 31px !important;
+        overflow: hidden !important;
+        font-size: 0 !important;
+    }
+
+    #posNetworkStatus::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+    }
+}
+
+
+/* ServeFlow POS: authoritative header layout */
+.pos-header {
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:12px !important;
+    width:100% !important;
+    min-height:70px !important;
+    padding:10px 18px !important;
+    overflow:visible !important;
+    background:#087fc2 !important;
+    color:#fff !important;
+}
+
+.pos-brand-lockup {
+    display:flex !important;
+    flex:1 1 auto !important;
+    align-items:center !important;
+    min-width:0 !important;
+    gap:11px !important;
+}
+
+.pos-brand-mark {
+    display:flex !important;
+    flex:0 0 44px !important;
+    width:44px !important;
+    height:44px !important;
+    align-items:center !important;
+    justify-content:center !important;
+    overflow:hidden !important;
+    border-radius:10px !important;
+    background:rgba(255,255,255,.16) !important;
+}
+
+.pos-brand-mark img {
+    display:block !important;
+    width:100% !important;
+    height:100% !important;
+    object-fit:contain !important;
+    padding:3px !important;
+    background:#fff !important;
+}
+
+.pos-brand-copy {
+    display:flex !important;
+    flex-direction:column !important;
+    min-width:0 !important;
+    overflow:hidden !important;
+}
+
+.pos-brand-copy strong {
+    display:block !important;
+    max-width:360px !important;
+    overflow:hidden !important;
+    color:#fff !important;
+    font-size:1.05rem !important;
+    font-weight:800 !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+}
+
+.pos-brand-copy small {
+    display:block !important;
+    overflow:hidden !important;
+    color:rgba(255,255,255,.85) !important;
+    font-size:.72rem !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+}
+
+.pos-device-badge {
+    display:none !important;
+}
+
+.pos-header-actions {
+    display:flex !important;
+    flex:0 0 auto !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    flex-wrap:nowrap !important;
+    gap:8px !important;
+}
+
+.pos-header-actions .btn,
+.pos-network-status {
+    color:#fff !important;
+    background:rgba(255,255,255,.15) !important;
+    border:1px solid rgba(255,255,255,.28) !important;
+}
+
+.pos-network-status {
+    display:inline-flex !important;
+    align-items:center !important;
+    gap:7px !important;
+    padding:8px 11px !important;
+    border-radius:10px !important;
+    font-size:.8rem !important;
+    font-weight:750 !important;
+    white-space:nowrap !important;
+}
+
+.pos-status-dot {
+    display:inline-block !important;
+    width:8px !important;
+    height:8px !important;
+    flex:0 0 8px !important;
+    border-radius:50% !important;
+    background:#4ade80 !important;
+}
+
+.pos-terminal-back {
+    display:inline-flex !important;
+    flex:0 0 38px !important;
+    width:38px !important;
+    height:38px !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border:1px solid rgba(255,255,255,.3) !important;
+    border-radius:10px !important;
+    color:#fff !important;
+    background:rgba(255,255,255,.15) !important;
+    text-decoration:none !important;
+    font-size:1.1rem !important;
+}
+
+.pos-terminal-back:hover {
+    color:#fff !important;
+    background:rgba(255,255,255,.28) !important;
+}
+
+@media(max-width:767.98px) {
+    .pos-header {
+        min-height:60px !important;
+        padding:7px 9px !important;
+        gap:6px !important;
+    }
+
+    .pos-brand-lockup {
+        gap:6px !important;
+    }
+
+    .pos-brand-mark {
+        display:none !important;
+    }
+
+    .pos-brand-copy strong {
+        max-width:115px !important;
+        font-size:.82rem !important;
+    }
+
+    .pos-brand-copy small {
+        display:none !important;
+    }
+
+    .pos-terminal-back {
+        flex-basis:32px !important;
+        width:32px !important;
+        height:34px !important;
+    }
+
+    .pos-header-actions {
+        gap:4px !important;
+    }
+
+    .pos-header-actions .btn {
+        min-width:32px !important;
+        min-height:34px !important;
+        padding:4px 6px !important;
+        font-size:.72rem !important;
+    }
+
+    #posNetworkStatus {
+        min-height:32px !important;
+        padding:5px 7px !important;
+        font-size:.7rem !important;
+    }
+}
+
+@media(max-width:380px) {
+    .pos-brand-copy strong {
+        max-width:85px !important;
+    }
+
+    .pos-header-actions {
+        gap:3px !important;
+    }
+}
+
 </style>
 
 <!-- Modern POS Header Bar -->
 <header class="pos-header d-flex flex-wrap justify-content-between align-items-center gap-3 no-print">
-  <div class="pos-brand-lockup">
-    <a id="posBackToSaaS" href="<?= BASE_URL ?>/dashboard" class="btn btn-sm d-none" aria-hidden="true" tabindex="-1" title="Return to management">
-      <i class="bi bi-arrow-left"></i>
-    </a>
+  <a id="posTerminalBack" class="pos-terminal-back" href="<?= BASE_URL ?>/dashboard" aria-label="Back to dashboard"><i class="bi bi-arrow-left"></i></a>
+<div class="pos-brand-lockup">
+    
     <span class="pos-brand-mark">
       <?php if ($posLogoUrl !== ''): ?>
         <img src="<?= htmlspecialchars($posLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($posRestaurantName, ENT_QUOTES, 'UTF-8') ?> logo">
@@ -476,10 +2059,28 @@ include APP_ROOT . '/app/Views/layouts/header.php';
 <div id="posSyncNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="alert" aria-live="polite"></div>
 
 <!-- Main POS Workspace -->
+
+<!-- POS Workspace Tabs -->
+<div id="posWorkspaceTabs" class="pos-workspace-tabs no-print" role="tablist" aria-label="POS workspace">
+  <button type="button" class="pos-workspace-tab active"
+          id="posCheckoutTab" role="tab" aria-selected="true"
+          aria-controls="posCheckoutPane" data-pos-tab="checkout">
+    <i class="bi bi-receipt-cutoff" aria-hidden="true"></i>
+    <span>Checkout</span>
+    <span class="pos-tab-count" id="posCheckoutCount">0</span>
+  </button>
+  <button type="button" class="pos-workspace-tab"
+          id="posMenusTab" role="tab" aria-selected="false"
+          aria-controls="posMenusPane" data-pos-tab="menus">
+    <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
+    <span>Menus</span>
+  </button>
+</div>
+
 <div class="container-fluid p-0 pos-workspace">
   <div class="row g-0 pos-workspace-row">
     <!-- Left Panel: Search, Categories & Product Grid -->
-    <div class="col-12 col-lg-7 col-xl-8 pos-catalog-panel">
+    <div id="posMenusPane" class="col-12 col-lg-7 col-xl-8 pos-catalog-panel pos-tab-pane">
       <!-- Search and Floor Zone Selector -->
       <div class="row g-2 mb-4">
         <div class="col-12 col-md-7">
@@ -541,7 +2142,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
     </div>
 
     <!-- Right Panel: Cart / Order Ticket -->
-    <div class="col-12 col-lg-5 col-xl-4 pos-ticket-panel">
+    <div id="posCheckoutPane" class="col-12 col-lg-5 col-xl-4 pos-ticket-panel pos-tab-pane">
       <!-- Dining Option Switcher -->
       <div class="pos-order-type-switcher">
         <button id="typeDineIn" class="btn pos-order-type active" onclick="window.posApp.setOrderType('dine_in')">
@@ -1373,7 +2974,7 @@ include APP_ROOT . '/app/Views/layouts/header.php';
               </div>
               <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                 <span class="product-price">₱${price.toFixed(2)}</span>
-                <span class="product-add-icon"><i class="bi bi-plus-lg"></i></span>
+                <span class="product-add-button"><i class="bi bi-plus-lg"></i> Add</span>
               </div>
             </div>
           </div>
@@ -2232,5 +3833,76 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   });
 })();
 </script>
+
+<script>
+(function () {
+  const tabs = document.getElementById('posWorkspaceTabs');
+  const checkoutPane = document.getElementById('posCheckoutPane');
+  const menusPane = document.getElementById('posMenusPane');
+
+  if (!tabs || !checkoutPane || !menusPane) return;
+
+  const checkoutTab = document.getElementById('posCheckoutTab');
+  const menusTab = document.getElementById('posMenusTab');
+  const count = document.getElementById('posCheckoutCount');
+
+  function updateCartCount() {
+    // Read the rendered ticket quantities; do not alter POS cart state.
+    const quantityNodes = checkoutPane.querySelectorAll('.ticket-qty');
+    let total = 0;
+
+    quantityNodes.forEach(function (node) {
+      const value = Number.parseInt(node.textContent.trim(), 10);
+      if (Number.isFinite(value) && value > 0) total += value;
+    });
+
+    if (count) count.textContent = String(total);
+  }
+
+  function showTab(name) {
+    const isMobile = window.matchMedia('(max-width: 767.98px)').matches;
+    const checkoutActive = name === 'checkout';
+
+    if (!isMobile) {
+      checkoutPane.classList.remove('pos-tab-hidden');
+      menusPane.classList.remove('pos-tab-hidden');
+      updateCartCount();
+      return;
+    }
+
+    checkoutPane.classList.toggle('pos-tab-hidden', !checkoutActive);
+    menusPane.classList.toggle('pos-tab-hidden', checkoutActive);
+
+    checkoutTab.classList.toggle('active', checkoutActive);
+    menusTab.classList.toggle('active', !checkoutActive);
+
+    checkoutTab.setAttribute('aria-selected', String(checkoutActive));
+    menusTab.setAttribute('aria-selected', String(!checkoutActive));
+
+    updateCartCount();
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  window.addEventListener('resize', function () {
+    showTab(checkoutTab.classList.contains('active') ? 'checkout' : 'menus');
+  });
+
+  checkoutTab.addEventListener('click', function () {
+    showTab('checkout');
+  });
+
+  menusTab.addEventListener('click', function () {
+    showTab('menus');
+  });
+
+  // Keep the cart count current after POS ticket updates.
+  const observer = new MutationObserver(updateCartCount);
+  observer.observe(checkoutPane, { childList:true, subtree:true, characterData:true });
+
+  // Checkout is the initial view on both desktop and mobile.
+  showTab('checkout');
+})();
+</script>
+
 
 <?php include APP_ROOT . '/app/Views/layouts/footer.php'; ?>

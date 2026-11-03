@@ -86,8 +86,101 @@ class DashboardController
                 // Low stock alerts count
                 $data['low_stock_count'] = (int)(Database::fetchOne("SELECT COUNT(*) AS c FROM ingredients WHERE restaurant_id = ? AND current_stock <= minimum_stock_alert AND is_active = 1", [$restaurantId])['c'] ?? 0);
 
-                // Fetch registered devices for this tenant
-                $data['devices'] = Database::fetchAll("SELECT * FROM pos_devices WHERE restaurant_id = ? ORDER BY id ASC", [$restaurantId]);
+                // Today's operational KPIs (tenant-scoped).
+                $todaySales = Database::fetchOne(
+                    "SELECT COALESCE(SUM(total_amount), 0) AS amount
+                     FROM orders
+                     WHERE restaurant_id = ?
+                       AND order_status <> 'cancelled'
+                       AND payment_status = 'paid'
+                       AND DATE(created_at) = CURDATE()",
+                    [$restaurantId]
+                );
+                $data['sales_today'] = (float)($todaySales['amount'] ?? 0);
+
+                $todayOrders = Database::fetchOne(
+                    "SELECT COUNT(*) AS total
+                     FROM orders
+                     WHERE restaurant_id = ?
+                       AND order_status <> 'cancelled'
+                       AND DATE(created_at) = CURDATE()",
+                    [$restaurantId]
+                );
+                $data['orders_today'] = (int)($todayOrders['total'] ?? 0);
+
+                // Estimated gross profit uses the same historical cost snapshots
+                // and discount allocation approach as ReportService.
+                $todayProfit = Database::fetchOne(
+                    "SELECT COALESCE(SUM(
+                        CASE WHEN o.subtotal > 0 THEN
+                            GREATEST(
+                                oi.subtotal
+                                - COALESCE(oi.discount_amount, 0)
+                                - ((oi.subtotal / o.subtotal) * o.discount_amount),
+                                0
+                            )
+                        ELSE 0 END
+                        - ((oi.cost_price * oi.quantity) + COALESCE(addons.addon_cost, 0))
+                     ), 0) AS amount
+                     FROM order_items oi
+                     INNER JOIN orders o
+                       ON o.restaurant_id = oi.restaurant_id AND o.id = oi.order_id
+                     LEFT JOIN (
+                        SELECT restaurant_id, order_item_id,
+                               SUM(cost_price * quantity) AS addon_cost
+                        FROM order_item_addons
+                        GROUP BY restaurant_id, order_item_id
+                     ) addons
+                       ON addons.restaurant_id = oi.restaurant_id
+                      AND addons.order_item_id = oi.id
+                     WHERE oi.restaurant_id = ?
+                       AND o.order_status <> 'cancelled'
+                       AND o.payment_status = 'paid'
+                       AND DATE(o.created_at) = CURDATE()",
+                    [$restaurantId]
+                );
+                $data['profit_today'] = (float)($todayProfit['amount'] ?? 0);
+
+                // Debt recovery: verified payments today for orders created before today.
+                $debtPaid = Database::fetchOne(
+                    "SELECT COALESCE(SUM(p.amount), 0) AS amount
+                     FROM payments p
+                     INNER JOIN orders o
+                       ON o.restaurant_id = p.restaurant_id AND o.id = p.order_id
+                     WHERE p.restaurant_id = ?
+                       AND p.is_verified = 1
+                       AND DATE(p.paid_at) = CURDATE()
+                       AND DATE(o.created_at) < CURDATE()
+                       AND o.order_status <> 'cancelled'",
+                    [$restaurantId]
+                );
+                $data['debt_paid_today'] = (float)($debtPaid['amount'] ?? 0);
+
+                // Latest eight orders, including unpaid and partially paid orders.
+                $data['recent_orders'] = Database::fetchAll(
+                    "SELECT o.id, o.order_number, o.order_type, o.order_status,
+                            o.payment_status, o.total_amount, o.created_at,
+                            COALESCE(items.item_count, 0) AS item_count
+                     FROM orders o
+                     LEFT JOIN (
+                        SELECT restaurant_id, order_id, SUM(quantity) AS item_count
+                        FROM order_items
+                        GROUP BY restaurant_id, order_id
+                     ) items
+                       ON items.restaurant_id = o.restaurant_id
+                      AND items.order_id = o.id
+                     WHERE o.restaurant_id = ?
+                       AND o.order_status <> 'cancelled'
+                     ORDER BY o.created_at DESC, o.id DESC
+                     LIMIT 8",
+                    [$restaurantId]
+                );
+
+                // Fetch registered devices for this tenant.
+                $data['devices'] = Database::fetchAll(
+                    "SELECT * FROM pos_devices WHERE restaurant_id = ? ORDER BY id ASC",
+                    [$restaurantId]
+                );
             } catch (\Throwable $e) {
                 $data['db_error'] = $e->getMessage();
             }
