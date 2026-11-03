@@ -12,31 +12,17 @@
     const toggle = document.getElementById('appSidebarToggle');
     const backdrop = document.getElementById('appSidebarBackdrop');
     const collapseToggle = document.getElementById('appSidebarCollapseToggle');
-    const themeToggle = document.getElementById('appThemeToggle');
     const root = document.documentElement;
 
-    // Apply saved preferences before interaction; defaults are expanded sidebar and light theme.
-    let savedTheme = 'light';
+    // Preserve the optional icon-only sidebar preference; appearance itself is fixed.
     let savedCollapse = false;
     try {
-      savedTheme = localStorage.getItem('serveflow-theme') === 'dark' ? 'dark' : 'light';
       savedCollapse = localStorage.getItem('serveflow-sidebar-collapsed') === '1';
     } catch (error) {}
-    const applyTheme = theme => {
-      root.setAttribute('data-theme', theme);
-      if (themeToggle) {
-        const dark = theme === 'dark';
-        themeToggle.checked = dark;
-        themeToggle.setAttribute('aria-checked', dark ? 'true' : 'false');
-        const label = document.querySelector('.app-theme-switch-label');
-        if (label) label.textContent = dark ? 'Dark mode' : 'Light mode';
-        themeToggle.setAttribute('aria-label', dark ? 'Dark mode enabled' : 'Dark mode disabled');
-      }
-    };
-    applyTheme(savedTheme);
     if (savedCollapse) root.setAttribute('data-sidebar-collapsed', 'true');
     else root.removeAttribute('data-sidebar-collapsed');
     document.body.classList.toggle('sidebar-collapsed', savedCollapse && window.innerWidth > 991);
+
     const updateCollapseToggle = () => {
       const collapsed = root.getAttribute('data-sidebar-collapsed') === 'true';
       if (!collapseToggle) return;
@@ -53,11 +39,6 @@
       document.body.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth > 991);
       try { localStorage.setItem('serveflow-sidebar-collapsed', collapsed ? '1' : '0'); } catch (error) {}
       updateCollapseToggle();
-    });
-    themeToggle?.addEventListener('change', () => {
-      const theme = themeToggle.checked ? 'dark' : 'light';
-      applyTheme(theme);
-      try { localStorage.setItem('serveflow-theme', theme); } catch (error) {}
     });
 
     const closeSidebar = () => {
