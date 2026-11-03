@@ -319,6 +319,8 @@
         .sf-quick-card small { font-size:.67rem; }
       }
     </style>
+  <?php endif; ?>
+
   
 
 </div>
