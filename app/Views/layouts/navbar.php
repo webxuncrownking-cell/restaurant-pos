@@ -13,7 +13,8 @@ $navGroups = [
   ],
   'Daily Operations' => [
     ['label' => 'POS Terminal', 'route' => '/pos', 'icon' => 'bi-display', 'primary' => true],
-    ['label' => 'Orders', 'route' => '/bills', 'icon' => 'bi-receipt'],
+    ['label' => 'Orders & Bills', 'route' => '/bills', 'icon' => 'bi-receipt'],
+    ['label' => 'Cashier Shifts', 'route' => '/shifts', 'icon' => 'bi-safe2'],
     ['label' => 'Tables', 'route' => '/tables', 'icon' => 'bi-grid-3x3-gap'],
   ],
   'Management' => [
@@ -28,6 +29,7 @@ $navGroups = [
 $navPermissionMap = [
   '/pos' => 'pos.create_order',
   '/bills' => 'pos.process_payment',
+  '/shifts' => 'shifts.open_close',
   '/tables' => 'tables.view_status',
   '/menu' => 'menu.manage_catalog',
   '/inventory' => 'inventory.view_stock',
