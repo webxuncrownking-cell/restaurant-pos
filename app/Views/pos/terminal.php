@@ -2001,6 +2001,129 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
     }
 }
 
+
+/* ServeFlow mobile POS refinement: consolidated responsive behavior. */
+@media (max-width: 767.98px) {
+  html, body { min-height:100%; height:100%; }
+  body:has(#posCheckoutPane) { min-height:100dvh; overflow-x:hidden; }
+  .pos-header {
+    position:relative !important; display:flex !important; flex-wrap:nowrap !important;
+    align-items:center !important; justify-content:flex-start !important; gap:8px !important;
+    width:100% !important; min-height:58px !important; padding:7px 10px !important;
+    overflow:visible !important;
+  }
+  .pos-terminal-back {
+    display:inline-flex !important; flex:0 0 34px !important; width:34px !important;
+    height:36px !important; align-items:center !important; justify-content:center !important;
+  }
+  .pos-brand-lockup {
+    display:flex !important; flex:1 1 auto !important; min-width:0 !important;
+    align-items:center !important; gap:7px !important; overflow:hidden !important;
+  }
+  .pos-brand-mark {
+    display:grid !important; flex:0 0 34px !important; width:34px !important;
+    height:34px !important; border-radius:9px !important;
+  }
+  .pos-brand-mark img { width:100% !important; height:100% !important; object-fit:contain !important; }
+  .pos-brand-copy { min-width:0 !important; overflow:hidden !important; }
+  .pos-brand-copy strong {
+    max-width:clamp(78px, 25vw, 145px) !important; font-size:.82rem !important;
+    line-height:1.15 !important; white-space:nowrap !important; overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  .pos-brand-copy small, .pos-device-badge { display:none !important; }
+  .pos-header-actions {
+    display:flex !important; flex:0 0 auto !important; width:auto !important;
+    min-width:0 !important; flex-wrap:nowrap !important; align-items:center !important;
+    justify-content:flex-end !important; gap:4px !important;
+  }
+  .pos-header-actions .btn {
+    display:inline-flex !important; flex:0 0 auto !important; align-items:center !important;
+    justify-content:center !important; min-width:32px !important; min-height:34px !important;
+    padding:4px 6px !important; border-radius:8px !important; font-size:0 !important;
+  }
+  .pos-header-actions .btn i { font-size:.92rem !important; }
+  #posSyncBtn { gap:3px !important; }
+  #posSyncBtn > span:not(.pos-sync-count) { display:none !important; }
+  #posSyncBtn .pos-sync-count {
+    display:inline-grid !important; min-width:16px !important; height:16px !important;
+    padding:0 3px !important; font-size:.6rem !important;
+  }
+  #posNetworkStatus {
+    display:inline-flex !important; flex:0 0 auto !important; min-width:0 !important;
+    min-height:31px !important; padding:5px 7px !important; gap:5px !important;
+    border-radius:8px !important; font-size:.66rem !important; white-space:nowrap !important;
+  }
+  .pos-header-actions .dropdown { flex:0 0 auto !important; }
+  .pos-header-actions .pos-cashier-btn {
+    width:34px !important; min-width:34px !important; max-width:34px !important;
+    min-height:34px !important; margin:0 !important; padding:3px !important;
+  }
+  .pos-cashier-btn .pos-cashier-avatar { width:25px !important; height:25px !important; }
+  .pos-cashier-name, .pos-cashier-btn.dropdown-toggle::after { display:none !important; }
+
+  .pos-workspace-tabs {
+    position:sticky !important; top:0 !important; z-index:1005 !important;
+    display:flex !important; gap:8px !important; padding:8px 10px !important;
+    background:#fff !important;
+  }
+  .pos-workspace-tab {
+    min-height:42px !important; padding:8px 12px !important;
+    border-radius:10px !important; font-size:.86rem !important;
+  }
+  .pos-workspace { min-height:0 !important; }
+  #posMenusPane, #posCheckoutPane {
+    width:100% !important; max-width:100% !important; flex:0 0 100% !important;
+  }
+  #posMenusPane {
+    height:auto !important; min-height:0 !important; max-height:none !important;
+    overflow:visible !important; padding:12px 10px 24px !important;
+  }
+  #posCheckoutPane {
+    display:flex !important; flex-direction:column !important;
+    height:calc(100dvh - 108px) !important;
+    min-height:calc(100dvh - 108px) !important;
+    max-height:calc(100dvh - 108px) !important;
+    overflow:hidden !important; border:0 !important; background:#fff !important;
+  }
+  #posCheckoutPane .pos-order-type-switcher {
+    flex:0 0 auto !important; padding:8px 10px !important; gap:6px !important;
+  }
+  #posCheckoutPane .pos-order-type {
+    min-height:42px !important; padding:8px 5px !important;
+    border-radius:8px !important; font-size:.76rem !important;
+  }
+  #posCheckoutPane .ticket-items {
+    flex:1 1 0 !important; min-height:0 !important; max-height:none !important;
+    overflow-y:auto !important; padding:10px !important; overscroll-behavior:contain;
+    background:#f5f7fb !important;
+  }
+  #posCheckoutPane .pos-empty-cart {
+    min-height:100% !important; height:auto !important; padding:14px !important;
+  }
+  #posCheckoutPane .pos-empty-cart .pos-empty-icon {
+    width:46px !important; height:46px !important; margin-bottom:9px !important;
+    font-size:1.2rem !important;
+  }
+  #posCheckoutPane .pos-empty-cart h5 { margin-bottom:4px !important; font-size:.87rem !important; }
+  #posCheckoutPane .pos-empty-cart p { font-size:.75rem !important; }
+  #posCheckoutPane .pos-ticket-summary {
+    flex:0 0 auto !important; max-height:42dvh !important; overflow-y:auto !important;
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+    box-shadow:0 -4px 16px rgba(15,23,42,.06) !important;
+  }
+  #posCheckoutPane .pos-ticket-summary #ticketTotal { font-size:1.45rem !important; }
+  #posCheckoutPane .pos-ticket-summary .pos-checkout-btn,
+  #posCheckoutPane .pos-ticket-summary .pos-clear-ticket { min-height:42px !important; }
+  body:has(#posCheckoutPane) .app-footer,
+  body:has(#posCheckoutPane) footer { display:none !important; }
+}
+@media (max-width: 380px) {
+  .pos-header { gap:5px !important; padding-left:7px !important; padding-right:7px !important; }
+  .pos-brand-copy strong { max-width:72px !important; }
+  .pos-header-actions { gap:3px !important; }
+  #posNetworkStatus { padding:5px 6px !important; }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
