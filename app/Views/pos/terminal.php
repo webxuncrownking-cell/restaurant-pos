@@ -2656,6 +2656,37 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
     box-shadow:0 8px 22px rgba(15,23,42,.17) !important;
   }
 }
+
+/* Compact mobile Checkout / Menus pill switch. */
+@media (max-width: 767.98px) {
+  #posWorkspaceTabs {
+    width:calc(100% - 32px) !important;
+    min-height:0 !important;
+    margin:10px auto 12px !important;
+    padding:5px !important;
+    border-radius:999px !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab {
+    min-height:44px !important;
+    padding:7px 10px !important;
+    font-size:.9rem !important;
+    gap:6px !important;
+  }
+  #posWorkspaceTabs .pos-tab-count {
+    min-width:19px !important;
+    height:19px !important;
+    font-size:.66rem !important;
+  }
+  /* Reduce the blank vertical gap before the order-type controls. */
+  #posWorkspaceTabs + .pos-workspace {
+    margin-top:0 !important;
+    padding-top:0 !important;
+  }
+  #posWorkspaceTabs + .pos-workspace #posCheckoutPane,
+  #posWorkspaceTabs + .pos-workspace #posMenusPane {
+    margin-top:0 !important;
+  }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
