@@ -2369,6 +2369,130 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
 @media (min-width: 768px) {
   .pos-floating-nav-trigger .pos-floating-nav-trigger-label { display:inline; }
 }
+
+/* POS quick actions: mobile speed-dial above subtotal; desktop uses header shortcuts. */
+.pos-floating-nav { display:none !important; }
+.pos-desktop-quick-actions { display:flex; align-items:center; gap:6px; }
+.pos-desktop-action {
+  min-height:36px !important;
+  padding:7px 10px !important;
+  color:#fff !important;
+  background:rgba(255,255,255,.14) !important;
+  border:1px solid rgba(255,255,255,.22) !important;
+  border-radius:9px !important;
+  white-space:nowrap;
+}
+.pos-desktop-action:hover { color:#fff !important; background:rgba(255,255,255,.24) !important; }
+.pos-desktop-action .pos-sync-count {
+  display:inline-grid; place-items:center; min-width:19px; height:19px; padding:0 5px;
+  border-radius:999px; background:rgba(255,255,255,.2); color:#fff; font-size:.65rem;
+}
+@media (max-width: 767.98px) {
+  .pos-desktop-quick-actions { display:none !important; }
+  .pos-floating-nav {
+    display:flex !important;
+    position:relative !important;
+    inset:auto !important;
+    z-index:20 !important;
+    flex-direction:column !important;
+    align-items:flex-end !important;
+    gap:12px !important;
+    width:100% !important;
+    margin:0 0 16px !important;
+    pointer-events:none !important;
+  }
+  .pos-floating-nav button,
+  .pos-floating-nav a { pointer-events:auto !important; }
+  .pos-floating-nav-list {
+    display:none !important;
+    flex-direction:column !important;
+    align-items:flex-end !important;
+    gap:13px !important;
+    width:auto !important;
+    padding:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+  .pos-floating-nav.is-open .pos-floating-nav-list { display:flex !important; }
+  .pos-floating-nav-item {
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:22px !important;
+    min-height:0 !important;
+    padding:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    background:transparent !important;
+    color:#fff !important;
+    text-decoration:none !important;
+    box-shadow:none !important;
+  }
+  .pos-quick-label {
+    display:inline-flex !important;
+    align-items:center !important;
+    min-height:38px !important;
+    padding:5px 14px !important;
+    border-radius:11px !important;
+    background:#202b3a !important;
+    color:#fff !important;
+    box-shadow:0 8px 18px rgba(15,23,42,.13) !important;
+    font-size:.9rem !important;
+    font-weight:700 !important;
+    white-space:nowrap !important;
+  }
+  .pos-quick-icon {
+    position:relative !important;
+    display:grid !important;
+    place-items:center !important;
+    flex:0 0 64px !important;
+    width:64px !important;
+    height:64px !important;
+    border-radius:50% !important;
+    color:#fff !important;
+    font-size:1.45rem !important;
+    box-shadow:0 8px 20px rgba(15,23,42,.13) !important;
+  }
+  .pos-quick-orders .pos-quick-icon { background:#0788c9 !important; }
+  .pos-quick-pending .pos-quick-icon { background:#ff7417 !important; }
+  .pos-quick-printer .pos-quick-icon { background:#4b5563 !important; }
+  .pos-quick-badge {
+    position:absolute !important;
+    top:-2px !important;
+    right:-2px !important;
+    display:grid !important;
+    place-items:center !important;
+    min-width:20px !important;
+    height:20px !important;
+    padding:0 5px !important;
+    border:2px solid #fff !important;
+    border-radius:50% !important;
+    background:#ef4444 !important;
+    color:#fff !important;
+    font-size:.62rem !important;
+    font-weight:800 !important;
+  }
+  .pos-floating-nav-trigger {
+    display:grid !important;
+    place-items:center !important;
+    flex:0 0 68px !important;
+    width:68px !important;
+    height:68px !important;
+    padding:0 !important;
+    border:3px solid #1769d2 !important;
+    border-radius:50% !important;
+    background:#0da5e9 !important;
+    color:#fff !important;
+    box-shadow:0 8px 22px rgba(15,23,42,.17) !important;
+    font-size:2rem !important;
+    pointer-events:auto !important;
+  }
+  .pos-floating-nav.is-open .pos-floating-nav-trigger { background:#0da5e9 !important; }
+  .pos-floating-nav-trigger-label { display:none !important; }
+}
+
 </style>
 
 <!-- Modern POS Header Bar -->
@@ -2394,6 +2518,18 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
       <span class="pos-status-dot" aria-hidden="true"></span>
       <span id="posNetworkText">Online</span>
     </span>
+
+    <div class="pos-desktop-quick-actions no-print">
+      <a class="btn pos-desktop-action" href="<?= BASE_URL ?>/bills" title="Orders and bills">
+        <i class="bi bi-list-check"></i><span>Orders</span>
+      </a>
+      <button class="btn pos-desktop-action" type="button" id="posDesktopPending" onclick="window.posApp.syncQueue()" title="Sync pending orders">
+        <i class="bi bi-hourglass-split"></i><span>Pending</span><span class="pos-sync-count" id="posDesktopPendingCount">0</span>
+      </button>
+      <button class="btn pos-desktop-action" type="button" id="posDesktopPrint" onclick="window.print()" title="Print the current receipt">
+        <i class="bi bi-printer-fill"></i><span>Printer</span>
+      </button>
+    </div>
 
     <button id="posSyncBtn" class="btn pos-sync-btn" onclick="window.posApp.syncQueue()" title="Synchronize saved orders">
       <i class="bi bi-arrow-repeat"></i><span>Sync</span><span class="pos-sync-count" id="unsyncedCount">0</span>
@@ -2427,25 +2563,6 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
 
 <!-- Main POS Workspace -->
 
-
-<!-- Floating POS quick navigation -->
-<div class="pos-floating-nav no-print" id="posFloatingNav">
-  <div class="pos-floating-nav-list" id="posFloatingNavList" aria-label="POS quick navigation">
-    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/bills"><i class="bi bi-receipt"></i><span>Orders &amp; Bills</span></a>
-    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/kitchen"><i class="bi bi-fire"></i><span>Kitchen Display</span></a>
-    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/tables"><i class="bi bi-grid-3x3"></i><span>Tables &amp; Floor</span></a>
-    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/shifts/active"><i class="bi bi-safe2"></i><span>Cash Drawer</span></a>
-    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/customers"><i class="bi bi-people"></i><span>Customers</span></a>
-    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/reservations"><i class="bi bi-calendar-check"></i><span>Reservations</span></a>
-    <button class="pos-floating-nav-item" type="button" id="posFloatingSync"><i class="bi bi-arrow-repeat"></i><span>Sync Pending Orders</span></button>
-    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-house"></i><span>Dashboard</span></a>
-  </div>
-  <button class="pos-floating-nav-trigger" type="button" id="posFloatingNavToggle"
-          aria-label="Open POS quick navigation" aria-controls="posFloatingNavList" aria-expanded="false">
-    <i class="bi bi-grid-fill" aria-hidden="true"></i>
-    <span class="pos-floating-nav-trigger-label">Quick actions</span>
-  </button>
-</div>
 
 <!-- POS Workspace Tabs -->
 <div id="posWorkspaceTabs" class="pos-workspace-tabs no-print" role="tablist" aria-label="POS workspace">
@@ -2554,6 +2671,24 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
 
       <!-- Ticket Summary & Calculations -->
       <div class="pos-ticket-summary">
+        <!-- Mobile-only floating quick actions, anchored immediately above order totals. -->
+        <div class="pos-floating-nav no-print" id="posFloatingNav">
+          <div class="pos-floating-nav-list" id="posFloatingNavList" aria-label="POS quick actions">
+            <a class="pos-floating-nav-item pos-quick-orders" href="<?= BASE_URL ?>/bills">
+              <span class="pos-quick-label">Orders</span><span class="pos-quick-icon"><i class="bi bi-list-check"></i></span>
+            </a>
+            <button class="pos-floating-nav-item pos-quick-pending" type="button" id="posFloatingSync">
+              <span class="pos-quick-label">Pending</span><span class="pos-quick-icon"><i class="bi bi-hourglass-split"></i><span class="pos-quick-badge" id="posFloatingPendingCount">0</span></span>
+            </button>
+            <button class="pos-floating-nav-item pos-quick-printer" type="button" id="posFloatingPrint">
+              <span class="pos-quick-label">Printer</span><span class="pos-quick-icon"><i class="bi bi-printer-fill"></i></span>
+            </button>
+          </div>
+          <button class="pos-floating-nav-trigger" type="button" id="posFloatingNavToggle"
+                  aria-label="Open quick actions" aria-controls="posFloatingNavList" aria-expanded="false">
+            <i class="bi bi-three-dots" aria-hidden="true"></i>
+          </button>
+        </div>
         <div class="d-flex justify-content-between text-muted small mb-2">
           <span>Subtotal</span>
           <span class="font-monospace fw-semibold text-white" id="ticketSubtotal">₱0.00</span>
@@ -4298,35 +4433,52 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
   const nav = document.getElementById('posFloatingNav');
   const toggle = document.getElementById('posFloatingNavToggle');
   const sync = document.getElementById('posFloatingSync');
+  const print = document.getElementById('posFloatingPrint');
   if (!nav || !toggle) return;
 
   function setOpen(open) {
     nav.classList.toggle('is-open', open);
     toggle.setAttribute('aria-expanded', String(open));
-    toggle.setAttribute('aria-label', open ? 'Close POS quick navigation' : 'Open POS quick navigation');
+    toggle.setAttribute('aria-label', open ? 'Close quick actions' : 'Open quick actions');
     const icon = toggle.querySelector('i');
-    if (icon) icon.className = open ? 'bi bi-x-lg' : 'bi bi-grid-fill';
+    if (icon) icon.className = open ? 'bi bi-x-lg' : 'bi bi-three-dots';
+  }
+
+  function refreshPendingCount() {
+    const source = document.getElementById('unsyncedCount');
+    const count = source ? source.textContent.trim() : '0';
+    ['posFloatingPendingCount', 'posDesktopPendingCount'].forEach(function (id) {
+      const target = document.getElementById(id);
+      if (target) target.textContent = count || '0';
+    });
   }
 
   toggle.addEventListener('click', function () {
     setOpen(!nav.classList.contains('is-open'));
   });
-
   nav.querySelectorAll('a').forEach(function (link) {
     link.addEventListener('click', function () { setOpen(false); });
   });
-
   sync?.addEventListener('click', function () {
     setOpen(false);
     if (window.posApp && typeof window.posApp.syncQueue === 'function') {
       void window.posApp.syncQueue();
     }
   });
+  print?.addEventListener('click', function () {
+    setOpen(false);
+    window.print();
+  });
+
+  const pendingSource = document.getElementById('unsyncedCount');
+  if (pendingSource && window.MutationObserver) {
+    new MutationObserver(refreshPendingCount).observe(pendingSource, { childList:true, characterData:true, subtree:true });
+  }
+  refreshPendingCount();
 
   document.addEventListener('click', function (event) {
     if (!nav.contains(event.target)) setOpen(false);
   });
-
   document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') setOpen(false);
   });
