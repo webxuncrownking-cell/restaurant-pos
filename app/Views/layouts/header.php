@@ -1988,6 +1988,25 @@ body {
     }
 }
 
+
+/* Center footer content on narrow mobile screens. */
+@media (max-width: 575.98px) {
+  .app-footer {
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:8px !important;
+    width:100% !important;
+    padding:18px 14px !important;
+    text-align:center !important;
+  }
+  .app-footer > span {
+    display:block !important;
+    width:100% !important;
+    text-align:center !important;
+  }
+}
 </style>
 
 <script>
