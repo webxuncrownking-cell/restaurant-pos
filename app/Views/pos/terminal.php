@@ -2508,6 +2508,94 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
   }
   .pos-ticket-summary { position:relative !important; z-index:2 !important; }
 }
+
+/* Correct cart-stage positioning: speed dial floats within grey ticket area above subtotal. */
+@media (max-width: 767.98px) {
+  #posCheckoutPane {
+    display:flex !important;
+    flex-direction:column !important;
+    min-height:0 !important;
+  }
+  #posCheckoutPane .pos-cart-stage {
+    position:relative !important;
+    display:flex !important;
+    flex:1 1 0 !important;
+    min-height:0 !important;
+    overflow:hidden !important;
+    background:#f5f7fb !important;
+  }
+  #posCheckoutPane .pos-cart-stage #ticketItemsList {
+    position:relative !important;
+    flex:1 1 auto !important;
+    width:100% !important;
+    height:100% !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow-y:auto !important;
+    padding:10px 10px 88px !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav {
+    position:absolute !important;
+    right:12px !important;
+    bottom:12px !important;
+    z-index:50 !important;
+    width:auto !important;
+    margin:0 !important;
+    pointer-events:none !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav button,
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav a {
+    pointer-events:auto !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-list {
+    gap:8px !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-quick-icon {
+    flex:0 0 52px !important;
+    width:52px !important;
+    height:52px !important;
+    color:#fff !important;
+    font-size:1.25rem !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-quick-icon i {
+    display:inline-block !important;
+    color:#fff !important;
+    opacity:1 !important;
+    visibility:visible !important;
+    font-family:"bootstrap-icons" !important;
+    font-style:normal !important;
+    line-height:1 !important;
+    font-size:1.25rem !important;
+    -webkit-font-smoothing:antialiased !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-quick-icon .pos-quick-badge {
+    color:#fff !important;
+    font-family:inherit !important;
+    font-size:.62rem !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-quick-label {
+    min-height:34px !important;
+    padding:4px 11px !important;
+    font-size:.82rem !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-trigger {
+    flex:0 0 54px !important;
+    width:54px !important;
+    height:54px !important;
+    min-width:54px !important;
+    min-height:54px !important;
+    border-width:2px !important;
+    font-size:1.55rem !important;
+  }
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-trigger i {
+    color:#fff !important;
+    opacity:1 !important;
+    visibility:visible !important;
+  }
+}
+@media (min-width: 768px) {
+  .pos-cart-stage { display:contents; }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
@@ -2675,6 +2763,8 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
         </button>
       </div>
 
+      <!-- Cart stage keeps the quick-action speed dial inside the grey ticket area. -->
+      <div class="pos-cart-stage">
       <!-- Ticket Items List -->
       <div class="ticket-items p-3" id="ticketItemsList">
         <div class="pos-empty-cart" id="emptyCartNotice">
@@ -2702,6 +2792,7 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
             <i class="bi bi-three-dots" aria-hidden="true"></i>
           </button>
         </div>
+      </div><!-- /.pos-cart-stage -->
 
       <!-- Ticket Summary & Calculations -->
       <div class="pos-ticket-summary">
