@@ -2596,6 +2596,66 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
 @media (min-width: 768px) {
   .pos-cart-stage { display:contents; }
 }
+
+/* Reference-style pill switch and borderless quick-action launcher. */
+@media (max-width: 767.98px) {
+  #posWorkspaceTabs {
+    display:flex !important;
+    align-items:center !important;
+    gap:0 !important;
+    width:calc(100% - 28px) !important;
+    margin:14px auto 16px !important;
+    padding:8px !important;
+    min-height:72px !important;
+    border:0 !important;
+    border-radius:999px !important;
+    background:#e2e8f0 !important;
+    box-shadow:none !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab {
+    flex:1 1 50% !important;
+    min-width:0 !important;
+    min-height:56px !important;
+    padding:10px 14px !important;
+    border:0 !important;
+    border-radius:999px !important;
+    background:transparent !important;
+    color:#667085 !important;
+    box-shadow:none !important;
+    font-size:1rem !important;
+    font-weight:750 !important;
+    gap:7px !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab.active {
+    background:#fff !important;
+    color:#087fc2 !important;
+    box-shadow:0 4px 10px rgba(15,23,42,.12) !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab > i { display:none !important; }
+  #posWorkspaceTabs .pos-tab-count {
+    min-width:21px !important;
+    height:21px !important;
+    padding:0 6px !important;
+    border-radius:999px !important;
+    background:#e8f1ff !important;
+    color:#087fc2 !important;
+    font-size:.7rem !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab.active .pos-tab-count {
+    background:#087fc2 !important;
+    color:#fff !important;
+  }
+
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-trigger,
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-trigger:hover,
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-trigger:focus,
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-trigger:focus-visible,
+  #posCheckoutPane .pos-cart-stage .pos-floating-nav-trigger:active {
+    border:0 !important;
+    outline:0 !important;
+    box-shadow:0 8px 22px rgba(15,23,42,.17) !important;
+  }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
