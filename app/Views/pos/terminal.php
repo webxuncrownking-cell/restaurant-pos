@@ -2239,6 +2239,136 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
     display:none !important;
   }
 }
+
+/* Segmented Checkout / Menus switch and floating POS quick navigation. */
+@media (max-width: 767.98px) {
+  #posWorkspaceTabs {
+    display:flex !important;
+    align-items:center !important;
+    gap:4px !important;
+    margin:0 !important;
+    padding:5px !important;
+    border:1px solid #e2e8f0 !important;
+    border-radius:14px !important;
+    background:#edf2f8 !important;
+    box-shadow:inset 0 1px 2px rgba(15,23,42,.04) !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab {
+    flex:1 1 50% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:8px !important;
+    min-width:0 !important;
+    min-height:43px !important;
+    padding:9px 10px !important;
+    border:0 !important;
+    border-radius:10px !important;
+    background:transparent !important;
+    color:#64748b !important;
+    box-shadow:none !important;
+    font-size:.88rem !important;
+    font-weight:750 !important;
+    transition:background .18s ease,color .18s ease,box-shadow .18s ease !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab.active {
+    background:#fff !important;
+    color:#1769d2 !important;
+    box-shadow:0 2px 7px rgba(15,23,42,.12) !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab i { font-size:1rem !important; }
+  #posWorkspaceTabs .pos-tab-count {
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    min-width:20px !important;
+    height:20px !important;
+    padding:0 6px !important;
+    border-radius:999px !important;
+    background:#e8f1ff !important;
+    color:#1769d2 !important;
+    font-size:.68rem !important;
+    font-weight:800 !important;
+  }
+  #posWorkspaceTabs .pos-workspace-tab.active .pos-tab-count {
+    background:#1769d2 !important;
+    color:#fff !important;
+  }
+}
+.pos-floating-nav {
+  position:fixed;
+  right:18px;
+  bottom:22px;
+  z-index:1200;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:10px;
+  pointer-events:none;
+}
+.pos-floating-nav button,
+.pos-floating-nav a { pointer-events:auto; }
+.pos-floating-nav-list {
+  display:none;
+  flex-direction:column;
+  align-items:stretch;
+  gap:7px;
+  width:218px;
+  padding:9px;
+  border:1px solid #e2e8f0;
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 16px 42px rgba(15,23,42,.2);
+}
+.pos-floating-nav.is-open .pos-floating-nav-list { display:flex; }
+.pos-floating-nav-item {
+  display:flex;
+  align-items:center;
+  gap:11px;
+  min-height:43px;
+  padding:9px 11px;
+  border:0;
+  border-radius:10px;
+  background:#fff;
+  color:#334155;
+  text-decoration:none;
+  text-align:left;
+  font-size:.84rem;
+  font-weight:700;
+}
+.pos-floating-nav-item:hover,
+.pos-floating-nav-item:focus-visible {
+  color:#1769d2;
+  background:#eff6ff;
+  outline:none;
+}
+.pos-floating-nav-item i { width:19px; text-align:center; font-size:1rem; color:#64748b; }
+.pos-floating-nav-trigger {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  min-width:54px;
+  height:54px;
+  padding:0 17px;
+  border:0;
+  border-radius:999px;
+  background:#1769d2;
+  color:#fff;
+  box-shadow:0 8px 22px rgba(23,105,210,.34);
+  font-size:1.15rem;
+}
+.pos-floating-nav-trigger:hover { background:#125bb9; color:#fff; }
+.pos-floating-nav-trigger .pos-floating-nav-trigger-label { display:none; font-size:.82rem; font-weight:800; }
+.pos-floating-nav.is-open .pos-floating-nav-trigger { background:#334155; }
+@media (max-width: 767.98px) {
+  .pos-floating-nav { right:14px; bottom:calc(16px + env(safe-area-inset-bottom)); }
+  .pos-floating-nav-list { width:min(218px, calc(100vw - 36px)); }
+  .pos-floating-nav-trigger { width:54px; min-width:54px; height:54px; padding:0; }
+}
+@media (min-width: 768px) {
+  .pos-floating-nav-trigger .pos-floating-nav-trigger-label { display:inline; }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
@@ -2296,6 +2426,26 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
 <div id="posSyncNotice" class="alert alert-warning py-2 px-3 mx-3 mt-2 mb-0 d-none" role="alert" aria-live="polite"></div>
 
 <!-- Main POS Workspace -->
+
+
+<!-- Floating POS quick navigation -->
+<div class="pos-floating-nav no-print" id="posFloatingNav">
+  <div class="pos-floating-nav-list" id="posFloatingNavList" aria-label="POS quick navigation">
+    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/bills"><i class="bi bi-receipt"></i><span>Orders &amp; Bills</span></a>
+    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/kitchen"><i class="bi bi-fire"></i><span>Kitchen Display</span></a>
+    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/tables"><i class="bi bi-grid-3x3"></i><span>Tables &amp; Floor</span></a>
+    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/shifts/active"><i class="bi bi-safe2"></i><span>Cash Drawer</span></a>
+    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/customers"><i class="bi bi-people"></i><span>Customers</span></a>
+    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/reservations"><i class="bi bi-calendar-check"></i><span>Reservations</span></a>
+    <button class="pos-floating-nav-item" type="button" id="posFloatingSync"><i class="bi bi-arrow-repeat"></i><span>Sync Pending Orders</span></button>
+    <a class="pos-floating-nav-item" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-house"></i><span>Dashboard</span></a>
+  </div>
+  <button class="pos-floating-nav-trigger" type="button" id="posFloatingNavToggle"
+          aria-label="Open POS quick navigation" aria-controls="posFloatingNavList" aria-expanded="false">
+    <i class="bi bi-grid-fill" aria-hidden="true"></i>
+    <span class="pos-floating-nav-trigger-label">Quick actions</span>
+  </button>
+</div>
 
 <!-- POS Workspace Tabs -->
 <div id="posWorkspaceTabs" class="pos-workspace-tabs no-print" role="tablist" aria-label="POS workspace">
@@ -4141,5 +4291,46 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
 })();
 </script>
 
+
+
+<script>
+(function () {
+  const nav = document.getElementById('posFloatingNav');
+  const toggle = document.getElementById('posFloatingNavToggle');
+  const sync = document.getElementById('posFloatingSync');
+  if (!nav || !toggle) return;
+
+  function setOpen(open) {
+    nav.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close POS quick navigation' : 'Open POS quick navigation');
+    const icon = toggle.querySelector('i');
+    if (icon) icon.className = open ? 'bi bi-x-lg' : 'bi bi-grid-fill';
+  }
+
+  toggle.addEventListener('click', function () {
+    setOpen(!nav.classList.contains('is-open'));
+  });
+
+  nav.querySelectorAll('a').forEach(function (link) {
+    link.addEventListener('click', function () { setOpen(false); });
+  });
+
+  sync?.addEventListener('click', function () {
+    setOpen(false);
+    if (window.posApp && typeof window.posApp.syncQueue === 'function') {
+      void window.posApp.syncQueue();
+    }
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!nav.contains(event.target)) setOpen(false);
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') setOpen(false);
+  });
+})();
+</script>
 
 <?php include APP_ROOT . '/app/Views/layouts/footer.php'; ?>
