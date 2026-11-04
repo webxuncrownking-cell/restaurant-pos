@@ -2493,6 +2493,21 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
   .pos-floating-nav-trigger-label { display:none !important; }
 }
 
+
+/* Anchor the speed-dial over the grey cart area, not inside the white subtotal panel. */
+@media (max-width: 767.98px) {
+  .pos-ticket-panel { position:relative !important; }
+  .ticket-items { position:relative !important; }
+  .pos-floating-nav {
+    position:absolute !important;
+    right:16px !important;
+    bottom:16px !important;
+    width:auto !important;
+    margin:0 !important;
+    z-index:30 !important;
+  }
+  .pos-ticket-summary { position:relative !important; z-index:2 !important; }
+}
 </style>
 
 <!-- Modern POS Header Bar -->
@@ -2669,8 +2684,6 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
         </div>
       </div>
 
-      <!-- Ticket Summary & Calculations -->
-      <div class="pos-ticket-summary">
         <!-- Mobile-only floating quick actions, anchored immediately above order totals. -->
         <div class="pos-floating-nav no-print" id="posFloatingNav">
           <div class="pos-floating-nav-list" id="posFloatingNavList" aria-label="POS quick actions">
@@ -2689,6 +2702,9 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
             <i class="bi bi-three-dots" aria-hidden="true"></i>
           </button>
         </div>
+
+      <!-- Ticket Summary & Calculations -->
+      <div class="pos-ticket-summary">
         <div class="d-flex justify-content-between text-muted small mb-2">
           <span>Subtotal</span>
           <span class="font-monospace fw-semibold text-white" id="ticketSubtotal">₱0.00</span>
