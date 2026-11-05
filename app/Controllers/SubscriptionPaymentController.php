@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace App\\Controllers;
+namespace App\Controllers;
 
-use App\\Core\\Auth;
-use App\\Core\\CSRF;
-use App\\Core\\Database;
-use App\\Core\\Request;
-use App\\Core\\Response;
-use App\\Core\\Session;
+use App\Core\Auth;
+use App\Core\CSRF;
+use App\Core\Database;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
 
 class SubscriptionPaymentController
 {
@@ -52,7 +52,7 @@ class SubscriptionPaymentController
             Response::redirect('/billing');
         }
         $tmp = (string)$upload['tmp_name'];
-        $mime = (new \\finfo(FILEINFO_MIME_TYPE))->file($tmp);
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($tmp);
         $allowed = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','application/pdf'=>'pdf'];
         if (!isset($allowed[$mime])) {
             Session::setFlash('danger', 'Upload a JPG, PNG, WEBP, or PDF receipt.');
@@ -109,10 +109,10 @@ class SubscriptionPaymentController
         $row = Database::fetchOne("SELECT proof_file_path FROM subscription_payment_submissions WHERE id = ?", [$id]);
         if (!$row) Response::notFound('Payment proof not found.');
         $relative = (string)$row['proof_file_path'];
-        if (!preg_match('/^subscription-proofs\\/[0-9]+-[a-f0-9]{32}\\.(?:jpg|png|webp|pdf)$/', $relative)) Response::notFound('Payment proof not found.');
+        if (!preg_match('/^subscription-proofs\/[0-9]+-[a-f0-9]{32}\.(?:jpg|png|webp|pdf)$/', $relative)) Response::notFound('Payment proof not found.');
         $file = dirname(APP_ROOT) . '/serveflow-private/' . $relative;
         if (!is_file($file)) Response::notFound('Payment proof file is unavailable.');
-        $mime = (new \\finfo(FILEINFO_MIME_TYPE))->file($file) ?: 'application/octet-stream';
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file) ?: 'application/octet-stream';
         if (!in_array($mime, ['image/jpeg','image/png','image/webp','application/pdf'], true)) Response::forbidden('Unsupported proof format.');
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . (string)filesize($file));
@@ -143,7 +143,7 @@ class SubscriptionPaymentController
         try {
             $pdo->beginTransaction();
             $submission = Database::fetchOne("SELECT * FROM subscription_payment_submissions WHERE id = ? FOR UPDATE", [$id]);
-            if (!$submission || $submission['status'] !== 'pending') throw new \\RuntimeException('This payment has already been reviewed.');
+            if (!$submission || $submission['status'] !== 'pending') throw new \RuntimeException('This payment has already been reviewed.');
             Database::query(
                 "UPDATE subscription_payment_submissions SET status = ?, reviewed_by = ?, reviewed_at = NOW(), reviewer_note = ? WHERE id = ?",
                 [$decision, (int)Auth::id(), $note !== '' ? $note : null, $id]
@@ -151,7 +151,7 @@ class SubscriptionPaymentController
 
             if ($decision === 'approved') {
                 $plan = Database::fetchOne("SELECT id FROM subscription_plans WHERE id = ? AND is_active = 1", [(int)$submission['plan_id']]);
-                if (!$plan) throw new \\RuntimeException('The selected plan is no longer active. Payment cannot be approved automatically.');
+                if (!$plan) throw new \RuntimeException('The selected plan is no longer active. Payment cannot be approved automatically.');
                 $existing = Database::fetchOne("SELECT id FROM subscriptions WHERE restaurant_id = ? ORDER BY id DESC LIMIT 1 FOR UPDATE", [(int)$submission['restaurant_id']]);
                 $start = date('Y-m-d H:i:s');
                 $end = date('Y-m-d H:i:s', strtotime($submission['billing_cycle'] === 'annually' ? '+1 year' : '+1 month'));
