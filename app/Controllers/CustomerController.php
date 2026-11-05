@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Core\Database;
@@ -49,6 +51,7 @@ final class CustomerController
 
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'customer_crm', 'Customer CRM and loyalty');
         Auth::requirePermission('reports.view_sales');
         $rid = (int)(TenantContext::getRestaurantId() ?? 0);
         if ($rid <= 0) { Response::redirect('/dashboard'); return; }
@@ -93,6 +96,7 @@ final class CustomerController
 
     public function save(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'customer_crm', 'Customer CRM and loyalty');
         Auth::requirePermission('reports.view_sales');
         if (!CSRF::validate($request->csrfToken())) { Session::setFlash('danger','Security token expired.'); Response::redirect('/customers'); return; }
         $rid = (int)(TenantContext::getRestaurantId() ?? 0);
@@ -131,6 +135,7 @@ final class CustomerController
 
     public function toggle(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'customer_crm', 'Customer CRM and loyalty');
         Auth::requirePermission('reports.view_sales');
         if (!CSRF::validate($request->csrfToken())) { Session::setFlash('danger','Security token expired.'); Response::redirect('/customers'); return; }
         $rid = (int)(TenantContext::getRestaurantId() ?? 0);
