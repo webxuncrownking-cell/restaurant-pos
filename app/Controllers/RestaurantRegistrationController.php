@@ -74,10 +74,12 @@ class RestaurantRegistrationController
                 $slug = substr($baseSlug, 0, 88) . '-' . $suffix++;
             }
 
+            $activationSetting = Database::fetchOne("SELECT setting_value FROM platform_settings WHERE setting_key = 'activation_fee_php'");
+            $activationFee = (float)($activationSetting['setting_value'] ?? 399.00);
             Database::query(
                 "INSERT INTO restaurants (name, slug, contact_email, contact_phone, currency_symbol, timezone, status, activation_status, activation_fee)
-                 VALUES (?, ?, ?, ?, '₱', 'Asia/Manila', 'active', 'pending', 399.00)",
-                [$restaurantName, $slug, $email, $phone]
+                 VALUES (?, ?, ?, ?, '₱', 'Asia/Manila', 'active', 'pending', ?)",
+                [$restaurantName, $slug, $email, $phone, $activationFee]
             );
             $restaurantId = (int)$pdo->lastInsertId();
 
