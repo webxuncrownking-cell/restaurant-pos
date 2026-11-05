@@ -67,6 +67,7 @@ if ($isPlatform) {
       ['label' => 'Restaurant Accounts', 'route' => '/restaurant-accounts', 'icon' => 'bi-building'],
       ['label' => 'Plans & Subscriptions', 'route' => '/platform-subscriptions', 'icon' => 'bi-credit-card'],
       ['label' => 'Activation Payments', 'route' => '/platform-activation-payments', 'icon' => 'bi-shield-check'],
+      ['label' => 'Pricing & Payment Settings', 'route' => '/platform-pricing', 'icon' => 'bi-sliders'],
 
     ],
     'System' => [
