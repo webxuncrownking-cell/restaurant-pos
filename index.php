@@ -90,6 +90,10 @@ $router->get('/platform-activation-payments', [ActivationController::class, 'adm
 $router->get('/platform-activation-payments/proof', [ActivationController::class, 'proof']);
 $router->get('/platform-pricing', [PlatformPricingController::class, 'index']);
 $router->post('/platform-pricing/save', [PlatformPricingController::class, 'save']);
+$router->post('/billing/payment/submit', [SubscriptionPaymentController::class, 'submit']);
+$router->get('/platform-subscription-payments', [SubscriptionPaymentController::class, 'adminIndex']);
+$router->get('/platform-subscription-payments/proof', [SubscriptionPaymentController::class, 'proof']);
+$router->post('/platform-subscription-payments/review', [SubscriptionPaymentController::class, 'review']);
 $router->post('/platform-activation-payments/review', [ActivationController::class, 'review']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/change-password', [AuthController::class, 'showChangePassword']);
