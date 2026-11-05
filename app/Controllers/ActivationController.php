@@ -128,7 +128,7 @@ class ActivationController
         $row = Database::fetchOne("SELECT proof_file_path FROM activation_payment_submissions WHERE id = ?", [$id]);
         if (!$row) Response::notFound('Payment proof not found.');
         $relative = (string)$row['proof_file_path'];
-        if (!preg_match('/^[a-zA-Z0-9_-]+\\/(?:[a-f0-9-]+)\\.(?:jpg|png|webp|pdf)$/', $relative)) {
+        if (!preg_match('/^activation-proofs\\/[0-9]+-[a-f0-9]{32}\\.(?:jpg|png|webp|pdf)$/', $relative)) {
             Response::notFound('Payment proof not found.');
         }
         $file = dirname(APP_ROOT) . '/serveflow-private/' . $relative;
