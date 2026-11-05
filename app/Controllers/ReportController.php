@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\TenantContext;
@@ -18,6 +20,7 @@ class ReportController
 {
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'advanced_reports', 'Advanced analytics and reports');
         Auth::requireAuth();
         $restaurantId = TenantContext::getRestaurantId();
         [$startDate, $endDate] = $this->getDateRange($request);
@@ -168,6 +171,7 @@ class ReportController
 
     public function dataJson(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'advanced_reports', 'Advanced analytics and reports');
         Auth::requireAuth();
         $restaurantId = TenantContext::getRestaurantId();
         [$startDate, $endDate] = $this->getDateRange($request);
@@ -185,6 +189,7 @@ class ReportController
      */
     public function exportCsv(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'advanced_reports', 'Advanced analytics and reports');
         Auth::requireAuth();
         $restaurantId = TenantContext::getRestaurantId();
         [$startDate, $endDate] = $this->getDateRange($request);
