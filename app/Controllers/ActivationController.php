@@ -83,8 +83,8 @@ class ActivationController
             Response::redirect('/activation');
         }
 
-        $relativeDir = 'uploads/activation-proofs';
-        $absoluteDir = APP_ROOT . '/' . $relativeDir;
+        $relativeDir = 'activation-proofs';
+        $absoluteDir = dirname(APP_ROOT) . '/serveflow-private/' . $relativeDir;
         if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0750, true) && !is_dir($absoluteDir)) {
             Session::setFlash('danger', 'Payment proof storage is unavailable. Contact support.');
             Response::redirect('/activation');
@@ -117,6 +117,33 @@ class ActivationController
             Session::setFlash('danger', 'Your payment submission could not be saved. Please try again.');
         }
         Response::redirect('/activation');
+    }
+
+
+    public function proof(Request $request): void
+    {
+        Auth::requireLogin();
+        if (!Auth::isPlatformAdmin()) Response::forbidden('Platform administrator access required.');
+        $id = (int)$request->get('id', 0);
+        $row = Database::fetchOne("SELECT proof_file_path FROM activation_payment_submissions WHERE id = ?", [$id]);
+        if (!$row) Response::notFound('Payment proof not found.');
+        $relative = (string)$row['proof_file_path'];
+        if (!preg_match('/^[a-zA-Z0-9_-]+\\/(?:[a-f0-9-]+)\\.(?:jpg|png|webp|pdf)$/', $relative)) {
+            Response::notFound('Payment proof not found.');
+        }
+        $file = dirname(APP_ROOT) . '/serveflow-private/' . $relative;
+        if (!is_file($file)) Response::notFound('Payment proof file is unavailable.');
+        $mime = (new \\finfo(FILEINFO_MIME_TYPE))->file($file) ?: 'application/octet-stream';
+        if (!in_array($mime, ['image/jpeg','image/png','image/webp','application/pdf'], true)) {
+            Response::forbidden('Unsupported payment proof format.');
+        }
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . (string)filesize($file));
+        header('Content-Disposition: inline; filename="activation-proof-' . $id . '.' . pathinfo($file, PATHINFO_EXTENSION) . '"');
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, no-store');
+        readfile($file);
+        exit;
     }
 
     public function adminIndex(Request $request): void
