@@ -34,7 +34,7 @@ class ActivationController
         );
         Response::render('activation/index', [
             'restaurant' => $restaurant,
-            'activation_fee' => (float)($fee['setting_value'] ?? $restaurant['activation_fee'] ?? 399),
+            'activation_fee' => (float)($restaurant['activation_fee'] ?? 399),
             'payment_instructions' => (string)($instructions['setting_value'] ?? ''),
             'submissions' => $submissions,
             'flashes' => Session::getFlashes()
@@ -52,7 +52,7 @@ class ActivationController
 
         $restaurantId = (int)Auth::getRestaurantId();
         $restaurant = Database::fetchOne(
-            "SELECT activation_status FROM restaurants WHERE id = ? AND deleted_at IS NULL",
+            "SELECT activation_status, activation_fee FROM restaurants WHERE id = ? AND deleted_at IS NULL",
             [$restaurantId]
         );
         if (!$restaurant || $restaurant['activation_status'] === 'activated') {
@@ -100,8 +100,7 @@ class ActivationController
             Response::redirect('/activation');
         }
 
-        $fee = Database::fetchOne("SELECT setting_value FROM platform_settings WHERE setting_key = 'activation_fee_php'");
-        $amount = (float)($fee['setting_value'] ?? 399);
+        $amount = (float)($restaurant['activation_fee'] ?? 399);
         try {
             Database::query(
                 "INSERT INTO activation_payment_submissions
