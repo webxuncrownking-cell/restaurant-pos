@@ -75,8 +75,8 @@ class RestaurantRegistrationController
             }
 
             Database::query(
-                "INSERT INTO restaurants (name, slug, contact_email, contact_phone, currency_symbol, timezone, status)
-                 VALUES (?, ?, ?, ?, 'PHP', 'Asia/Manila', 'active')",
+                "INSERT INTO restaurants (name, slug, contact_email, contact_phone, currency_symbol, timezone, status, activation_status, activation_fee)
+                 VALUES (?, ?, ?, ?, '₱', 'Asia/Manila', 'active', 'pending', 399.00')",
                 [$restaurantName, $slug, $email, $phone]
             );
             $restaurantId = (int)$pdo->lastInsertId();
@@ -100,21 +100,10 @@ class RestaurantRegistrationController
                 [$restaurantId, $roleId, $username, $email, password_hash($password, PASSWORD_DEFAULT), $ownerName]
             );
 
-            $plan = Database::fetchOne("SELECT id FROM subscription_plans WHERE is_active = 1 ORDER BY price_monthly ASC, id ASC LIMIT 1");
-            if (!$plan) {
-                throw new RuntimeException('No active subscription plan is configured yet.');
-            }
-
-            $start = date('Y-m-d H:i:s');
-            $end = date('Y-m-d H:i:s', strtotime('+14 days'));
-            Database::query(
-                "INSERT INTO subscriptions (restaurant_id, plan_id, status, billing_cycle, trial_ends_at, current_period_start, current_period_end, grace_period_days)
-                 VALUES (?, ?, 'trial', 'monthly', ?, ?, ?, 7)",
-                [$restaurantId, (int)$plan['id'], $end, $start, $end]
-            );
+            // No automatic trial or subscription is created at registration.\n            // The owner signs in and submits the one-time activation payment first.
 
             $pdo->commit();
-            Session::setFlash('success', 'Your ServeFlow POS account has been created. Sign in using your new username and the restaurant slug shown below: ' . $slug);
+            Session::setFlash('success', 'Your ServeFlow POS account has been created. Sign in to submit your one-time activation payment. Restaurant slug: ' . $slug);
             Response::redirect('/login');
         } catch (Throwable $e) {
             if (isset($pdo) && $pdo->inTransaction()) {
