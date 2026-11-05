@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Core\Request;
@@ -22,6 +24,7 @@ class ExpiryWasteController
 {
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'expiry_wastage', 'Expiry and wastage tracking');
         Auth::requirePermission('inventory.view_stock');
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) {
@@ -46,6 +49,7 @@ class ExpiryWasteController
 
     public function migrate(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'expiry_wastage', 'Expiry and wastage tracking');
         Auth::requirePermission('inventory.stock_in');
         if (!$this->validCsrf($request)) return;
 
@@ -62,6 +66,7 @@ class ExpiryWasteController
 
     public function recordWaste(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'expiry_wastage', 'Expiry and wastage tracking');
         Auth::requirePermission('inventory.adjust');
         if (!$this->validCsrf($request)) return;
 
