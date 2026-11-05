@@ -43,12 +43,16 @@ class BillingController
         $plans = BillingService::getAvailablePlans();
         $invoices = BillingService::getInvoices($restaurantId);
         $graceDays = TenantContext::getGraceDaysRemaining();
+        $instructions = Database::fetchOne("SELECT setting_value FROM platform_settings WHERE setting_key = 'activation_payment_instructions'");
+        $paymentSubmissions = Database::fetchAll("SELECT ps.*, sp.name AS plan_name FROM subscription_payment_submissions ps JOIN subscription_plans sp ON sp.id = ps.plan_id WHERE ps.restaurant_id = ? ORDER BY ps.id DESC LIMIT 10", [$restaurantId]);
 
         Response::render('billing/index', [
             'subscription' => $subscription,
             'plans' => $plans,
             'invoices' => $invoices,
-            'graceDays' => $graceDays
+            'graceDays' => $graceDays,
+            'paymentInstructions' => (string)($instructions['setting_value'] ?? ''),
+            'paymentSubmissions' => $paymentSubmissions
         ]);
     }
 
