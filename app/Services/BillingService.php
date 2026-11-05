@@ -164,6 +164,10 @@ class BillingService
 
     public static function requireFeature(int $restaurantId, string $feature, string $label): void
     {
+        if (!\\App\\Core\\Auth::check()) {
+            \\App\\Core\\Response::redirect('/login');
+        }
+        if (\\App\\Core\\Auth::isPlatformAdmin()) return;
         if (!self::hasFeature($restaurantId, $feature)) {
             \App\Core\Response::forbidden(
                 $label . ' is not included in your current subscription or the subscription has expired. Your existing POS, orders, and basic inventory remain available. Visit Billing to review available plans.'
