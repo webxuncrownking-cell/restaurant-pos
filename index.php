@@ -58,6 +58,7 @@ use App\Controllers\ExpenseController;
 use App\Controllers\TimePricingController;
 use App\Controllers\CustomerController;
 use App\Controllers\ComboController;
+use App\Controllers\ActivationController;
 
 // 3. Initialize Session & Security
 Session::start();
@@ -83,6 +84,10 @@ $router->get('/', function (Request $req) {
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->get('/register', [RestaurantRegistrationController::class, 'show']);
 $router->post('/register', [RestaurantRegistrationController::class, 'register']);
+$router->get('/activation', [ActivationController::class, 'index']);
+$router->post('/activation/submit', [ActivationController::class, 'submit']);
+$router->get('/platform-activation-payments', [ActivationController::class, 'adminIndex']);
+$router->post('/platform-activation-payments/review', [ActivationController::class, 'review']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/change-password', [AuthController::class, 'showChangePassword']);
 $router->post('/change-password', [AuthController::class, 'changePassword']);
