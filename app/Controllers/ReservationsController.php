@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Core\Request;
@@ -23,6 +25,7 @@ class ReservationsController
 {
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reservations', 'Reservations and waiting list');
         Auth::requireAuth();
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         if ($restaurantId <= 0) {
@@ -54,6 +57,7 @@ class ReservationsController
 
     public function migrate(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reservations', 'Reservations and waiting list');
         $restaurantId = $this->authorize();
         $this->validateCsrf($request);
 
@@ -74,6 +78,7 @@ class ReservationsController
 
     public function createReservation(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reservations', 'Reservations and waiting list');
         $restaurantId = $this->authorize();
         $this->validateCsrf($request);
         $this->requireSchema();
@@ -92,6 +97,7 @@ class ReservationsController
 
     public function reservationAction(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reservations', 'Reservations and waiting list');
         $restaurantId = $this->authorize();
         $this->validateCsrf($request);
         $this->requireSchema();
@@ -124,6 +130,7 @@ class ReservationsController
 
     public function createWaitlist(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reservations', 'Reservations and waiting list');
         $restaurantId = $this->authorize();
         $this->validateCsrf($request);
         $this->requireSchema();
@@ -142,6 +149,7 @@ class ReservationsController
 
     public function waitlistAction(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reservations', 'Reservations and waiting list');
         $restaurantId = $this->authorize();
         $this->validateCsrf($request);
         $this->requireSchema();
