@@ -87,6 +87,7 @@ $router->post('/register', [RestaurantRegistrationController::class, 'register']
 $router->get('/activation', [ActivationController::class, 'index']);
 $router->post('/activation/submit', [ActivationController::class, 'submit']);
 $router->get('/platform-activation-payments', [ActivationController::class, 'adminIndex']);
+$router->get('/platform-activation-payments/proof', [ActivationController::class, 'proof']);
 $router->post('/platform-activation-payments/review', [ActivationController::class, 'review']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/change-password', [AuthController::class, 'showChangePassword']);
