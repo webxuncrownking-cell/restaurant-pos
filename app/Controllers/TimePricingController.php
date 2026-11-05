@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Core\Database;
@@ -38,6 +40,7 @@ final class TimePricingController
 
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'scheduled_pricing', 'Scheduled menu pricing');
         Auth::requirePermission('menu.manage_catalog');
         $restaurantId = TenantContext::getRestaurantId();
         $this->ensureSchema();
@@ -48,6 +51,7 @@ final class TimePricingController
 
     public function save(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'scheduled_pricing', 'Scheduled menu pricing');
         Auth::requirePermission('menu.manage_catalog');
         if (!CSRF::validate($request->csrfToken())) { Response::redirect('/pricing?error=Invalid+security+token'); return; }
         $restaurantId = TenantContext::getRestaurantId();
@@ -94,6 +98,7 @@ final class TimePricingController
 
     public function toggle(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'scheduled_pricing', 'Scheduled menu pricing');
         Auth::requirePermission('menu.manage_catalog');
         if (!CSRF::validate($request->csrfToken())) { Response::redirect('/pricing?error=Invalid+security+token'); return; }
         $restaurantId=TenantContext::getRestaurantId(); $this->ensureSchema();
