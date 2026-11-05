@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Core\Database;
@@ -18,6 +20,7 @@ final class ComboController
 {
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'combo_meals', 'Combo meal management');
         Auth::requirePermission('menu.manage_catalog');
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         if ($restaurantId <= 0) { Response::redirect('/dashboard'); return; }
@@ -63,6 +66,7 @@ final class ComboController
 
     public function save(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'combo_meals', 'Combo meal management');
         Auth::requirePermission('menu.manage_catalog');
         if (!CSRF::validate($request->csrfToken())) { Session::setFlash('danger', 'Security token expired.'); Response::redirect('/combos'); return; }
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
@@ -85,6 +89,7 @@ final class ComboController
 
     public function remove(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'combo_meals', 'Combo meal management');
         Auth::requirePermission('menu.manage_catalog');
         if (!CSRF::validate($request->csrfToken())) { Session::setFlash('danger', 'Security token expired.'); Response::redirect('/combos'); return; }
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
