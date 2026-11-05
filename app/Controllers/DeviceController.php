@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\TenantContext;
@@ -24,6 +26,7 @@ class DeviceController
      */
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'multi_terminal', 'Multi-terminal management');
         Auth::requireAuth();
         $restaurantId = TenantContext::getRestaurantId();
 
@@ -53,6 +56,7 @@ class DeviceController
      */
     public function register(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'multi_terminal', 'Multi-terminal management');
         Auth::requireAuth();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
@@ -75,6 +79,7 @@ class DeviceController
      */
     public function rotate(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'multi_terminal', 'Multi-terminal management');
         Auth::requireAuth();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
@@ -100,6 +105,7 @@ class DeviceController
      */
     public function toggleStatus(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'multi_terminal', 'Multi-terminal management');
         Auth::requireAuth();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
@@ -122,6 +128,7 @@ class DeviceController
      */
     public function updateAuthorizations(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'multi_terminal', 'Multi-terminal management');
         Auth::requireAuth();
         $isAjax = $request->isAjax();
         CSRF::validateToken($request->post('_csrf_token'));
