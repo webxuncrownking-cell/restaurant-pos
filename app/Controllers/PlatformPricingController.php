@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace App\\Controllers;
+namespace App\Controllers;
 
-use App\\Core\\Auth;
-use App\\Core\\CSRF;
-use App\\Core\\Database;
-use App\\Core\\Request;
-use App\\Core\\Response;
-use App\\Core\\Session;
+use App\Core\Auth;
+use App\Core\CSRF;
+use App\Core\Database;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
 
 class PlatformPricingController
 {
@@ -58,7 +58,7 @@ class PlatformPricingController
                 $monthly = $price['monthly'] ?? null;
                 $annual = $price['annually'] ?? null;
                 if (!is_numeric($monthly) || !is_numeric($annual) || (float)$monthly < 0 || (float)$annual < 0 || (float)$monthly > 1000000 || (float)$annual > 10000000) {
-                    throw new \\InvalidArgumentException('One or more subscription plan prices are invalid.');
+                    throw new \InvalidArgumentException('One or more subscription plan prices are invalid.');
                 }
                 Database::query(
                     "UPDATE subscription_plans SET price_monthly = ?, price_annually = ? WHERE id = ?",
@@ -67,7 +67,7 @@ class PlatformPricingController
             }
             $pdo->commit();
             Session::setFlash('success', 'Platform activation fee, payment instructions, and subscription prices were saved.');
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[ServeFlow platform pricing] ' . $e->getMessage());
             Session::setFlash('danger', 'Settings were not saved. Check the entered values and try again.');
