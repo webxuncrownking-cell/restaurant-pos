@@ -59,6 +59,8 @@ use App\Controllers\TimePricingController;
 use App\Controllers\CustomerController;
 use App\Controllers\ComboController;
 use App\Controllers\ActivationController;
+use App\Controllers\PlatformPricingController;
+use App\Controllers\SubscriptionPaymentController;
 
 // 3. Initialize Session & Security
 Session::start();
