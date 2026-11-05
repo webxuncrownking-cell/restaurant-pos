@@ -13,6 +13,7 @@ use App\Core\Response;
 use App\Core\TenantContext;
 use App\Core\Auth;
 use App\Core\CSRF;
+use App\Core\Database;
 use App\Services\BillingService;
 use Exception;
 
