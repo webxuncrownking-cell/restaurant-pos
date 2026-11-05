@@ -53,7 +53,7 @@ class Auth
             } else {
                 $tenantId = (int)Session::get('restaurant_id');
                 $sql = "SELECT u.id, u.restaurant_id, u.role_id, u.username, u.email, u.full_name, u.status, u.must_change_password,
-                               r.name AS role_name, r.slug AS role_slug, rest.name AS restaurant_name
+                               r.name AS role_name, r.slug AS role_slug, rest.name AS restaurant_name, rest.activation_status
                         FROM users u
                         JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
                         JOIN restaurants rest ON rest.id = u.restaurant_id
@@ -139,6 +139,20 @@ class Auth
         if (!self::check()) {
             Session::setFlash('warning', 'Please sign in to access this page.');
             Response::redirect('/login');
+        }
+
+        // Pending restaurant activation: owners may access only the activation page and sign out.
+        if (!self::isPlatformAdmin()) {
+            $user = self::user();
+            if (($user['activation_status'] ?? 'activated') !== 'activated') {
+                $currentPath = (new Request())->getPath();
+                if (($user['role_slug'] ?? '') !== 'owner') {
+                    Response::forbidden('This restaurant is awaiting activation. Please contact the restaurant owner.');
+                }
+                if (!in_array($currentPath, ['/activation', '/activation/submit', '/logout', '/change-password'], true)) {
+                    Response::redirect('/activation');
+                }
+            }
         }
 
         // Enforce password change if flagged
