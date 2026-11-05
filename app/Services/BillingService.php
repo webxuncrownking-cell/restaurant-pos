@@ -67,46 +67,11 @@ class BillingService
      */
     public static function changePlan(int $restaurantId, int $newPlanId, string $billingCycle = 'monthly'): bool
     {
-        $plan = Database::fetchOne("SELECT * FROM subscription_plans WHERE id = :id AND is_active = 1", [':id' => $newPlanId]);
-        if (!$plan) {
-            throw new InvalidArgumentException('Selected plan does not exist or is inactive.');
-        }
-
-        $current = self::getCurrentSubscription($restaurantId);
-        if ($current) {
-            // Update plan on current subscription
-            Database::query(
-                "UPDATE subscriptions 
-                 SET plan_id = :plan_id, 
-                     billing_cycle = :billing_cycle, 
-                     status = 'active', 
-                     updated_at = NOW() 
-                 WHERE restaurant_id = :restaurant_id AND id = :id",
-                [
-                    ':restaurant_id' => $restaurantId,
-                    ':id' => $current['id'],
-                    ':plan_id' => $newPlanId,
-                    ':billing_cycle' => in_array($billingCycle, ['monthly', 'annually']) ? $billingCycle : 'monthly'
-                ]
-            );
-        } else {
-            // Create subscription
-            $now = date('Y-m-d H:i:s');
-            $periodEnd = date('Y-m-d H:i:s', strtotime($billingCycle === 'annually' ? '+1 year' : '+1 month'));
-
-            Database::query(
-                "INSERT INTO subscriptions (restaurant_id, plan_id, status, billing_cycle, current_period_start, current_period_end, created_at)
-                 VALUES (:restaurant_id, :plan_id, 'active', :billing_cycle, :start, :end, NOW())",
-                [
-                    ':restaurant_id' => $restaurantId,
-                    ':plan_id' => $newPlanId,
-                    ':billing_cycle' => $billingCycle,
-                    ':start' => $now,
-                    ':end' => $periodEnd
-                ]
-            );
-        }
-
-        return true;
+        // Never grant a paid tier before a payment has been submitted and verified
+        // by a platform administrator. The manual subscription-payment workflow
+        // is not enabled yet, so plan changes are intentionally unavailable.
+        throw new \\InvalidArgumentException(
+            'Subscription upgrades are temporarily unavailable while payment verification is being configured. Your existing POS access is unchanged.'
+        );
     }
 }
