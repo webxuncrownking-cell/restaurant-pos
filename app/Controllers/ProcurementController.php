@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\BillingService;
+
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Core\Request;
@@ -22,6 +24,7 @@ class ProcurementController
 {
     public function index(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'suppliers', 'Supplier and purchase order management');
         Auth::requirePermission('inventory.view_stock');
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) {
@@ -47,6 +50,7 @@ class ProcurementController
 
     public function migrate(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'suppliers', 'Supplier and purchase order management');
         Auth::requirePermission('inventory.stock_in');
         if (!$this->validCsrf($request)) return;
         try {
@@ -61,6 +65,7 @@ class ProcurementController
 
     public function createSupplier(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'suppliers', 'Supplier and purchase order management');
         $restaurantId = $this->authorizeWrite();
         if (!$this->validCsrf($request)) return;
         try {
@@ -77,6 +82,7 @@ class ProcurementController
 
     public function toggleSupplier(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'suppliers', 'Supplier and purchase order management');
         $restaurantId = $this->authorizeWrite();
         if (!$this->validCsrf($request)) return;
         $supplierId = filter_var($request->post('supplier_id'), FILTER_VALIDATE_INT);
@@ -97,6 +103,7 @@ class ProcurementController
 
     public function createOrder(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'suppliers', 'Supplier and purchase order management');
         $restaurantId = $this->authorizeWrite();
         if (!$this->validCsrf($request)) return;
         $userId = $this->tenantUserId($restaurantId);
@@ -153,6 +160,7 @@ class ProcurementController
 
     public function orderAction(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'suppliers', 'Supplier and purchase order management');
         $restaurantId = $this->authorizeWrite();
         if (!$this->validCsrf($request)) return;
         $orderId = filter_var($request->post('purchase_order_id'), FILTER_VALIDATE_INT);
@@ -173,6 +181,7 @@ class ProcurementController
 
     public function receive(Request $request): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'suppliers', 'Supplier and purchase order management');
         $restaurantId = $this->authorizeWrite();
         if (!$this->validCsrf($request)) return;
         $userId = $this->tenantUserId($restaurantId);
