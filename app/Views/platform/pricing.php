@@ -11,7 +11,7 @@
   <?php endforeach; ?>
 
   <form method="POST" action="<?= BASE_URL ?>/platform-pricing/save">
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\\App\\Core\\CSRF::getToken(), ENT_QUOTES, 'UTF-8') ?>">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\App\Core\CSRF::getToken(), ENT_QUOTES, 'UTF-8') ?>">
 
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-header bg-white py-3"><h5 class="fw-bold mb-0">Restaurant Activation</h5></div>
