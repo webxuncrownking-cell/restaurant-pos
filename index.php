@@ -88,6 +88,8 @@ $router->get('/activation', [ActivationController::class, 'index']);
 $router->post('/activation/submit', [ActivationController::class, 'submit']);
 $router->get('/platform-activation-payments', [ActivationController::class, 'adminIndex']);
 $router->get('/platform-activation-payments/proof', [ActivationController::class, 'proof']);
+$router->get('/platform-pricing', [PlatformPricingController::class, 'index']);
+$router->post('/platform-pricing/save', [PlatformPricingController::class, 'save']);
 $router->post('/platform-activation-payments/review', [ActivationController::class, 'review']);
 $router->post('/login', [AuthController::class, 'login']);
 $router->get('/change-password', [AuthController::class, 'showChangePassword']);
