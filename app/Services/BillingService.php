@@ -70,7 +70,7 @@ class BillingService
         // Never grant a paid tier before a payment has been submitted and verified
         // by a platform administrator. The manual subscription-payment workflow
         // is not enabled yet, so plan changes are intentionally unavailable.
-        throw new \\InvalidArgumentException(
+        throw new \InvalidArgumentException(
             'Subscription upgrades are temporarily unavailable while payment verification is being configured. Your existing POS access is unchanged.'
         );
     }
