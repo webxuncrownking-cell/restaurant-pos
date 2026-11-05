@@ -79,13 +79,15 @@
               <?php if ($isCurrent): ?>
                 <button class="btn btn-outline-primary w-100 disabled" disabled>Active Plan</button>
               <?php else: ?>
-                <form method="POST" action="<?= BASE_URL ?>/billing/upgrade">
-                  <input type="hidden" name="_csrf_token" value="<?= \App\Core\CSRF::getToken() ?>">
-                  <input type="hidden" name="plan_id" value="<?= $p['id'] ?>">
-                  <input type="hidden" name="billing_cycle" value="monthly">
-                  <button type="submit" class="btn btn-primary w-100 fw-semibold" onclick="return confirm('Switch to <?= htmlspecialchars($p['name']) ?>?');">
-                    Switch to <?= htmlspecialchars($p['name']) ?>
-                  </button>
+                <form method="POST" action="<?= BASE_URL ?>/billing/payment/submit" enctype="multipart/form-data" class="border rounded-3 p-3">
+                  <?= \\App\\Core\\CSRF::formField() ?>
+                  <input type="hidden" name="plan_id" value="<?= (int)$p['id'] ?>">
+                  <div class="mb-2"><label class="form-label small fw-semibold">Billing cycle</label><select class="form-select form-select-sm" name="billing_cycle"><option value="monthly">Monthly</option><option value="annually">Annual</option></select></div>
+                  <div class="mb-2"><label class="form-label small fw-semibold">Payment method</label><select class="form-select form-select-sm" name="payment_method" required><option value="">Choose</option><option value="gcash">GCash</option><option value="bank_transfer">Bank transfer</option><option value="cash_deposit">Cash deposit</option><option value="other">Other</option></select></div>
+                  <div class="mb-2"><input class="form-control form-control-sm" name="transaction_reference" maxlength="120" placeholder="Transaction reference" required></div>
+                  <div class="mb-2"><input class="form-control form-control-sm" name="payer_name" maxlength="120" placeholder="Payer name" required></div>
+                  <div class="mb-3"><input class="form-control form-control-sm" type="file" name="payment_proof" accept=".jpg,.jpeg,.png,.webp,.pdf" required><div class="form-text">Receipt required; max 5 MB.</div></div>
+                  <button type="submit" class="btn btn-primary w-100 fw-semibold">Submit payment for review</button>
                 </form>
               <?php endif; ?>
             </div>
@@ -94,6 +96,17 @@
       </div>
     <?php endforeach; ?>
   </div>
+
+  <?php if (trim((string)($paymentInstructions ?? '')) !== ''): ?>
+    <div class="alert alert-info mb-4"><strong>Payment instructions</strong><br><?= nl2br(htmlspecialchars($paymentInstructions, ENT_QUOTES, 'UTF-8')) ?></div>
+  <?php endif; ?>
+  <?php if (!empty($paymentSubmissions)): ?>
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body"><h5 class="fw-bold">Subscription payment submissions</h5>
+      <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Reference</th><th>Status</th><th>Review note</th></tr></thead><tbody>
+      <?php foreach ($paymentSubmissions as $submission): ?><tr><td><?= htmlspecialchars(date('M d, Y H:i', strtotime($submission['created_at']))) ?></td><td><?= htmlspecialchars($submission['plan_name']) ?> (<?= htmlspecialchars($submission['billing_cycle']) ?>)</td><td>₱<?= number_format((float)$submission['amount'],2) ?></td><td><?= htmlspecialchars($submission['transaction_reference']) ?></td><td><span class="badge bg-<?= $submission['status']==='approved'?'success':($submission['status']==='rejected'?'danger':'warning') ?>"><?= htmlspecialchars(ucfirst($submission['status'])) ?></span></td><td><?= htmlspecialchars((string)($submission['reviewer_note'] ?? '—')) ?></td></tr><?php endforeach; ?>
+      </tbody></table></div>
+    </div></div>
+  <?php endif; ?>
 
   <!-- Invoices History -->
   <div class="card border-0 shadow-sm">
