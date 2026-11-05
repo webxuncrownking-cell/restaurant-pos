@@ -80,7 +80,7 @@
                 <button class="btn btn-outline-primary w-100 disabled" disabled>Active Plan</button>
               <?php else: ?>
                 <form method="POST" action="<?= BASE_URL ?>/billing/payment/submit" enctype="multipart/form-data" class="border rounded-3 p-3">
-                  <?= \\App\\Core\\CSRF::formField() ?>
+                  <?= \App\Core\CSRF::formField() ?>
                   <input type="hidden" name="plan_id" value="<?= (int)$p['id'] ?>">
                   <div class="mb-2"><label class="form-label small fw-semibold">Billing cycle</label><select class="form-select form-select-sm" name="billing_cycle"><option value="monthly">Monthly</option><option value="annually">Annual</option></select></div>
                   <div class="mb-2"><label class="form-label small fw-semibold">Payment method</label><select class="form-select form-select-sm" name="payment_method" required><option value="">Choose</option><option value="gcash">GCash</option><option value="bank_transfer">Bank transfer</option><option value="cash_deposit">Cash deposit</option><option value="other">Other</option></select></div>
