@@ -152,9 +152,13 @@ class SubscriptionPaymentController
             if ($decision === 'approved') {
                 $plan = Database::fetchOne("SELECT id FROM subscription_plans WHERE id = ? AND is_active = 1", [(int)$submission['plan_id']]);
                 if (!$plan) throw new \RuntimeException('The selected plan is no longer active. Payment cannot be approved automatically.');
-                $existing = Database::fetchOne("SELECT id FROM subscriptions WHERE restaurant_id = ? ORDER BY id DESC LIMIT 1 FOR UPDATE", [(int)$submission['restaurant_id']]);
-                $start = date('Y-m-d H:i:s');
-                $end = date('Y-m-d H:i:s', strtotime($submission['billing_cycle'] === 'annually' ? '+1 year' : '+1 month'));
+                $existing = Database::fetchOne("SELECT id, current_period_end FROM subscriptions WHERE restaurant_id = ? ORDER BY id DESC LIMIT 1 FOR UPDATE", [(int)$submission['restaurant_id']]);
+                $now = new \\DateTimeImmutable('now');
+                $existingEnd = !empty($existing['current_period_end']) ? new \\DateTimeImmutable($existing['current_period_end']) : $now;
+                $periodStart = $existingEnd > $now ? $existingEnd : $now;
+                $periodEnd = $periodStart->modify($submission['billing_cycle'] === 'annually' ? '+1 year' : '+1 month');
+                $start = $periodStart->format('Y-m-d H:i:s');
+                $end = $periodEnd->format('Y-m-d H:i:s');
                 if ($existing) {
                     Database::query(
                         "UPDATE subscriptions SET plan_id = ?, status = 'active', billing_cycle = ?, current_period_start = ?, current_period_end = ?, trial_ends_at = NULL, cancel_at_period_end = 0, canceled_at = NULL, updated_at = NOW() WHERE id = ? AND restaurant_id = ?",
