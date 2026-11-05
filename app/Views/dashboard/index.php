@@ -199,12 +199,7 @@
       $visibleTiles = array_values(array_filter($tiles, static fn($tile) => $tile['allowed']));
     ?>
 
-    <section class="dashboard-welcome mb-4">
-      <div>
-        <span class="dashboard-eyebrow">RESTAURANT WORKSPACE</span>
-        <h1>Today's overview</h1>
-        <p>Here's what's happening at <?= htmlspecialchars($restaurant['name'] ?? 'your restaurant') ?>.</p>
-      </div>
+    <section class="dashboard-welcome dashboard-welcome-date-only mb-3">
       <div class="dashboard-date">
         <i class="bi bi-calendar3"></i>
         <?= date('l, F j, Y') ?>
