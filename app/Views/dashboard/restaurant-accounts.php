@@ -22,7 +22,7 @@
     </div>
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0" id="restaurantAccountsTable">
-        <thead class="table-light small text-uppercase text-muted"><tr><th>ID</th><th>Restaurant</th><th>Slug</th><th>Contact</th><th>Plan</th><th>Account Status</th><th>Subscription</th><th>Manage</th></tr></thead>
+        <thead class="table-light small text-uppercase text-muted"><tr><th>ID</th><th>Restaurant</th><th>Slug</th><th>Contact</th><th>Plan</th><th>Account Status</th><th>Activation</th><th>Subscription</th><th>Manage</th></tr></thead>
         <tbody>
           <?php if (!empty($restaurants)): foreach ($restaurants as $r): ?>
             <tr>
@@ -32,6 +32,7 @@
               <td class="small text-muted"><?= htmlspecialchars((string)($r['contact_email'] ?? '—'), ENT_QUOTES, 'UTF-8') ?><br><?= htmlspecialchars((string)($r['contact_phone'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></td>
               <td><span class="badge bg-info text-dark"><?= htmlspecialchars((string)($r['plan_name'] ?? 'No plan'), ENT_QUOTES, 'UTF-8') ?></span></td>
               <td><span class="badge <?= strtolower((string)($r['status'] ?? '')) === 'active' ? 'bg-success' : 'bg-secondary' ?>"><?= htmlspecialchars(ucfirst((string)($r['status'] ?? 'Unknown')), ENT_QUOTES, 'UTF-8') ?></span></td>
+              <td><span class="badge <?= ($r['activation_status'] ?? 'activated') === 'activated' ? 'bg-success' : (($r['activation_status'] ?? '') === 'rejected' ? 'bg-danger' : 'bg-warning text-dark') ?>"><?= htmlspecialchars(ucfirst((string)($r['activation_status'] ?? 'activated')), ENT_QUOTES, 'UTF-8') ?></span></td>
               <td><?= htmlspecialchars(ucfirst((string)($r['sub_status'] ?? 'None')), ENT_QUOTES, 'UTF-8') ?></td>
               <td>
                 <div class="d-flex flex-wrap gap-1">
@@ -48,7 +49,7 @@
               </td>
             </tr>
           <?php endforeach; else: ?>
-            <tr><td colspan="8" class="text-center text-muted py-4">No tenant restaurants registered yet.</td></tr>
+            <tr><td colspan="9" class="text-center text-muted py-4">No tenant restaurants registered yet.</td></tr>
           <?php endif; ?>
         </tbody>
       </table>
