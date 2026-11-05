@@ -76,7 +76,7 @@ class RestaurantRegistrationController
 
             Database::query(
                 "INSERT INTO restaurants (name, slug, contact_email, contact_phone, currency_symbol, timezone, status, activation_status, activation_fee)
-                 VALUES (?, ?, ?, ?, '₱', 'Asia/Manila', 'active', 'pending', 399.00')",
+                 VALUES (?, ?, ?, ?, '₱', 'Asia/Manila', 'active', 'pending', 399.00)",
                 [$restaurantName, $slug, $email, $phone]
             );
             $restaurantId = (int)$pdo->lastInsertId();
