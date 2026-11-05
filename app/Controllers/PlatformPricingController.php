@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace App\\Controllers;
+namespace App\Controllers;
 
-use App\\Core\\Auth;
-use App\\Core\\CSRF;
-use App\\Core\\Database;
-use App\\Core\\Request;
-use App\\Core\\Response;
-use App\\Core\\Session;
+use App\Core\Auth;
+use App\Core\CSRF;
+use App\Core\Database;
+use App\Core\Request;
+use App\Core\Response;
+use App\Core\Session;
 
 class PlatformPricingController
 {
@@ -83,7 +83,7 @@ class PlatformPricingController
             foreach ($planPrices as $planId => $price) {
                 $id = filter_var($planId, FILTER_VALIDATE_INT);
                 if (!$id || !isset($existingById[$id]) || !is_array($price)) {
-                    throw new \\InvalidArgumentException('An unknown subscription plan was submitted.');
+                    throw new \InvalidArgumentException('An unknown subscription plan was submitted.');
                 }
                 $monthly = $price['monthly'] ?? null;
                 $annual = $price['annually'] ?? null;
@@ -91,7 +91,7 @@ class PlatformPricingController
                 if (!is_array($submittedFeatures) || !is_numeric($monthly) || !is_numeric($annual)
                     || (float)$monthly < 0 || (float)$annual < 0
                     || (float)$monthly > 1000000 || (float)$annual > 10000000) {
-                    throw new \\InvalidArgumentException('One or more subscription plan prices or features are invalid.');
+                    throw new \InvalidArgumentException('One or more subscription plan prices or features are invalid.');
                 }
 
                 $features = json_decode((string)$existingById[$id]['features_json'], true);
@@ -115,7 +115,7 @@ class PlatformPricingController
 
             $pdo->commit();
             Session::setFlash('success', 'Activation fee, payment instructions, plan prices, and plan features were saved.');
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[ServeFlow platform pricing] ' . $e->getMessage());
             Session::setFlash('danger', 'Settings were not saved. Check the entered values and try again.');
