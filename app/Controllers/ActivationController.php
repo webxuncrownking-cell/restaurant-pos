@@ -133,7 +133,7 @@ class ActivationController
         }
         $file = dirname(APP_ROOT) . '/serveflow-private/' . $relative;
         if (!is_file($file)) Response::notFound('Payment proof file is unavailable.');
-        $mime = (new \\finfo(FILEINFO_MIME_TYPE))->file($file) ?: 'application/octet-stream';
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file) ?: 'application/octet-stream';
         if (!in_array($mime, ['image/jpeg','image/png','image/webp','application/pdf'], true)) {
             Response::forbidden('Unsupported payment proof format.');
         }
