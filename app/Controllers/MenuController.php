@@ -15,6 +15,7 @@ use App\Core\CSRF;
 use App\Core\Database;
 use App\Core\Auth;
 use App\Services\MenuService;
+use App\Services\BillingService;
 
 class MenuController
 {
@@ -683,6 +684,7 @@ class MenuController
 
     public function showRecipeBOM(Request $request, array $params): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'recipe_costing', 'Recipe costing and bill of materials');
         Auth::requirePermission('menu.manage_recipes');
         $restaurant = TenantContext::getRestaurant();
         if (!$restaurant) {
@@ -733,6 +735,7 @@ class MenuController
 
     public function saveRecipeBOM(Request $request, array $params): void
     {
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'recipe_costing', 'Recipe costing and bill of materials');
         Auth::requirePermission('menu.manage_recipes');
         if (!CSRF::validate($request->csrfToken())) {
             Response::redirect('/menu?error=Invalid+security+token');
