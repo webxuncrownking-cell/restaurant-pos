@@ -104,12 +104,6 @@ class AuthService
              WHERE (u.username = :login_username OR u.email = :login_email)
                AND rest.slug = :slug
                AND u.deleted_at IS NULL
-               AND EXISTS (
-                   SELECT 1 FROM pos_device_staff_authorizations sa
-                   JOIN pos_devices d ON d.id = sa.device_id AND d.restaurant_id = sa.restaurant_id
-                   WHERE sa.restaurant_id = u.restaurant_id AND sa.user_id = u.id
-                     AND sa.is_allowed_offline = 1 AND d.status = 'active'
-               )
              LIMIT 1",
             [':login_username' => $login, ':login_email' => $login, ':slug' => $tenantSlug]
         );
