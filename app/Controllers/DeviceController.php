@@ -112,9 +112,9 @@ class DeviceController
         $pin = trim((string)$request->post('pin', ''));
 
         if ($userId <= 0 || $fullName === '' || $username === ''
-            || mb_strlen($fullName) > 150 || mb_strlen($username) > 80
+            || strlen($fullName) > 150 || strlen($username) > 80
             || !in_array($status, ['active', 'inactive'], true)
-            || ($email !== '' && (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190))
+            || ($email !== '' && (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 190))
             || ($pin !== '' && !preg_match('/^[0-9]{4,6}$/D', $pin))) {
             $_SESSION['flash_error'] = 'Please check the staff details. Name and username are required, and the PIN must contain 4 to 6 digits.';
             Response::redirect('/staff-pins');
