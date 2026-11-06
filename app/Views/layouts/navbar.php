@@ -21,6 +21,7 @@ $navGroups = [
     ['label' => 'Reservations & Waitlist', 'route' => '/reservations', 'icon' => 'bi-calendar2-check'],
   ],
   'Operations' => [
+    ['label' => 'Staff Terminal PINs', 'route' => '/staff-pins', 'icon' => 'bi-shield-lock'],
     ['label' => 'POS Terminals', 'route' => '/devices', 'icon' => 'bi-tablet-landscape'],
     ['label' => 'Cashier Shifts', 'route' => '/shifts', 'icon' => 'bi-safe2'],
     ['label' => 'Open Bills & Split Payments', 'route' => '/bills', 'icon' => 'bi-receipt-cutoff'],
@@ -82,6 +83,7 @@ if ($isPlatform) {
     $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap): bool {
       $route = (string)($item['route'] ?? '');
       if ($route === '/install') return false;
+      if ($route === '/staff-pins') return \App\Core\Auth::roleSlug() === 'owner';
       if ($route === '/billing') return \App\Core\Auth::roleSlug() === 'owner';
       if ($route === '/reservations') return in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true);
       if (isset($navPermissionMap[$route])) return \App\Core\Auth::can($navPermissionMap[$route]);
@@ -92,10 +94,6 @@ if ($isPlatform) {
 
   if ($canManageBranding) {
     $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
-  }
-
-  if ($user && !$isPlatform && \App\Core\Auth::roleSlug() === 'owner') {
-    $navGroups['Account'][] = ['label' => 'Staff Terminal PINs', 'route' => '/staff-pins', 'icon' => 'bi-shield-lock'];
   }
 
   $canViewKitchen = $restaurant !== null && (in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \App\Core\Auth::can('kitchen.view_kds'));
