@@ -29,7 +29,6 @@ $logoPath = (string)($restaurant['logo_path'] ?? '');
 $logoUrl = $logoPath !== '' ? BASE_URL . '/' . ltrim($logoPath, '/') : '';
 $restaurantName = $restaurant['name'] ?? ($isPlatform ? 'ServeFlow POS' : 'Restaurant POS');
 $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
-$roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Admin' : 'Staff');
 ?>
 <div class="app-shell">
   <main class="app-main">
@@ -86,9 +85,6 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
               <?php endif; ?>
               <?php if ($canManageBranding): ?>
                 <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
-              <?php endif; ?>
-              <?php if (!$isPlatform && $restaurant && \App\Core\Auth::roleSlug() === 'owner'): ?>
-                <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/staff-pins"><i class="bi bi-shield-lock me-2"></i>Staff Terminal PINs</a></li>
               <?php endif; ?>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item rounded-2 py-2 text-danger" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
