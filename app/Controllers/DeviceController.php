@@ -93,6 +93,89 @@ class DeviceController
     }
 
     /**
+     * Update a staff account's basic details and optional terminal PIN.
+     */
+    public function updateStaffDetails(Request $request): void
+    {
+        Auth::requireLogin();
+        if (Auth::isPlatformAdmin() || Auth::roleSlug() !== 'owner') {
+            Response::forbidden('Only the restaurant owner can manage staff accounts.');
+        }
+        CSRF::validateToken($request->post('_csrf_token'));
+
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $userId = (int)$request->post('user_id', 0);
+        $fullName = trim((string)$request->post('full_name', ''));
+        $username = trim((string)$request->post('username', ''));
+        $email = trim((string)$request->post('email', ''));
+        $status = (string)$request->post('status', 'active');
+        $pin = trim((string)$request->post('pin', ''));
+
+        if ($userId <= 0 || $fullName === '' || $username === ''
+            || mb_strlen($fullName) > 150 || mb_strlen($username) > 80
+            || !in_array($status, ['active', 'inactive'], true)
+            || ($email !== '' && (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190))
+            || ($pin !== '' && !preg_match('/^[0-9]{4,6}$/D', $pin))) {
+            $_SESSION['flash_error'] = 'Please check the staff details. Name and username are required, and the PIN must contain 4 to 6 digits.';
+            Response::redirect('/staff-pins');
+        }
+
+        $staff = Database::fetchOne(
+            "SELECT id FROM users WHERE id = :user_id AND restaurant_id = :restaurant_id AND deleted_at IS NULL",
+            [':user_id' => $userId, ':restaurant_id' => $restaurantId]
+        );
+        if (!$staff) {
+            $_SESSION['flash_error'] = 'The selected staff account was not found in this restaurant.';
+            Response::redirect('/staff-pins');
+        }
+
+        $duplicate = Database::fetchOne(
+            "SELECT id FROM users
+             WHERE restaurant_id = :restaurant_id AND id <> :user_id AND deleted_at IS NULL
+               AND (username = :username OR (:email_check <> '' AND email = :email)) LIMIT 1",
+            [
+                ':restaurant_id' => $restaurantId,
+                ':user_id' => $userId,
+                ':username' => $username,
+                ':email_check' => $email,
+                ':email' => $email
+            ]
+        );
+        if ($duplicate) {
+            $_SESSION['flash_error'] = 'That username or email address is already used by another account in this restaurant.';
+            Response::redirect('/staff-pins');
+        }
+
+        $params = [
+            ':full_name' => $fullName,
+            ':username' => $username,
+            ':email' => $email !== '' ? $email : null,
+            ':status' => $status,
+            ':user_id' => $userId,
+            ':restaurant_id' => $restaurantId
+        ];
+        $sql = "UPDATE users
+                SET full_name = :full_name, username = :username, email = :email, status = :status
+                WHERE id = :user_id AND restaurant_id = :restaurant_id";
+
+        if ($pin !== '') {
+            $saltHex = bin2hex(random_bytes(16));
+            $saltBytes = hex2bin($saltHex);
+            $pinHash = hash_pbkdf2('sha256', $pin, $saltBytes, 10000, 64);
+            $sql = "UPDATE users
+                    SET full_name = :full_name, username = :username, email = :email, status = :status,
+                        offline_pin_salt = :pin_salt, offline_pin_hash = :pin_hash
+                    WHERE id = :user_id AND restaurant_id = :restaurant_id";
+            $params[':pin_salt'] = $saltHex;
+            $params[':pin_hash'] = $pinHash;
+        }
+
+        Database::query($sql, $params);
+        $_SESSION['flash_success'] = 'Staff details updated successfully.';
+        Response::redirect('/staff-pins');
+    }
+
+    /**
      * Display registered devices and staff mappings
      */
     public function index(Request $request): void
