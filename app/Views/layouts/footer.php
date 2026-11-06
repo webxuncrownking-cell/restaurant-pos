@@ -47,19 +47,6 @@ window.addEventListener('DOMContentLoaded', () => {
         button.setAttribute('aria-label', 'Go back');
         button.innerHTML = '<i class="bi bi-arrow-left"></i><span>Back</span>';
 
-        button.addEventListener('click', function (event) {
-            const referrer = document.referrer;
-            if (referrer) {
-                try {
-                    const previous = new URL(referrer);
-                    if (previous.origin === window.location.origin) {
-                        event.preventDefault();
-                        window.history.back();
-                    }
-                } catch (_) {}
-            }
-        });
-
         target.insertBefore(button, target.firstChild);
     }
 
