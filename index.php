@@ -78,11 +78,13 @@ $router->get('/', function (Request $req) {
     if (Auth::check()) {
         Response::redirect('/dashboard');
     } else {
-        Response::redirect('/login');
+        Response::redirect('/terminal-login');
     }
 });
 
 // Authentication Routes
+$router->get('/terminal-login', [AuthController::class, 'showTerminalLogin']);
+$router->post('/terminal-login', [AuthController::class, 'terminalLogin']);
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->get('/register', [RestaurantRegistrationController::class, 'show']);
 $router->post('/register', [RestaurantRegistrationController::class, 'register']);
