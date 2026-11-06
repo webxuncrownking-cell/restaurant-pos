@@ -193,7 +193,7 @@
               'route' => '/staff-pins',
               'icon' => 'bi-people',
               'color' => 'indigo',
-              'allowed' => \\App\\Core\\Auth::roleSlug() === 'owner'
+              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
           ],
           [
               'label' => 'Settings',
