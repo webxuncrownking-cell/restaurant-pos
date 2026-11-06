@@ -188,19 +188,19 @@
               'allowed' => \App\Core\Auth::can('shifts.open_close')
           ],
           [
+              'label' => 'Staff',
+              'description' => 'Manage staff accounts and terminal PINs',
+              'route' => '/staff-pins',
+              'icon' => 'bi-people',
+              'color' => 'indigo',
+              'allowed' => \\App\\Core\\Auth::roleSlug() === 'owner'
+          ],
+          [
               'label' => 'Settings',
               'description' => 'Restaurant details and preferences',
               'route' => '/settings',
               'icon' => 'bi-gear',
               'color' => 'slate',
-              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
-          ],
-          [
-              'label' => 'Staff Terminal PINs',
-              'description' => 'Create and manage cashier sign-in PINs',
-              'route' => '/staff-pins',
-              'icon' => 'bi-shield-lock',
-              'color' => 'indigo',
               'allowed' => \App\Core\Auth::roleSlug() === 'owner'
           ],
       ];
