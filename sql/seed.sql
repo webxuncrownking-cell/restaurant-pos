@@ -124,12 +124,12 @@ ON DUPLICATE KEY UPDATE `permission_id` = VALUES(`permission_id`);
 
 -- Manager gets permissions (1-18)
 INSERT INTO `role_permissions` (`restaurant_id`, `role_id`, `permission_id`)
-SELECT 1, 2, p.id FROM `permissions` p WHERE p.id IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18)
+SELECT 1, 2, p.id FROM `permissions` p WHERE p.code IN ('pos.create_order','pos.process_payment','pos.apply_discount','orders.cancel_void','orders.issue_refund','tables.view_status','tables.manage_tables','kitchen.view_kds','kitchen.update_state','inventory.view_stock','inventory.stock_in','inventory.adjust','menu.manage_catalog','menu.manage_recipes','shifts.open_close','shifts.cash_drop','reports.view_sales','reports.view_ledger')
 ON DUPLICATE KEY UPDATE `permission_id` = VALUES(`permission_id`);
 
 -- Cashier gets (1,2,6,15,16)
 INSERT INTO `role_permissions` (`restaurant_id`, `role_id`, `permission_id`)
-SELECT 1, 3, p.id FROM `permissions` p WHERE p.id IN (1,2,6,15,16)
+SELECT 1, 3, p.id FROM `permissions` p WHERE p.code IN ('pos.create_order','pos.process_payment','tables.view_status','shifts.open_close','shifts.cash_drop')
 ON DUPLICATE KEY UPDATE `permission_id` = VALUES(`permission_id`);
 
 -- Role Permissions Mapping for Restaurant 2
