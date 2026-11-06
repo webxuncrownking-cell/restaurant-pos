@@ -21,6 +21,77 @@ use Exception;
 
 class DeviceController
 {
+
+    /**
+     * Owner-only PIN setup for staff terminal sign-in.
+     * Kept separate from premium multi-terminal device management.
+     */
+    public function pinSettings(Request $request): void
+    {
+        Auth::requireLogin();
+        if (Auth::isPlatformAdmin() || Auth::roleSlug() !== 'owner') {
+            Response::forbidden('Only the restaurant owner can manage staff terminal PINs.');
+        }
+
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $staffMembers = Database::fetchAll(
+            "SELECT id, full_name, username, email, status,
+                    CASE WHEN offline_pin_salt IS NOT NULL AND offline_pin_hash IS NOT NULL
+                         THEN 1 ELSE 0 END AS pin_configured
+             FROM users
+             WHERE restaurant_id = :restaurant_id AND deleted_at IS NULL
+             ORDER BY full_name ASC",
+            [':restaurant_id' => $restaurantId]
+        );
+
+        Response::render('devices/staff_pins', ['staffMembers' => $staffMembers]);
+    }
+
+    /**
+     * Save a 4-6 digit staff terminal PIN using the same PBKDF2 format
+     * used by the existing offline terminal authorization feature.
+     */
+    public function saveStaffPin(Request $request): void
+    {
+        Auth::requireLogin();
+        if (Auth::isPlatformAdmin() || Auth::roleSlug() !== 'owner') {
+            Response::forbidden('Only the restaurant owner can manage staff terminal PINs.');
+        }
+        CSRF::validateToken($request->post('_csrf_token'));
+
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $userId = (int)$request->post('user_id', 0);
+        $pin = trim((string)$request->post('pin', ''));
+
+        if ($userId <= 0 || !preg_match('/^[0-9]{4,6}$/D', $pin)) {
+            $_SESSION['flash_error'] = 'Choose a staff member and enter a PIN containing 4 to 6 digits.';
+            Response::redirect('/staff-pins');
+        }
+
+        $staff = Database::fetchOne(
+            "SELECT id FROM users
+             WHERE id = :user_id AND restaurant_id = :restaurant_id
+               AND status = 'active' AND deleted_at IS NULL",
+            [':user_id' => $userId, ':restaurant_id' => $restaurantId]
+        );
+        if (!$staff) {
+            $_SESSION['flash_error'] = 'The selected staff account is not active in this restaurant.';
+            Response::redirect('/staff-pins');
+        }
+
+        $saltHex = bin2hex(random_bytes(16));
+        $saltBytes = hex2bin($saltHex);
+        $pinHash = hash_pbkdf2('sha256', $pin, $saltBytes, 10000, 64);
+        Database::query(
+            "UPDATE users SET offline_pin_salt = :salt, offline_pin_hash = :hash
+             WHERE id = :user_id AND restaurant_id = :restaurant_id",
+            [':salt' => $saltHex, ':hash' => $pinHash, ':user_id' => $userId, ':restaurant_id' => $restaurantId]
+        );
+
+        $_SESSION['flash_success'] = 'Staff terminal PIN saved successfully.';
+        Response::redirect('/staff-pins');
+    }
+
     /**
      * Display registered devices and staff mappings
      */
