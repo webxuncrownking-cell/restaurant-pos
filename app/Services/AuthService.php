@@ -80,6 +80,60 @@ class AuthService
         ];
     }
 
+
+    /**
+     * Authenticate restaurant staff with their configured 4-6 digit terminal PIN.
+     * The restaurant slug is mandatory so identical usernames in other tenants
+     * can never be selected accidentally.
+     */
+    public function authenticateWithPin(string $login, string $pin, string $tenantSlug): array
+    {
+        $login = trim($login);
+        $tenantSlug = trim($tenantSlug);
+
+        if ($login === '' || $tenantSlug === '' || !preg_match('/^[0-9]{4,6}$/D', $pin)) {
+            return ['success' => false, 'error' => 'Enter your staff username, restaurant slug, and 4–6 digit PIN.'];
+        }
+
+        $staffUser = Database::fetchOne(
+            "SELECT u.*, r.slug AS role_slug, r.name AS role_name,
+                    rest.status AS restaurant_status, rest.activation_status, rest.name AS restaurant_name
+             FROM users u
+             JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+             JOIN restaurants rest ON rest.id = u.restaurant_id
+             WHERE (u.username = :login OR u.email = :login)
+               AND rest.slug = :slug
+               AND u.deleted_at IS NULL
+             LIMIT 1",
+            [':login' => $login, ':slug' => $tenantSlug]
+        );
+
+        // Use the same generic response for unknown users and invalid PINs.
+        if (!$staffUser || $staffUser['status'] !== 'active'
+            || $staffUser['restaurant_status'] === 'suspended') {
+            return ['success' => false, 'error' => 'Invalid staff login or PIN. Check your details and try again.'];
+        }
+
+        $saltHex = (string)($staffUser['offline_pin_salt'] ?? '');
+        $storedHash = (string)($staffUser['offline_pin_hash'] ?? '');
+        if (!preg_match('/^[a-f0-9]{32}$/iD', $saltHex)
+            || !preg_match('/^[a-f0-9]{64}$/iD', $storedHash)) {
+            return ['success' => false, 'error' => 'A terminal PIN has not been configured for this staff account. Ask your manager to set one in Terminal Devices.'];
+        }
+
+        $salt = hex2bin($saltHex);
+        if ($salt === false) {
+            return ['success' => false, 'error' => 'Invalid staff login or PIN. Check your details and try again.'];
+        }
+
+        $candidate = hash_pbkdf2('sha256', $pin, $salt, 10000, 64);
+        if (!hash_equals(strtolower($storedHash), strtolower($candidate))) {
+            return ['success' => false, 'error' => 'Invalid staff login or PIN. Check your details and try again.'];
+        }
+
+        return ['success' => true, 'is_platform' => false, 'user' => $staffUser];
+    }
+
     /**
      * Update password and clear must_change_password flag.
      */
