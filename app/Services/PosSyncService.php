@@ -353,6 +353,7 @@ class PosSyncService
     public static function processOrderSync(int $restaurantId, array $orderPayload): array
     {
         $clientUuid = trim((string)($orderPayload['client_uuid'] ?? ''));
+        $orderNotes = trim((string)($orderPayload['notes'] ?? ''));
         if ($restaurantId <= 0 || $clientUuid === '' || strlen($clientUuid) > 36) {
             throw new InvalidArgumentException('A valid restaurant and client order UUID are required.');
         }
