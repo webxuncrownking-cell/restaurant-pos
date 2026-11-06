@@ -88,7 +88,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
               <?php if ($canManageBranding): ?>
                 <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
               <?php endif; ?>
-              <?php if (!$isPlatform && $restaurant && \\App\\Core\\Auth::roleSlug() === 'owner'): ?>
+              <?php if (!$isPlatform && $restaurant && \App\Core\Auth::roleSlug() === 'owner'): ?>
                 <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/staff-pins"><i class="bi bi-shield-lock me-2"></i>Staff Terminal PINs</a></li>
               <?php endif; ?>
               <li><hr class="dropdown-divider"></li>
