@@ -2026,19 +2026,6 @@ body {
         back.setAttribute('aria-label', 'Back');
         back.innerHTML = '<i class="bi bi-arrow-left"></i><span>Back</span>';
 
-        back.addEventListener('click', function (event) {
-            try {
-                const previous = document.referrer
-                    ? new URL(document.referrer)
-                    : null;
-
-                if (previous && previous.origin === window.location.origin) {
-                    event.preventDefault();
-                    window.history.back();
-                }
-            } catch (error) {}
-        });
-
         target.insertBefore(back, target.firstChild);
     }
 
