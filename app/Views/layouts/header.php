@@ -109,6 +109,51 @@
     }
     .form-control, .form-select { border-color: #dbe2ec; border-radius: 10px; min-height: 42px; }
     .form-control:focus, .form-select:focus { border-color: var(--pos-primary); box-shadow: 0 0 0 .2rem rgba(37,99,235,.13); }
+
+    /* Consistent native file picker styling across every app form. */
+    .form-control[type="file"] {
+      min-height: 46px;
+      padding: .375rem .5rem;
+      line-height: 1.5;
+      color: #475569;
+      background-color: #fff;
+      overflow: hidden;
+    }
+    .form-control[type="file"]::file-selector-button {
+      min-height: 36px;
+      margin: -.375rem .75rem -.375rem -.5rem;
+      padding: .55rem 1rem;
+      color: #fff;
+      font: inherit;
+      font-weight: 650;
+      background: var(--pos-primary);
+      border: 0;
+      border-right: 1px solid var(--pos-primary);
+      border-radius: 7px 0 0 7px;
+      cursor: pointer;
+      transition: filter .15s ease-in-out;
+    }
+    .form-control[type="file"]::file-selector-button:hover {
+      filter: brightness(.92);
+    }
+    .form-control[type="file"]:focus-visible {
+      outline: 0;
+      border-color: var(--pos-primary);
+      box-shadow: 0 0 0 .2rem rgba(37,99,235,.13);
+    }
+    .form-control[type="file"]::-webkit-file-upload-button {
+      min-height: 36px;
+      margin: -.375rem .75rem -.375rem -.5rem;
+      padding: .55rem 1rem;
+      color: #fff;
+      font: inherit;
+      font-weight: 650;
+      background: var(--pos-primary);
+      border: 0;
+      border-right: 1px solid var(--pos-primary);
+      border-radius: 7px 0 0 7px;
+      cursor: pointer;
+    }
     .table > :not(caption) > * > * { padding: .85rem .9rem; }
     .table thead th { color: #657184; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .045em; white-space: nowrap; }
     .badge { letter-spacing: .01em; }
