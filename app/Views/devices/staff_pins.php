@@ -3,7 +3,7 @@
 <div class="container py-4">
  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
   <div><h1 class="h3 fw-bold mb-1"><i class="bi bi-shield-lock text-primary me-2"></i>Staff Terminal PINs</h1><p class="text-muted small mb-0">Set or update the 4–6 digit PIN each staff member uses to open the POS terminal.</p></div>
-  <a href="<?= BASE_URL ?>/devices" class="btn btn-outline-secondary"><i class="bi bi-tablet me-1"></i> Device Management</a>
+  <a href="<?= BASE_URL ?>/settings" class="btn btn-outline-secondary"><i class="bi bi-gear me-1"></i> Settings</a>
  </div>
  <?php if (!empty($_SESSION['flash_success'])): ?><div class="alert alert-success"><?= htmlspecialchars((string)$_SESSION['flash_success'], ENT_QUOTES, 'UTF-8') ?></div><?php unset($_SESSION['flash_success']); endif; ?>
  <?php if (!empty($_SESSION['flash_error'])): ?><div class="alert alert-danger"><?= htmlspecialchars((string)$_SESSION['flash_error'], ENT_QUOTES, 'UTF-8') ?></div><?php unset($_SESSION['flash_error']); endif; ?>
@@ -31,5 +31,5 @@
   <?php endforeach; endif; ?>
   </tbody>
  </table></div></div>
- <div class="alert alert-info mt-3 small"><i class="bi bi-info-circle me-1"></i> PINs are stored as salted PBKDF2 hashes, never as plain text. Staff must use their username, restaurant slug, and PIN on the terminal sign-in screen.</div>
+ <div class="alert alert-info mt-3 small"><i class="bi bi-info-circle me-1"></i> PINs are stored as salted PBKDF2 hashes, never as plain text. A staff member can sign in only when an active POS device is registered and that staff member is authorized for it. Staff must use their username, restaurant slug, and PIN on the terminal sign-in screen.</div>
 </div>
