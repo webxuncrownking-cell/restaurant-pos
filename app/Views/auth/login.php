@@ -126,7 +126,7 @@ html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#839
       <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
         <div class="card-header bg-white border-bottom py-3 px-4">
           <h5 class="mb-0 fw-semibold text-secondary d-flex align-items-center gap-2">
-            <i class="bi bi-shield-lock text-primary"></i> Sign In to Terminal
+            <i class="bi bi-shield-lock text-primary"></i> Owner / Admin Sign In
           </h5>
         </div>
         <div class="card-body p-4">
@@ -164,6 +164,7 @@ html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#839
         </div>
       </div>
 
+      <div class="text-center mt-3"><span class="text-muted small">Need the cashier terminal?</span> <a href="<?= BASE_URL ?>/terminal-login" class="text-decoration-none fw-semibold small">Sign in with PIN</a></div>
       <div class="text-center mt-3"><span class="text-muted small">New to ServeFlow POS?</span> <a href="<?= BASE_URL ?>/register" class="text-decoration-none fw-semibold small">Register your restaurant</a></div>
 
       <!-- Diagnostics Link -->
