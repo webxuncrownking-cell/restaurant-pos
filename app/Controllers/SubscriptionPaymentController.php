@@ -9,6 +9,7 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use Throwable;
 
 class SubscriptionPaymentController
 {
@@ -46,17 +47,47 @@ class SubscriptionPaymentController
             Response::redirect('/billing');
         }
 
+        // Allow only one pending payment per restaurant. This avoids duplicate reviews
+        // and prevents repeated uploads while a payment is awaiting verification.
+        $pending = Database::fetchOne(
+            "SELECT id FROM subscription_payment_submissions WHERE restaurant_id = ? AND status = 'pending' LIMIT 1",
+            [$restaurantId]
+        );
+        if ($pending) {
+            Session::setFlash('warning', 'You already have a subscription payment awaiting verification. Please wait for the platform team to review it.');
+            Response::redirect('/billing');
+            return;
+        }
+
         $upload = $_FILES['payment_proof'] ?? null;
-        if (!is_array($upload) || (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || (int)$upload['size'] > 5 * 1024 * 1024) {
+        if (!is_array($upload) ||
+            (int)($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK ||
+            (int)($upload['size'] ?? 0) < 1 ||
+            (int)$upload['size'] > 5 * 1024 * 1024) {
             Session::setFlash('danger', 'Attach a payment receipt no larger than 5 MB.');
             Response::redirect('/billing');
+            return;
         }
-        $tmp = (string)$upload['tmp_name'];
+        $tmp = (string)($upload['tmp_name'] ?? '');
+        if ($tmp === '' || !is_uploaded_file($tmp)) {
+            Session::setFlash('danger', 'The uploaded receipt could not be verified. Please choose the file again.');
+            Response::redirect('/billing');
+            return;
+        }
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($tmp);
         $allowed = ['image/jpeg'=>'jpg','image/png'=>'png','image/webp'=>'webp','application/pdf'=>'pdf'];
-        if (!isset($allowed[$mime])) {
+        if (!is_string($mime) || !isset($allowed[$mime])) {
             Session::setFlash('danger', 'Upload a JPG, PNG, WEBP, or PDF receipt.');
             Response::redirect('/billing');
+            return;
+        }
+        if (str_starts_with($mime, 'image/')) {
+            $image = @getimagesize($tmp);
+            if (!$image || ($image['mime'] ?? '') !== $mime) {
+                Session::setFlash('danger', 'The uploaded receipt image is invalid.');
+                Response::redirect('/billing');
+                return;
+            }
         }
 
         $directory = dirname(APP_ROOT) . '/serveflow-private/subscription-proofs';
