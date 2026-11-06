@@ -201,7 +201,7 @@
               'route' => '/staff-pins',
               'icon' => 'bi-shield-lock',
               'color' => 'indigo',
-              'allowed' => \\App\\Core\\Auth::roleSlug() === 'owner'
+              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
           ],
       ];
       $visibleTiles = array_values(array_filter($tiles, static fn($tile) => $tile['allowed']));
