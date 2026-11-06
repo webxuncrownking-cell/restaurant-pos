@@ -359,6 +359,7 @@ class PosSyncService
         }
 
         $customerId = (int)($orderPayload['customer_id'] ?? 0);
+        $loyaltyEnabled = BillingService::hasFeature($restaurantId, 'loyalty');
         $redeemPointsRaw = $orderPayload['loyalty_redeem_points'] ?? 0;
         if ($customerId < 0 || !is_numeric($redeemPointsRaw) || !is_finite((float)$redeemPointsRaw)) {
             throw new InvalidArgumentException('The selected customer or loyalty redemption is invalid.');
@@ -366,6 +367,9 @@ class PosSyncService
         $redeemPoints = (int)$redeemPointsRaw;
         if ((float)$redeemPointsRaw !== (float)$redeemPoints || $redeemPoints < 0 || $redeemPoints > 1000000 || ($redeemPoints > 0 && $redeemPoints % 100 !== 0)) {
             throw new InvalidArgumentException('Loyalty redemption must use increments of 100 points.');
+        }
+        if ($redeemPoints > 0 && !$loyaltyEnabled) {
+            throw new InvalidArgumentException('Loyalty rewards are not included in this restaurant subscription. The order can still be processed without redeeming points.');
         }
         if ($redeemPoints > 0 && $customerId <= 0) {
             throw new InvalidArgumentException('Select a customer before redeeming loyalty points.');
@@ -927,7 +931,7 @@ class PosSyncService
                 }
                 // Award one point per complete PHP 100 on the post-discount paid amount.
                 // Unique ledger entries make earning and redemption idempotent per order.
-                if (!$saveAsOpen) {
+                if (!$saveAsOpen && $loyaltyEnabled) {
                     $earnedPoints = (int)floor($totalAmount / 100);
                     if ($earnedPoints > 0) {
                         Database::query(
