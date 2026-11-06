@@ -50,6 +50,10 @@ jobs:
         run: cp config/database.example.php config/database.php
       - name: Import schema
         run: mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/schema.sql
+      - name: Apply activation and subscription payment migrations
+        run: |
+          mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/migrations/20261105_activation_workflow.sql
+          mysql --host=127.0.0.1 --user=root --password=root restaurant_pos < sql/migrations/20261106_subscription_payment_workflow.sql
       - name: Diagnose schema import failure
         if: failure()
         run: |
