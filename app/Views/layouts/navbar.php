@@ -94,6 +94,10 @@ if ($isPlatform) {
     $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
   }
 
+  if ($user && !$isPlatform && \App\Core\Auth::roleSlug() === 'owner') {
+    $navGroups['Account'][] = ['label' => 'Staff Terminal PINs', 'route' => '/staff-pins', 'icon' => 'bi-shield-lock'];
+  }
+
   $canViewKitchen = $restaurant !== null && (in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \App\Core\Auth::can('kitchen.view_kds'));
   if ($canViewKitchen) {
     $navGroups['Operations'][] = ['label' => 'Kitchen Display', 'route' => '/kitchen', 'icon' => 'bi-fire'];
