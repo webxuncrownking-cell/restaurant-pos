@@ -147,7 +147,7 @@ html[data-theme="dark"] .register-page-wrap .form-control::placeholder { color:#
             <input class="form-control" type="password" id="password_confirmation" name="password_confirmation" minlength="10" required autocomplete="new-password">
           </div>
         </div>
-        <div class="alert alert-info small mt-4 mb-3"><i class="bi bi-info-circle me-1"></i> Your restaurant will be created with an Owner account and a 14-day trial on the lowest-priced active plan. No payment is collected by this form.</div>
+        <div class="alert alert-info small mt-4 mb-3"><i class="bi bi-info-circle me-1"></i> Your restaurant will be created with an Owner account and will require activation by ServeFlow before the POS can be used. No payment is collected by this form.</div>
         <button type="submit" class="btn btn-warning text-dark fw-semibold w-100 py-2"><i class="bi bi-person-check me-2"></i>Create Restaurant Account</button>
       </form>
     </div>
