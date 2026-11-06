@@ -127,6 +127,11 @@ class AuthController
         unset($_SESSION['terminal_pin_attempts'], $_SESSION['terminal_pin_locked_until']);
         Auth::login($result['user'], false);
 
+        if (($result['user']['activation_status'] ?? 'activated') !== 'activated') {
+            Session::setFlash('warning', 'Your restaurant is awaiting activation. Please complete the activation step first.');
+            Response::redirect('/activation');
+        }
+
         if (!empty($result['user']['must_change_password'])) {
             Session::setFlash('warning', 'Please update your account password before continuing.');
             Response::redirect('/change-password');
