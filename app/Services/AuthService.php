@@ -101,11 +101,11 @@ class AuthService
              FROM users u
              JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
              JOIN restaurants rest ON rest.id = u.restaurant_id
-             WHERE (u.username = :login OR u.email = :login)
+             WHERE (u.username = :login_username OR u.email = :login_email)
                AND rest.slug = :slug
                AND u.deleted_at IS NULL
              LIMIT 1",
-            [':login' => $login, ':slug' => $tenantSlug]
+            [':login_username' => $login, ':login_email' => $login, ':slug' => $tenantSlug]
         );
 
         // Use the same generic response for unknown users and invalid PINs.
