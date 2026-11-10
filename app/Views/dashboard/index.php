@@ -169,7 +169,7 @@
                   <h3 class="h6 fw-bold mb-1">Platform Activity</h3>
                   <small class="text-muted">Recent updates</small>
                 </div>
-                <span class="badge bg-primary bg-opacity-10 text-primary">Live overview</span>
+                <span class="badge bg-primary bg-opacity-10 text-primary">Overview</span>
               </div>
 
               <div class="rounded-3 bg-warning bg-opacity-10 p-3 mb-3">
