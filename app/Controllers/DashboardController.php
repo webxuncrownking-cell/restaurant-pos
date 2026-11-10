@@ -64,6 +64,47 @@ class DashboardController
                 $data['active_restaurants_this_month'] = (int)($monthOrders['active_restaurants'] ?? 0);
 
                 $data['restaurants'] = Database::fetchAll("SELECT r.*, s.status AS sub_status, sp.name AS plan_name FROM restaurants r LEFT JOIN subscriptions s ON s.restaurant_id = r.id LEFT JOIN subscription_plans sp ON sp.id = s.plan_id WHERE r.deleted_at IS NULL ORDER BY r.id ASC");
+
+                // Recent platform activity for the superadmin dashboard.
+                $data['recent_restaurants'] = Database::fetchAll(
+                    "SELECT id, name, slug, activation_status, status, created_at
+                     FROM restaurants
+                     WHERE deleted_at IS NULL
+                     ORDER BY created_at DESC, id DESC
+                     LIMIT 4"
+                );
+                $data['recent_subscriptions'] = Database::fetchAll(
+                    "SELECT s.id, s.status, s.billing_cycle, s.updated_at,
+                            r.name AS restaurant_name, sp.name AS plan_name
+                     FROM subscriptions s
+                     INNER JOIN restaurants r ON r.id = s.restaurant_id
+                     INNER JOIN subscription_plans sp ON sp.id = s.plan_id
+                     WHERE r.deleted_at IS NULL
+                     ORDER BY s.updated_at DESC, s.id DESC
+                     LIMIT 4"
+                );
+                $data['pending_activation_count'] = (int)(Database::fetchOne(
+                    "SELECT COUNT(*) AS c
+                     FROM activation_payment_submissions
+                     WHERE status = 'pending'"
+                )['c'] ?? 0);
+                $data['recent_activation_submissions'] = Database::fetchAll(
+                    "SELECT p.id, p.status, p.amount, p.payment_method, p.created_at,
+                            r.name AS restaurant_name
+                     FROM activation_payment_submissions p
+                     INNER JOIN restaurants r ON r.id = p.restaurant_id
+                     WHERE p.status = 'pending' AND r.deleted_at IS NULL
+                     ORDER BY p.created_at DESC, p.id DESC
+                     LIMIT 3"
+                );
+                $data['recent_pos_devices'] = Database::fetchAll(
+                    "SELECT d.id, d.status, d.last_sync_at, r.name AS restaurant_name
+                     FROM pos_devices d
+                     INNER JOIN restaurants r ON r.id = d.restaurant_id
+                     WHERE r.deleted_at IS NULL
+                     ORDER BY d.last_sync_at DESC, d.id DESC
+                     LIMIT 3"
+                );
             } catch (\Throwable $e) {
                 $data['db_error'] = $e->getMessage();
             }
