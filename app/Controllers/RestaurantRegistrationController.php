@@ -117,10 +117,10 @@ class RestaurantRegistrationController
                 [$ownerUserId, $restaurantId]
             );
             if (!$owner) {
-                throw new \\RuntimeException('New owner account could not be loaded after registration.');
+                throw new \RuntimeException('New owner account could not be loaded after registration.');
             }
 
-            \\App\\Core\\Auth::login($owner, false);
+            \App\Core\Auth::login($owner, false);
             Session::setFlash('success', 'Your restaurant account has been created. Complete activation to unlock ServeFlow POS.');
             Response::redirect('/dashboard');
         } catch (Throwable $e) {
