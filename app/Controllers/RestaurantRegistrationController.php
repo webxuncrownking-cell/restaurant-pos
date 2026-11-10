@@ -104,9 +104,25 @@ class RestaurantRegistrationController
 
             // No automatic trial or subscription is created at registration.\n            // The owner signs in and submits the one-time activation payment first.
 
+            $ownerUserId = (int)$pdo->lastInsertId();
             $pdo->commit();
-            Session::setFlash('success', 'Your ServeFlow POS account has been created. Sign in to submit your one-time activation payment. Restaurant slug: ' . $slug);
-            Response::redirect('/login');
+
+            $owner = Database::fetchOne(
+                "SELECT u.*, r.slug AS role_slug, r.name AS role_name,
+                        rest.name AS restaurant_name, rest.activation_status
+                 FROM users u
+                 JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+                 JOIN restaurants rest ON rest.id = u.restaurant_id
+                 WHERE u.id = ? AND u.restaurant_id = ? LIMIT 1",
+                [$ownerUserId, $restaurantId]
+            );
+            if (!$owner) {
+                throw new \\RuntimeException('New owner account could not be loaded after registration.');
+            }
+
+            \\App\\Core\\Auth::login($owner, false);
+            Session::setFlash('success', 'Your restaurant account has been created. Complete activation to unlock ServeFlow POS.');
+            Response::redirect('/dashboard');
         } catch (Throwable $e) {
             if (isset($pdo) && $pdo->inTransaction()) {
                 $pdo->rollBack();
