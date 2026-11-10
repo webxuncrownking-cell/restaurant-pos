@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Core\TenantContext;
+use App\Services\TelegramNotifier;
 
 class ActivationController
 {
@@ -126,7 +127,7 @@ class ActivationController
                     'payment_method' => $method,
                     'transaction_reference' => $reference,
                 ]);
-            } catch (\\Throwable $notificationError) {
+            } catch (\Throwable $notificationError) {
                 error_log('[ServeFlow Telegram] ' . $notificationError->getMessage());
             }
 
