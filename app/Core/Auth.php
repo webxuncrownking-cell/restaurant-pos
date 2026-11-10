@@ -149,7 +149,9 @@ class Auth
                 if (($user['role_slug'] ?? '') !== 'owner') {
                     Response::forbidden('This restaurant is awaiting activation. Please contact the restaurant owner.');
                 }
-                if (!in_array($currentPath, ['/activation', '/activation/submit', '/logout', '/change-password'], true)) {
+                // Allow the owner to see the dashboard activation notice. Operational
+                // routes remain blocked until the platform approves activation.
+                if (!in_array($currentPath, ['/dashboard', '/activation', '/activation/submit', '/logout', '/change-password'], true)) {
                     Response::redirect('/activation');
                 }
             }
