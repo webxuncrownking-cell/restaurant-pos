@@ -57,26 +57,6 @@ $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
       </div>
 
       <div class="app-topbar-actions">
-        <?php if ($isPlatform): ?>
-          <div class="dropdown platform-nav-dropdown me-2">
-            <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-grid-3x3-gap me-1"></i> Platform Menu
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2 mt-2">
-              <li><h6 class="dropdown-header">Platform Management</h6></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/dashboard"><i class="bi bi-speedometer2 me-2"></i>Platform Dashboard</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/restaurant-accounts"><i class="bi bi-buildings me-2"></i>Restaurant Accounts</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/platform-activation-payments"><i class="bi bi-shield-check me-2"></i>Activation Payments</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/platform-subscriptions"><i class="bi bi-credit-card me-2"></i>Subscriptions</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/platform-subscription-payments"><i class="bi bi-receipt me-2"></i>Subscription Payments</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/platform-pricing"><i class="bi bi-tags me-2"></i>Platform Pricing</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/platform-analytics"><i class="bi bi-graph-up-arrow me-2"></i>Platform Analytics</a></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/platform-health"><i class="bi bi-heart-pulse me-2"></i>Platform Health</a></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-cpu me-2"></i>System Diagnostics</a></li>
-            </ul>
-          </div>
-        <?php endif; ?>
         <?php if ($restaurant): ?>
           <?php if ($isSubValid): ?>
             <span class="header-subscription"><i class="bi bi-shield-check"></i> Subscription Active</span>
