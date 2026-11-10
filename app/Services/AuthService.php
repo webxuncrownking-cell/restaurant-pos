@@ -38,24 +38,22 @@ class AuthService
             ];
         }
 
-        // 2. Tenant Staff Authentication
-        // If tenantSlug is provided, scope to that restaurant; otherwise search by unique username/email
-        $params = [$login, $login];
-        $slugCondition = "";
-
-        if ($tenantSlug && trim($tenantSlug) !== '') {
-            $slugCondition = "AND rest.slug = ?";
-            $params[] = trim($tenantSlug);
+        // Resolve staff by globally unique username/email; reject ambiguous legacy accounts.
+        $matches = Database::fetchAll(
+            "SELECT u.*, r.slug AS role_slug, r.name AS role_name,
+                    rest.status AS restaurant_status, rest.name AS restaurant_name,
+                    rest.activation_status
+             FROM users u
+             JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+             JOIN restaurants rest ON rest.id = u.restaurant_id
+             WHERE (u.username = ? OR u.email = ?) AND u.deleted_at IS NULL
+             ORDER BY u.id ASC LIMIT 2",
+            [$login, $login]
+        );
+        if (count($matches) > 1) {
+            return ['success' => false, 'error' => 'This login matches more than one restaurant account. Please contact ServeFlow support.'];
         }
-
-        $sql = "SELECT u.*, r.slug AS role_slug, r.name AS role_name, rest.status AS restaurant_status, rest.name AS restaurant_name
-                FROM users u
-                JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
-                JOIN restaurants rest ON rest.id = u.restaurant_id
-                WHERE (u.username = ? OR u.email = ?) AND u.deleted_at IS NULL {$slugCondition}
-                LIMIT 1";
-
-        $staffUser = Database::fetchOne($sql, $params);
+        $staffUser = $matches[0] ?? null;
 
         if (!$staffUser) {
             return ['success' => false, 'error' => 'Invalid username or password.'];
@@ -82,58 +80,54 @@ class AuthService
 
 
     /**
-     * Authenticate restaurant staff with their configured 4-6 digit terminal PIN.
-     * The restaurant slug is mandatory so identical usernames in other tenants
-     * can never be selected accidentally.
+     * Authenticate staff by username/email and PIN without a tenant slug.
+     * Only one exact PIN match is accepted across all matching staff accounts.
      */
-    public function authenticateWithPin(string $login, string $pin, string $tenantSlug): array
+    public function authenticateWithPin(string $login, string $pin): array
     {
         $login = trim($login);
-        $tenantSlug = trim($tenantSlug);
-
-        if ($login === '' || $tenantSlug === '' || !preg_match('/^[0-9]{4,6}$/D', $pin)) {
-            return ['success' => false, 'error' => 'Enter your staff username, restaurant slug, and 4–6 digit PIN.'];
+        if ($login === '' || !preg_match('/^[0-9]{4,6}$/D', $pin)) {
+            return ['success' => false, 'error' => 'Enter your staff username/email and a 4–6 digit PIN.'];
         }
 
-        $staffUser = Database::fetchOne(
+        $staffUsers = Database::fetchAll(
             "SELECT u.*, r.slug AS role_slug, r.name AS role_name,
-                    rest.status AS restaurant_status, rest.activation_status, rest.name AS restaurant_name
+                    rest.status AS restaurant_status, rest.activation_status,
+                    rest.name AS restaurant_name
              FROM users u
              JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
              JOIN restaurants rest ON rest.id = u.restaurant_id
-             WHERE (u.username = :login_username OR u.email = :login_email)
-               AND rest.slug = :slug
-               AND u.deleted_at IS NULL
-             LIMIT 1",
-            [':login_username' => $login, ':login_email' => $login, ':slug' => $tenantSlug]
+             WHERE (u.username = ? OR u.email = ?)
+               AND u.deleted_at IS NULL AND u.status = 'active'
+               AND rest.status <> 'suspended'
+             ORDER BY u.id ASC LIMIT 20",
+            [$login, $login]
         );
 
-        // Use the same generic response for unknown users and invalid PINs.
-        if (!$staffUser || $staffUser['status'] !== 'active'
-            || $staffUser['restaurant_status'] === 'suspended') {
+        $matchedUser = null;
+        foreach ($staffUsers as $staffUser) {
+            $saltHex = (string)($staffUser['offline_pin_salt'] ?? '');
+            $storedHash = (string)($staffUser['offline_pin_hash'] ?? '');
+            if (!preg_match('/^[a-f0-9]{32}$/iD', $saltHex)
+                || !preg_match('/^[a-f0-9]{64}$/iD', $storedHash)) {
+                continue;
+            }
+            $salt = hex2bin($saltHex);
+            if ($salt === false) continue;
+            $candidate = hash_pbkdf2('sha256', $pin, $salt, 10000, 64);
+            if (hash_equals(strtolower($storedHash), strtolower($candidate))) {
+                if ($matchedUser !== null) {
+                    return ['success' => false, 'error' => 'This PIN matches more than one staff account. Please contact your restaurant manager.'];
+                }
+                $matchedUser = $staffUser;
+            }
+        }
+
+        if ($matchedUser === null) {
             return ['success' => false, 'error' => 'Invalid staff login or PIN. Check your details and try again.'];
         }
-
-        $saltHex = (string)($staffUser['offline_pin_salt'] ?? '');
-        $storedHash = (string)($staffUser['offline_pin_hash'] ?? '');
-        if (!preg_match('/^[a-f0-9]{32}$/iD', $saltHex)
-            || !preg_match('/^[a-f0-9]{64}$/iD', $storedHash)) {
-            return ['success' => false, 'error' => 'A terminal PIN has not been configured for this staff account. Ask your manager to set one in Terminal Devices.'];
-        }
-
-        $salt = hex2bin($saltHex);
-        if ($salt === false) {
-            return ['success' => false, 'error' => 'Invalid staff login or PIN. Check your details and try again.'];
-        }
-
-        $candidate = hash_pbkdf2('sha256', $pin, $salt, 10000, 64);
-        if (!hash_equals(strtolower($storedHash), strtolower($candidate))) {
-            return ['success' => false, 'error' => 'Invalid staff login or PIN. Check your details and try again.'];
-        }
-
-        return ['success' => true, 'is_platform' => false, 'user' => $staffUser];
+        return ['success' => true, 'is_platform' => false, 'user' => $matchedUser];
     }
-
     /**
      * Update password and clear must_change_password flag.
      */
