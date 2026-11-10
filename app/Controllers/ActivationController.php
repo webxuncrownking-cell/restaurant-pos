@@ -52,7 +52,7 @@ class ActivationController
 
         $restaurantId = (int)Auth::getRestaurantId();
         $restaurant = Database::fetchOne(
-            "SELECT activation_status, activation_fee FROM restaurants WHERE id = ? AND deleted_at IS NULL",
+            "SELECT name, contact_phone, activation_status, activation_fee FROM restaurants WHERE id = ? AND deleted_at IS NULL",
             [$restaurantId]
         );
         if (!$restaurant || $restaurant['activation_status'] === 'activated') {
@@ -109,6 +109,27 @@ class ActivationController
                 [$restaurantId, $amount, $method, $reference, $payer, $relativeDir . '/' . $filename, (int)Auth::id()]
             );
             Database::query("UPDATE restaurants SET activation_status = 'pending' WHERE id = ?", [$restaurantId]);
+
+            // Send a best-effort Telegram alert after the payment record is saved.
+            // A Telegram outage must never undo or block the owner's submission.
+            try {
+                $owner = Database::fetchOne(
+                    "SELECT full_name, email FROM users WHERE id = ? AND restaurant_id = ? LIMIT 1",
+                    [(int)Auth::id(), $restaurantId]
+                );
+                TelegramNotifier::sendActivationPaymentSubmitted([
+                    'restaurant_name' => $restaurant['name'] ?? 'Unknown restaurant',
+                    'owner_name' => $owner['full_name'] ?? $payer,
+                    'owner_email' => $owner['email'] ?? '',
+                    'contact_phone' => $restaurant['contact_phone'] ?? '',
+                    'amount' => $amount,
+                    'payment_method' => $method,
+                    'transaction_reference' => $reference,
+                ]);
+            } catch (\\Throwable $notificationError) {
+                error_log('[ServeFlow Telegram] ' . $notificationError->getMessage());
+            }
+
             Session::setFlash('success', 'Payment proof submitted. Your account will be activated after platform verification.');
         } catch (\Throwable $e) {
             @unlink($absoluteDir . '/' . $filename);
