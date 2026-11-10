@@ -10,6 +10,33 @@
     <?php endforeach; ?>
   <?php endif; ?>
 
+  <?php if (!$is_platform && (($restaurant['activation_status'] ?? 'activated') !== 'activated')): ?>
+    <div class="modal fade" id="serveflowActivationModal" tabindex="-1" aria-labelledby="serveflowActivationTitle" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+          <div class="modal-body p-4 p-md-5 text-center">
+            <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-inline-flex align-items-center justify-content-center mb-3" style="width:68px;height:68px;">
+              <i class="bi bi-shield-lock fs-2"></i>
+            </div>
+            <h2 class="h4 fw-bold mb-2" id="serveflowActivationTitle">Activate Your Restaurant</h2>
+            <p class="text-muted mb-3">Your account has been created successfully. Submit the one-time activation payment to unlock the POS, orders, inventory, and restaurant management features.</p>
+            <div class="alert alert-warning text-start small mb-4"><strong>Activation required.</strong> Operational tools remain locked until ServeFlow verifies and approves your payment.</div>
+            <a href="<?= BASE_URL ?>/activation" class="btn btn-primary btn-lg w-100"><i class="bi bi-credit-card me-2"></i>Continue to Activation</a>
+            <a href="<?= BASE_URL ?>/logout" class="btn btn-link text-muted mt-2">Sign out</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        var element = document.getElementById('serveflowActivationModal');
+        if (element && window.bootstrap) {
+          bootstrap.Modal.getOrCreateInstance(element, {backdrop: 'static', keyboard: false}).show();
+        }
+      });
+    </script>
+  <?php endif; ?>
+
   <?php if ($is_platform): ?>
   <!-- Welcome Banner -->
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
