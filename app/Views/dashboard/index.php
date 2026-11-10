@@ -119,33 +119,45 @@
       </div>
     </div>
 
-    <!-- Dedicated platform tools -->
-    <div class="row g-3 mb-4">
-      <div class="col-12 col-lg-6">
-        <a href="<?= BASE_URL ?>/platform-analytics" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset">
-          <div class="card-body d-flex align-items-center gap-3 p-4">
-            <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3"><i class="bi bi-graph-up-arrow fs-3"></i></div>
-            <div class="flex-grow-1">
-              <h5 class="fw-semibold mb-1">Platform Analytics</h5>
-              <p class="text-muted small mb-0">Review subscription status, plan distribution, recurring revenue estimates, and POS usage trends.</p>
-            </div>
-            <i class="bi bi-arrow-right text-primary"></i>
-          </div>
-        </a>
+    <!-- Platform navigation cards -->
+    <section class="platform-management-section mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div>
+          <h3 class="h5 fw-bold mb-1">Platform Management</h3>
+          <p class="text-muted small mb-0">Access and manage all ServeFlow platform tools.</p>
+        </div>
       </div>
-      <div class="col-12 col-lg-6">
-        <a href="<?= BASE_URL ?>/restaurant-accounts" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset">
-          <div class="card-body d-flex align-items-center gap-3 p-4">
-            <div class="p-3 bg-info bg-opacity-10 text-info rounded-3"><i class="bi bi-building fs-3"></i></div>
-            <div class="flex-grow-1">
-              <h5 class="fw-semibold mb-1">Restaurant Accounts</h5>
-              <p class="text-muted small mb-0">Search registered restaurants, review their plan and status, and inspect a tenant workspace.</p>
-            </div>
-            <i class="bi bi-arrow-right text-primary"></i>
+      <div class="row g-3">
+        <?php
+          $platformMenus = [
+            ['Platform Analytics', '/platform-analytics', 'bi-graph-up-arrow', 'Review subscriptions, revenue, and POS usage.', 'primary'],
+            ['Restaurant Accounts', '/restaurant-accounts', 'bi-buildings', 'Manage registered restaurant accounts.', 'info'],
+            ['Activation Payments', '/platform-activation-payments', 'bi-shield-check', 'Review payment proofs and activate restaurants.', 'success'],
+            ['Subscriptions', '/platform-subscriptions', 'bi-credit-card', 'View and manage restaurant subscriptions.', 'primary'],
+            ['Subscription Payments', '/platform-subscription-payments', 'bi-receipt', 'Review subscription payment records.', 'warning'],
+            ['Platform Pricing', '/platform-pricing', 'bi-tags', 'Manage platform plans and pricing.', 'info'],
+            ['Platform Health', '/platform-health', 'bi-heart-pulse', 'Monitor platform services and status.', 'danger'],
+            ['System Diagnostics', '/install', 'bi-cpu', 'Inspect system configuration and diagnostics.', 'secondary'],
+          ];
+        ?>
+        <?php foreach ($platformMenus as $menu): ?>
+          <div class="col-12 col-sm-6 col-xl-3">
+            <a href="<?= BASE_URL . $menu[1] ?>" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset platform-management-card">
+              <div class="card-body d-flex align-items-center gap-3 p-3">
+                <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-<?= htmlspecialchars($menu[4]) ?> bg-opacity-10 text-<?= htmlspecialchars($menu[4]) ?>" style="width:48px;height:48px;flex:0 0 48px;">
+                  <i class="bi <?= htmlspecialchars($menu[2]) ?> fs-4"></i>
+                </span>
+                <span class="flex-grow-1 min-width-0">
+                  <strong class="d-block mb-1"><?= htmlspecialchars($menu[0]) ?></strong>
+                  <small class="text-muted"><?= htmlspecialchars($menu[3]) ?></small>
+                </span>
+                <i class="bi bi-arrow-up-right text-primary"></i>
+              </div>
+            </a>
           </div>
-        </a>
+        <?php endforeach; ?>
       </div>
-    </div>
+    </section>
 
   <?php else: ?>
     <!-- TENANT APP DASHBOARD -->
