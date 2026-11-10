@@ -36,10 +36,6 @@
    <form method="POST" action="<?= BASE_URL ?>/terminal-login" autocomplete="off">
     <?= $csrf_field ?>
     <div class="mb-3">
-     <label class="form-label" for="tenant_slug">Restaurant Slug</label>
-     <input class="form-control" id="tenant_slug" name="tenant_slug" required maxlength="100" placeholder="e.g. mang-juan" autocomplete="organization">
-    </div>
-    <div class="mb-3">
      <label class="form-label" for="login">Staff Username or Email</label>
      <input class="form-control" id="login" name="login" required maxlength="100" placeholder="Enter your staff username" autocomplete="username">
     </div>
