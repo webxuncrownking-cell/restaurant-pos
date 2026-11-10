@@ -48,9 +48,7 @@ class AuthController
 
         $login = (string)$request->post('login', '');
         $password = (string)$request->post('password', '');
-        $tenantSlug = (string)$request->post('tenant_slug', '');
-
-        $result = $this->authService->authenticate($login, $password, $tenantSlug ?: null);
+        $result = $this->authService->authenticate($login, $password);
 
         if (!$result['success']) {
             Session::setFlash('danger', $result['error']);
@@ -108,9 +106,7 @@ class AuthController
 
         $login = (string)$request->post('login', '');
         $pin = (string)$request->post('pin', '');
-        $tenantSlug = (string)$request->post('tenant_slug', '');
-
-        $result = $this->authService->authenticateWithPin($login, $pin, $tenantSlug);
+        $result = $this->authService->authenticateWithPin($login, $pin);
         if (!$result['success']) {
             $attempts = (int)($_SESSION['terminal_pin_attempts'] ?? 0) + 1;
             $_SESSION['terminal_pin_attempts'] = $attempts;
