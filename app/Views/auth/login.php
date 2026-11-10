@@ -37,7 +37,6 @@ html[data-theme="dark"] .login-page-wrap { background:radial-gradient(ellipse at
 .login-page-wrap .card-body { padding:24px !important; }
 .login-page-wrap .form-label { color:#34445c !important; font-size:.85rem !important; font-weight:700 !important; }
 .login-page-wrap .form-control { min-height:48px; background:#f8fafd !important; color:#18263d !important; border:1px solid #d5deeb !important; border-radius:0 11px 11px 0 !important; }
-.login-page-wrap input#tenant_slug { border-radius:11px !important; }
 .login-page-wrap .input-group-text { min-width:44px; justify-content:center; background:#edf3fc !important; color:#3769b3 !important; border:1px solid #d5deeb !important; border-right:0 !important; border-radius:11px 0 0 11px !important; }
 .login-page-wrap .form-control:focus { background:#fff !important; border-color:#4b83e6 !important; box-shadow:0 0 0 4px rgba(59,130,246,.13) !important; }
 .login-page-wrap .btn-warning { min-height:48px; border:0 !important; border-radius:11px !important; background:#2563eb !important; color:#fff !important; box-shadow:0 7px 18px rgba(37,99,235,.2) !important; }
@@ -147,14 +146,6 @@ html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#839
                 <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-key"></i></span>
                 <input type="password" class="form-control border-start-0 ps-3" id="password" name="password" required placeholder="Enter password">
               </div>
-            </div>
-
-            <div class="mb-4">
-              <label for="tenant_slug" class="form-label fw-medium text-secondary small d-flex justify-content-between">
-                <span>Restaurant Slug <span class="text-muted fw-normal">(Optional)</span></span>
-                <span class="text-muted fw-normal">e.g. mang-juan</span>
-              </label>
-              <input type="text" class="form-control" id="tenant_slug" name="tenant_slug" placeholder="Leave empty for auto-detect or superadmin">
             </div>
 
             <button type="submit" class="btn btn-warning w-100 py-2 fw-semibold text-dark shadow-sm">
