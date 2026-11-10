@@ -119,43 +119,126 @@
       </div>
     </div>
 
-    <!-- Platform navigation cards -->
-    <section class="platform-management-section mb-4">
-      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-        <div>
-          <h3 class="h5 fw-bold mb-1">Platform Management</h3>
-          <p class="text-muted small mb-0">Access and manage all ServeFlow platform tools.</p>
-        </div>
-      </div>
-      <div class="row g-3">
-        <?php
-          $platformMenus = [
-            ['Platform Analytics', '/platform-analytics', 'bi-graph-up-arrow', 'Review subscriptions, revenue, and POS usage.', 'primary'],
-            ['Restaurant Accounts', '/restaurant-accounts', 'bi-buildings', 'Manage registered restaurant accounts.', 'info'],
-            ['Activation Payments', '/platform-activation-payments', 'bi-shield-check', 'Review payment proofs and activate restaurants.', 'success'],
-            ['Subscriptions', '/platform-subscriptions', 'bi-credit-card', 'View and manage restaurant subscriptions.', 'primary'],
-            ['Subscription Payments', '/platform-subscription-payments', 'bi-receipt', 'Review subscription payment records.', 'warning'],
-            ['Platform Pricing', '/platform-pricing', 'bi-tags', 'Manage platform plans and pricing.', 'info'],
-            ['Platform Health', '/platform-health', 'bi-heart-pulse', 'Monitor platform services and status.', 'danger'],
-            ['System Diagnostics', '/install', 'bi-cpu', 'Inspect system configuration and diagnostics.', 'secondary'],
-          ];
-        ?>
-        <?php foreach ($platformMenus as $menu): ?>
-          <div class="col-12 col-sm-6 col-xl-3">
-            <a href="<?= BASE_URL . $menu[1] ?>" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset platform-management-card">
-              <div class="card-body d-flex align-items-center gap-3 p-3">
-                <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-<?= htmlspecialchars($menu[4]) ?> bg-opacity-10 text-<?= htmlspecialchars($menu[4]) ?>" style="width:48px;height:48px;flex:0 0 48px;">
-                  <i class="bi <?= htmlspecialchars($menu[2]) ?> fs-4"></i>
-                </span>
-                <span class="flex-grow-1 min-width-0">
-                  <strong class="d-block mb-1"><?= htmlspecialchars($menu[0]) ?></strong>
-                  <small class="text-muted"><?= htmlspecialchars($menu[3]) ?></small>
-                </span>
-                <i class="bi bi-arrow-up-right text-primary"></i>
-              </div>
-            </a>
+    <!-- Platform workspace: larger navigation area with recent activity sidebar -->
+    <section class="platform-workspace mb-4">
+      <div class="row g-3 align-items-stretch">
+        <div class="col-12 col-xl-9">
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div>
+              <h3 class="h5 fw-bold mb-1">Platform Management</h3>
+              <p class="text-muted small mb-0">Your main workspace for managing ServeFlow.</p>
+            </div>
           </div>
-        <?php endforeach; ?>
+          <div class="row g-3">
+            <?php
+              $platformMenus = [
+                ['Platform Analytics', '/platform-analytics', 'bi-graph-up-arrow', 'Revenue, subscriptions, and usage insights.', 'primary'],
+                ['Restaurant Accounts', '/restaurant-accounts', 'bi-buildings', 'Manage registered restaurant accounts.', 'info'],
+                ['Activation Payments', '/platform-activation-payments', 'bi-shield-check', 'Review proofs and activate restaurants.', 'success'],
+                ['Subscriptions', '/platform-subscriptions', 'bi-credit-card', 'Manage plans and subscriptions.', 'primary'],
+                ['Subscription Payments', '/platform-subscription-payments', 'bi-receipt', 'Review subscription payment records.', 'warning'],
+                ['Platform Pricing', '/platform-pricing', 'bi-tags', 'Manage plans and pricing.', 'info'],
+                ['Platform Health', '/platform-health', 'bi-heart-pulse', 'Monitor platform services and status.', 'danger'],
+                ['System Diagnostics', '/install', 'bi-cpu', 'System configuration and diagnostics.', 'secondary'],
+              ];
+            ?>
+            <?php foreach ($platformMenus as $menu): ?>
+              <div class="col-12 col-md-6">
+                <a href="<?= BASE_URL . $menu[1] ?>" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset platform-management-card">
+                  <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-<?= htmlspecialchars($menu[4]) ?> bg-opacity-10 text-<?= htmlspecialchars($menu[4]) ?>" style="width:60px;height:60px;flex:0 0 60px;">
+                      <i class="bi <?= htmlspecialchars($menu[2]) ?> fs-3"></i>
+                    </span>
+                    <span class="flex-grow-1 min-width-0">
+                      <strong class="d-block fs-6 mb-1"><?= htmlspecialchars($menu[0]) ?></strong>
+                      <small class="text-muted"><?= htmlspecialchars($menu[3]) ?></small>
+                    </span>
+                    <i class="bi bi-arrow-up-right text-primary fs-5"></i>
+                  </div>
+                </a>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
+        <aside class="col-12 col-xl-3">
+          <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h3 class="h6 fw-bold mb-1">Platform Activity</h3>
+                  <small class="text-muted">Recent updates</small>
+                </div>
+                <span class="badge bg-primary bg-opacity-10 text-primary">Live overview</span>
+              </div>
+
+              <div class="rounded-3 bg-warning bg-opacity-10 p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <small class="text-muted d-block">Activation payments to review</small>
+                    <strong class="fs-4"><?= (int)($pending_activation_count ?? 0) ?></strong>
+                  </div>
+                  <i class="bi bi-shield-exclamation text-warning fs-3"></i>
+                </div>
+                <a href="<?= BASE_URL ?>/platform-activation-payments" class="small fw-semibold text-decoration-none">Review submissions <i class="bi bi-arrow-right"></i></a>
+              </div>
+
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <strong class="small">Recently Added Restaurants</strong>
+                  <a href="<?= BASE_URL ?>/restaurant-accounts" class="small text-decoration-none">View all</a>
+                </div>
+                <?php if (!empty($recent_restaurants)): ?>
+                  <?php foreach ($recent_restaurants as $item): ?>
+                    <div class="d-flex justify-content-between gap-2 py-2 border-bottom">
+                      <span class="min-width-0">
+                        <strong class="d-block small text-truncate"><?= htmlspecialchars($item['name'] ?? 'Restaurant') ?></strong>
+                        <small class="text-muted"><?= !empty($item['created_at']) ? date('M j', strtotime($item['created_at'])) : 'Date unavailable' ?></small>
+                      </span>
+                      <span class="badge <?= ($item['activation_status'] ?? '') === 'activated' ? 'bg-success' : 'bg-warning text-dark' ?> align-self-center"><?= htmlspecialchars(ucfirst((string)($item['activation_status'] ?? 'pending'))) ?></span>
+                    </div>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <p class="small text-muted mb-0">No restaurant accounts yet.</p>
+                <?php endif; ?>
+              </div>
+
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <strong class="small">Recent Subscriptions</strong>
+                  <a href="<?= BASE_URL ?>/platform-subscriptions" class="small text-decoration-none">View all</a>
+                </div>
+                <?php if (!empty($recent_subscriptions)): ?>
+                  <?php foreach ($recent_subscriptions as $item): ?>
+                    <div class="py-2 border-bottom">
+                      <strong class="d-block small text-truncate"><?= htmlspecialchars($item['restaurant_name'] ?? 'Restaurant') ?></strong>
+                      <small class="text-muted"><?= htmlspecialchars($item['plan_name'] ?? 'Plan') ?> · <?= htmlspecialchars(ucfirst((string)($item['status'] ?? 'unknown'))) ?></small>
+                    </div>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <p class="small text-muted mb-0">No subscription activity yet.</p>
+                <?php endif; ?>
+              </div>
+
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <strong class="small">POS Terminal Activity</strong>
+                  <a href="<?= BASE_URL ?>/platform-health" class="small text-decoration-none">View health</a>
+                </div>
+                <?php if (!empty($recent_pos_devices)): ?>
+                  <?php foreach ($recent_pos_devices as $device): ?>
+                    <div class="d-flex justify-content-between gap-2 py-2 border-bottom">
+                      <span class="small text-truncate"><?= htmlspecialchars($device['restaurant_name'] ?? 'Restaurant') ?></span>
+                      <small class="text-muted text-nowrap"><?= !empty($device['last_sync_at']) ? date('M j, g:i A', strtotime($device['last_sync_at'])) : 'Not synced' ?></small>
+                    </div>
+                  <?php endforeach; ?>
+                <?php else: ?>
+                  <p class="small text-muted mb-0">No POS terminal activity yet.</p>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </section>
 
