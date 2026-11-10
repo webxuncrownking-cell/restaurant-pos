@@ -122,7 +122,7 @@
     <!-- Platform workspace: larger navigation area with recent activity sidebar -->
     <section class="platform-workspace mb-4">
       <div class="row g-3 align-items-stretch">
-        <div class="col-12 col-xl-9">
+        <div class="col-12 col-xl-7">
           <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
             <div>
               <h3 class="h5 fw-bold mb-1">Platform Management</h3>
@@ -161,7 +161,7 @@
           </div>
         </div>
 
-        <aside class="col-12 col-xl-3">
+        <aside class="col-12 col-xl-5">
           <div class="card border-0 shadow-sm rounded-3 h-100">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-center mb-3">
