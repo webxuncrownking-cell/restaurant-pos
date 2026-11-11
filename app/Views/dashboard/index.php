@@ -134,124 +134,162 @@
           <h2>Restaurant overview</h2>
           <p>Your essential activity, sales, and stock alerts in one place.</p>
         </div>
-        <a href="<?= BASE_URL ?>/pos" class="btn btn-primary sf-primary-action">
-          <i class="bi bi-display" aria-hidden="true"></i> Open POS Terminal
-        </a>
+        <?php if (!empty($can_create_orders)): ?>
+          <a href="<?= BASE_URL ?>/pos" class="btn btn-primary sf-primary-action">
+            <i class="bi bi-display" aria-hidden="true"></i> Open POS Terminal
+          </a>
+        <?php endif; ?>
       </div>
 
+      <?php if (!empty($can_view_sales) || !empty($can_view_order_activity) || !empty($can_process_payments) || !empty($can_view_inventory)): ?>
       <div class="sf-stat-grid">
-        <article class="sf-stat-card sf-stat-sales">
-          <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-currency-exchange"></i></span><span class="sf-stat-label">Sales today</span></div>
-          <div class="sf-stat-value"><?= htmlspecialchars($dashboardCurrency, ENT_QUOTES, 'UTF-8') ?><?= number_format((float)($sales_today ?? 0), 2) ?></div>
-          <div class="sf-stat-note">Paid orders recorded today</div>
-        </article>
-        <article class="sf-stat-card">
-          <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-receipt"></i></span><span class="sf-stat-label">Orders today</span></div>
-          <div class="sf-stat-value"><?= number_format((int)($orders_today ?? 0)) ?></div>
-          <div class="sf-stat-note"><?= number_format((int)($active_orders ?? 0)) ?> currently in progress</div>
-        </article>
-        <article class="sf-stat-card">
-          <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-wallet2"></i></span><span class="sf-stat-label">Open bills</span></div>
-          <div class="sf-stat-value"><?= number_format((int)($open_bills_count ?? 0)) ?></div>
-          <div class="sf-stat-note">Unpaid or partially paid</div>
-        </article>
-        <article class="sf-stat-card <?= !empty($low_stock_count) ? 'sf-stat-warning' : '' ?>">
-          <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-box-seam"></i></span><span class="sf-stat-label">Low-stock items</span></div>
-          <div class="sf-stat-value"><?= number_format((int)($low_stock_count ?? 0)) ?></div>
-          <div class="sf-stat-note">At or below minimum stock</div>
-        </article>
+        <?php if (!empty($can_view_sales)): ?>
+          <article class="sf-stat-card sf-stat-sales">
+            <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-currency-exchange"></i></span><span class="sf-stat-label">Sales today</span></div>
+            <div class="sf-stat-value"><?= htmlspecialchars($dashboardCurrency, ENT_QUOTES, 'UTF-8') ?> <?= number_format((float)($sales_today ?? 0), 2) ?></div>
+            <div class="sf-stat-note">Paid orders recorded today</div>
+          </article>
+        <?php endif; ?>
+        <?php if (!empty($can_view_order_activity)): ?>
+          <article class="sf-stat-card">
+            <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-receipt"></i></span><span class="sf-stat-label">Orders today</span></div>
+            <div class="sf-stat-value"><?= number_format((int)($orders_today ?? 0)) ?></div>
+            <div class="sf-stat-note"><?= number_format((int)($active_orders ?? 0)) ?> currently in progress</div>
+          </article>
+        <?php endif; ?>
+        <?php if (!empty($can_process_payments)): ?>
+          <article class="sf-stat-card">
+            <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-wallet2"></i></span><span class="sf-stat-label">Open bills</span></div>
+            <div class="sf-stat-value"><?= number_format((int)($open_bills_count ?? 0)) ?></div>
+            <div class="sf-stat-note">Unpaid or partially paid</div>
+          </article>
+        <?php endif; ?>
+        <?php if (!empty($can_view_inventory)): ?>
+          <article class="sf-stat-card <?= !empty($low_stock_count) ? 'sf-stat-warning' : '' ?>">
+            <div class="sf-stat-top"><span class="sf-stat-icon"><i class="bi bi-box-seam"></i></span><span class="sf-stat-label">Low-stock items</span></div>
+            <div class="sf-stat-value"><?= number_format((int)($low_stock_count ?? 0)) ?></div>
+            <div class="sf-stat-note">At or below minimum stock</div>
+          </article>
+        <?php endif; ?>
       </div>
+      <?php endif; ?>
 
-      <div class="sf-section-heading">
-        <div><h3>Quick access</h3><p>Go straight to the tasks you use every day.</p></div>
-      </div>
-      <div class="sf-quick-grid">
-        <a class="sf-quick-card sf-quick-pos" href="<?= BASE_URL ?>/pos">
-          <span class="sf-quick-icon"><i class="bi bi-display"></i></span>
-          <span><strong>POS Terminal</strong><small>Create orders and process sales</small></span>
-          <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
-        </a>
-        <a class="sf-quick-card" href="<?= BASE_URL ?>/bills">
-          <span class="sf-quick-icon"><i class="bi bi-receipt-cutoff"></i></span>
-          <span><strong>Orders &amp; Bills</strong><small>Review unpaid bills and payments</small></span>
-          <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
-        </a>
-        <a class="sf-quick-card" href="<?= BASE_URL ?>/inventory">
-          <span class="sf-quick-icon"><i class="bi bi-box-seam"></i></span>
-          <span><strong>Inventory</strong><small>Check ingredients and stock levels</small></span>
-          <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
-        </a>
-        <a class="sf-quick-card" href="<?= BASE_URL ?>/reports">
-          <span class="sf-quick-icon"><i class="bi bi-graph-up-arrow"></i></span>
-          <span><strong>Analytics</strong><small>View sales and business performance</small></span>
-          <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
-        </a>
-      </div>
-
-      <div class="sf-dashboard-lower">
-        <section class="sf-panel">
-          <div class="sf-panel-heading">
-            <div><h3>Recent orders</h3><p>Latest non-cancelled orders across your restaurant.</p></div>
-            <a href="<?= BASE_URL ?>/bills">View open bills <i class="bi bi-arrow-right"></i></a>
-          </div>
-          <div class="table-responsive">
-            <table class="table align-middle mb-0 sf-orders-table">
-              <thead><tr><th>Order</th><th>Type / Table</th><th>Order status</th><th>Payment</th><th class="text-end">Total</th></tr></thead>
-              <tbody>
-                <?php if (!empty($recent_orders)): ?>
-                  <?php foreach ($recent_orders as $order): ?>
-                    <?php
-                      $orderStatus = (string)($order['order_status'] ?? 'pending');
-                      $paymentStatus = (string)($order['payment_status'] ?? 'unpaid');
-                      $statusClass = $orderStatus === 'completed' ? 'success' : ($orderStatus === 'ready' ? 'info' : 'secondary');
-                      $paymentClass = $paymentStatus === 'paid' ? 'success' : ($paymentStatus === 'partially_paid' ? 'warning' : 'danger');
-                      $orderType = ucfirst(str_replace('_', ' ', (string)($order['order_type'] ?? '')));
-                      $tableLabel = trim((string)($order['table_number'] ?? '')) !== '' ? 'Table ' . (string)$order['table_number'] : (string)($order['table_name'] ?? '');
-                    ?>
-                    <tr>
-                      <td><strong><?= htmlspecialchars((string)($order['order_number'] ?? ('#' . $order['id'])), ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars(date('M j, g:i A', strtotime((string)$order['created_at'])), ENT_QUOTES, 'UTF-8') ?></small></td>
-                      <td><span><?= htmlspecialchars($orderType, ENT_QUOTES, 'UTF-8') ?></span><?php if ($tableLabel !== ''): ?><small><?= htmlspecialchars($tableLabel, ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></td>
-                      <td><span class="badge text-bg-<?= $statusClass ?>"><?= htmlspecialchars($statusLabels[$orderStatus] ?? ucfirst($orderStatus), ENT_QUOTES, 'UTF-8') ?></span></td>
-                      <td><span class="badge text-bg-<?= $paymentClass ?>"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $paymentStatus)), ENT_QUOTES, 'UTF-8') ?></span></td>
-                      <td class="text-end fw-semibold text-nowrap"><?= htmlspecialchars($dashboardCurrency, ENT_QUOTES, 'UTF-8') ?><?= number_format((float)($order['total_amount'] ?? 0), 2) ?></td>
-                    </tr>
-                  <?php endforeach; ?>
-                <?php else: ?>
-                  <tr><td colspan="5" class="sf-empty-state">No orders have been recorded yet.</td></tr>
-                <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="sf-panel sf-stock-panel">
-          <div class="sf-panel-heading">
-            <div><h3>Stock alerts</h3><p>Ingredients that need attention.</p></div>
-            <a href="<?= BASE_URL ?>/inventory">Inventory <i class="bi bi-arrow-right"></i></a>
-          </div>
-          <?php if (!empty($low_stock_items)): ?>
-            <div class="sf-stock-list">
-              <?php foreach ($low_stock_items as $stockItem): ?>
-                <div class="sf-stock-row">
-                  <span class="sf-stock-mark"><i class="bi bi-exclamation"></i></span>
-                  <span class="sf-stock-copy">
-                    <strong><?= htmlspecialchars((string)$stockItem['name'], ENT_QUOTES, 'UTF-8') ?></strong>
-                    <small>Minimum <?= number_format((float)$stockItem['minimum_stock_alert'], 2) ?> <?= htmlspecialchars((string)$stockItem['base_unit'], ENT_QUOTES, 'UTF-8') ?></small>
-                  </span>
-                  <span class="sf-stock-quantity"><?= number_format((float)$stockItem['current_stock'], 2) ?> <?= htmlspecialchars((string)$stockItem['base_unit'], ENT_QUOTES, 'UTF-8') ?></span>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php else: ?>
-            <div class="sf-stock-empty">
-              <span><i class="bi bi-check2-circle"></i></span>
-              <strong>Stock levels look good</strong>
-              <small>No ingredients are currently at or below their minimum stock level.</small>
-            </div>
+      <?php
+        $hasQuickAccess = !empty($can_process_payments) || !empty($can_view_inventory) || !empty($can_view_sales);
+      ?>
+      <?php if ($hasQuickAccess): ?>
+        <div class="sf-section-heading">
+          <div><h3>Quick access</h3><p>Go straight to the tasks you use every day.</p></div>
+        </div>
+        <div class="sf-quick-grid">
+          <?php if (!empty($can_process_payments)): ?>
+            <a class="sf-quick-card" href="<?= BASE_URL ?>/bills">
+              <span class="sf-quick-icon"><i class="bi bi-receipt-cutoff"></i></span>
+              <span><strong>Orders &amp; Bills</strong><small>Review unpaid bills and payments</small></span>
+              <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
+            </a>
           <?php endif; ?>
-        </section>
-      </div>
-    </section>
+          <?php if (!empty($can_view_inventory)): ?>
+            <a class="sf-quick-card" href="<?= BASE_URL ?>/inventory">
+              <span class="sf-quick-icon"><i class="bi bi-box-seam"></i></span>
+              <span><strong>Inventory</strong><small>Check ingredients and stock levels</small></span>
+              <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
+            </a>
+          <?php endif; ?>
+          <?php if (!empty($can_view_sales)): ?>
+            <a class="sf-quick-card" href="<?= BASE_URL ?>/reports">
+              <span class="sf-quick-icon"><i class="bi bi-graph-up-arrow"></i></span>
+              <span><strong>Analytics</strong><small>View sales and business performance</small></span>
+              <i class="bi bi-arrow-up-right sf-quick-arrow"></i>
+            </a>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php
+        $showRecentOrders = !empty($can_view_order_activity);
+        $showStockAlerts = !empty($can_view_inventory);
+        $showOrderFinancials = !empty($can_view_order_financials);
+        $showSingleDashboardPanel = $showRecentOrders xor $showStockAlerts;
+      ?>
+      <?php if ($showRecentOrders || $showStockAlerts): ?>
+        <div class="sf-dashboard-lower<?= $showSingleDashboardPanel ? ' sf-dashboard-lower-single' : '' ?>">
+          <?php if ($showRecentOrders): ?>
+            <section class="sf-panel">
+              <div class="sf-panel-heading">
+                <div><h3>Recent orders</h3><p>Latest non-cancelled orders across your restaurant.</p></div>
+                <?php if (!empty($can_process_payments)): ?>
+                  <a href="<?= BASE_URL ?>/bills">View open bills <i class="bi bi-arrow-right"></i></a>
+                <?php endif; ?>
+              </div>
+              <div class="table-responsive">
+                <table class="table align-middle mb-0 sf-orders-table">
+                  <thead>
+                    <tr>
+                      <th>Order</th><th>Type / Table</th><th>Order status</th>
+                      <?php if ($showOrderFinancials): ?><th>Payment</th><th class="text-end">Total</th><?php endif; ?>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php if (!empty($recent_orders)): ?>
+                      <?php foreach ($recent_orders as $order): ?>
+                        <?php
+                          $orderStatus = (string)($order['order_status'] ?? 'pending');
+                          $paymentStatus = (string)($order['payment_status'] ?? 'unpaid');
+                          $statusClass = $orderStatus === 'completed' ? 'success' : ($orderStatus === 'ready' ? 'info' : 'secondary');
+                          $paymentClass = $paymentStatus === 'paid' ? 'success' : ($paymentStatus === 'partially_paid' ? 'warning' : 'danger');
+                          $orderType = ucfirst(str_replace('_', ' ', (string)($order['order_type'] ?? '')));
+                          $tableLabel = trim((string)($order['table_number'] ?? '')) !== '' ? 'Table ' . (string)$order['table_number'] : (string)($order['table_name'] ?? '');
+                        ?>
+                        <tr>
+                          <td><strong><?= htmlspecialchars((string)($order['order_number'] ?? ('#' . $order['id'])), ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars(date('M j, g:i A', strtotime((string)$order['created_at'])), ENT_QUOTES, 'UTF-8') ?></small></td>
+                          <td><span><?= htmlspecialchars($orderType, ENT_QUOTES, 'UTF-8') ?></span><?php if ($tableLabel !== ''): ?><small><?= htmlspecialchars($tableLabel, ENT_QUOTES, 'UTF-8') ?></small><?php endif; ?></td>
+                          <td><span class="badge text-bg-<?= $statusClass ?>"><?= htmlspecialchars($statusLabels[$orderStatus] ?? ucfirst($orderStatus), ENT_QUOTES, 'UTF-8') ?></span></td>
+                          <?php if ($showOrderFinancials): ?>
+                            <td><span class="badge text-bg-<?= $paymentClass ?>"><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $paymentStatus)), ENT_QUOTES, 'UTF-8') ?></span></td>
+                            <td class="text-end fw-semibold text-nowrap"><?= htmlspecialchars($dashboardCurrency, ENT_QUOTES, 'UTF-8') ?> <?= number_format((float)($order['total_amount'] ?? 0), 2) ?></td>
+                          <?php endif; ?>
+                        </tr>
+                      <?php endforeach; ?>
+                    <?php else: ?>
+                      <tr><td colspan="<?= $showOrderFinancials ? 5 : 3 ?>" class="sf-empty-state">No orders have been recorded yet.</td></tr>
+                    <?php endif; ?>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          <?php endif; ?>
+
+          <?php if ($showStockAlerts): ?>
+            <section class="sf-panel sf-stock-panel">
+              <div class="sf-panel-heading">
+                <div><h3>Stock alerts</h3><p>Ingredients that need attention.</p></div>
+                <a href="<?= BASE_URL ?>/inventory">Inventory <i class="bi bi-arrow-right"></i></a>
+              </div>
+              <?php if (!empty($low_stock_items)): ?>
+                <div class="sf-stock-list">
+                  <?php foreach ($low_stock_items as $stockItem): ?>
+                    <div class="sf-stock-row">
+                      <span class="sf-stock-mark"><i class="bi bi-exclamation"></i></span>
+                      <span class="sf-stock-copy">
+                        <strong><?= htmlspecialchars((string)$stockItem['name'], ENT_QUOTES, 'UTF-8') ?></strong>
+                        <small>Minimum <?= number_format((float)$stockItem['minimum_stock_alert'], 2) ?> <?= htmlspecialchars((string)$stockItem['base_unit'], ENT_QUOTES, 'UTF-8') ?></small>
+                      </span>
+                      <span class="sf-stock-quantity"><?= number_format((float)$stockItem['current_stock'], 2) ?> <?= htmlspecialchars((string)$stockItem['base_unit'], ENT_QUOTES, 'UTF-8') ?></span>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php else: ?>
+                <div class="sf-stock-empty">
+                  <span><i class="bi bi-check2-circle"></i></span>
+                  <strong>Stock levels look good</strong>
+                  <small>No ingredients are currently at or below their minimum stock level.</small>
+                </div>
+              <?php endif; ?>
+            </section>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
 
     <style>
       .sf-dashboard { --sf-muted:#778398; --sf-line:#e8edf4; color:#182338; }
@@ -260,7 +298,7 @@
       .sf-dashboard-heading h2 { margin:0; color:#182338; font-size:1.55rem; font-weight:800; letter-spacing:-.04em; }
       .sf-dashboard-heading p,.sf-section-heading p,.sf-panel-heading p { margin:5px 0 0; color:var(--sf-muted); font-size:.88rem; }
       .sf-primary-action { min-height:46px!important; padding:0 17px!important; border-radius:11px!important; box-shadow:0 5px 14px rgba(37,99,235,.18)!important; }
-      .sf-stat-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:15px; margin-bottom:29px; }
+      .sf-stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(205px,1fr)); gap:15px; margin-bottom:29px; }
       .sf-stat-card { min-width:0; padding:19px; background:#fff; border:1px solid var(--sf-line); border-radius:16px; box-shadow:0 5px 18px rgba(22,34,55,.035); }
       .sf-stat-top { display:flex; align-items:center; gap:10px; color:#748198; font-size:.82rem; font-weight:700; }
       .sf-stat-icon { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:11px; color:#2563eb; background:#edf4ff; font-size:1rem; }
@@ -274,7 +312,7 @@
       .sf-section-heading { margin:0 0 13px; }
       .sf-section-heading h3,.sf-panel-heading h3 { margin:0; color:#202d42; font-size:1rem; font-weight:800; letter-spacing:-.02em; }
       .sf-section-heading p { margin-top:3px; }
-      .sf-quick-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; margin-bottom:25px; }
+      .sf-quick-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(205px,1fr)); gap:13px; margin-bottom:25px; }
       .sf-quick-card { display:flex; align-items:center; gap:12px; min-width:0; padding:15px 14px; color:#26354b; background:#fff; border:1px solid var(--sf-line); border-radius:14px; text-decoration:none; box-shadow:0 4px 14px rgba(22,34,55,.025); transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease; }
       .sf-quick-card:hover { color:#1d4ed8; border-color:#c9d9f5; transform:translateY(-2px); box-shadow:0 9px 22px rgba(22,34,55,.07); }
       .sf-quick-icon { display:grid; place-items:center; width:42px; height:42px; flex:0 0 42px; color:#2563eb; background:#eff5ff; border-radius:12px; font-size:1.1rem; }
@@ -284,6 +322,7 @@
       .sf-quick-arrow { margin-left:auto; color:#a0aabc; font-size:.82rem; }
       .sf-quick-pos { border-color:#cbdcf9; background:linear-gradient(140deg,#fff,#f4f8ff); }
       .sf-dashboard-lower { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(285px,.9fr); gap:16px; align-items:stretch; }
+      .sf-dashboard-lower-single { grid-template-columns:minmax(0,1fr); }
       .sf-panel { min-width:0; overflow:hidden; background:#fff; border:1px solid var(--sf-line); border-radius:16px; box-shadow:0 5px 18px rgba(22,34,55,.035); }
       .sf-panel-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:18px 19px; border-bottom:1px solid #eef1f6; }
       .sf-panel-heading a { color:#2563eb; font-size:.79rem; font-weight:750; text-decoration:none; white-space:nowrap; }
@@ -306,10 +345,10 @@
       .sf-stock-empty>span { display:grid; place-items:center; width:45px; height:45px; margin-bottom:10px; border-radius:50%; color:#15966a; background:#e9f8f1; font-size:1.25rem; }
       .sf-stock-empty strong { color:#304057; font-size:.88rem; }
       .sf-stock-empty small { max-width:235px; margin-top:5px; color:#929daf; font-size:.74rem; }
-      @media (max-width:1199.98px) { .sf-stat-grid,.sf-quick-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+      @media (max-width:1199.98px) { .sf-stat-grid,.sf-quick-grid { grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); } }
       @media (max-width:767.98px) { .sf-dashboard-heading { align-items:flex-start; flex-direction:column; } .sf-dashboard-lower { grid-template-columns:1fr; } }
       @media (max-width:479.98px) {
-        .sf-stat-grid,.sf-quick-grid { grid-template-columns:1fr 1fr; gap:9px; }
+        .sf-stat-grid,.sf-quick-grid { grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:9px; }
         .sf-stat-card { padding:14px 12px; }
         .sf-stat-value { font-size:1.35rem; }
         .sf-stat-top { align-items:flex-start; flex-direction:column; gap:7px; font-size:.74rem; }
