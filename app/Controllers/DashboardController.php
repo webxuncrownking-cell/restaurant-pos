@@ -81,7 +81,10 @@ class DashboardController
             $data['can_process_payments'] = Auth::can('pos.process_payment');
             $data['can_view_sales'] = Auth::can('reports.view_sales');
             $data['can_view_inventory'] = Auth::can('inventory.view_stock');
-            $data['can_view_kitchen'] = Auth::can('kitchen.view_kds');
+            $data['can_view_kitchen'] = (
+                in_array(Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true)
+                || Auth::can('kitchen.view_kds')
+            );
             $data['can_view_order_activity'] = (
                 $data['can_create_orders']
                 || $data['can_process_payments']
