@@ -132,32 +132,30 @@
           <div class="row g-3">
             <?php
               $platformMenus = [
-                ['Platform Analytics', '/platform-analytics', 'bi-graph-up-arrow', 'Revenue, subscriptions, and usage insights.', 'primary'],
-                ['Restaurant Accounts', '/restaurant-accounts', 'bi-buildings', 'Manage registered restaurant accounts.', 'info'],
-                ['Activation Payments', '/platform-activation-payments', 'bi-shield-check', 'Review proofs and activate restaurants.', 'success'],
-                ['Subscriptions', '/platform-subscriptions', 'bi-credit-card', 'Manage plans and subscriptions.', 'primary'],
-                ['Subscription Payments', '/platform-subscription-payments', 'bi-receipt', 'Review subscription payment records.', 'warning'],
-                ['Platform Pricing', '/platform-pricing', 'bi-tags', 'Manage plans and pricing.', 'info'],
-                ['Platform Health', '/platform-health', 'bi-heart-pulse', 'Monitor platform services and status.', 'danger'],
-                ['System Diagnostics', '/install', 'bi-cpu', 'System configuration and diagnostics.', 'secondary'],
+                ['Platform Analytics', '/platform-analytics', 'bi-graph-up-arrow', 'Revenue, subscriptions, and usage insights.', 'tile-blue'],
+                ['Restaurant Accounts', '/restaurant-accounts', 'bi-buildings', 'Manage registered restaurant accounts.', 'tile-orange'],
+                ['Activation Payments', '/platform-activation-payments', 'bi-shield-check', 'Review proofs and activate restaurants.', 'tile-green'],
+                ['Subscriptions', '/platform-subscriptions', 'bi-credit-card', 'Manage plans and subscriptions.', 'tile-indigo'],
+                ['Subscription Payments', '/platform-subscription-payments', 'bi-receipt', 'Review subscription payment records.', 'tile-orange'],
+                ['Platform Pricing', '/platform-pricing', 'bi-tags', 'Manage plans and pricing.', 'tile-purple'],
+                ['Platform Health', '/platform-health', 'bi-heart-pulse', 'Monitor platform services and status.', 'tile-green'],
+                ['System Diagnostics', '/install', 'bi-cpu', 'System configuration and diagnostics.', 'tile-slate'],
               ];
             ?>
-            <?php foreach ($platformMenus as $menu): ?>
-              <div class="col-12 col-md-6">
-                <a href="<?= BASE_URL . $menu[1] ?>" class="card border-0 shadow-sm rounded-3 h-100 text-decoration-none text-reset platform-management-card">
-                  <div class="card-body d-flex align-items-center gap-3 p-4">
-                    <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-<?= htmlspecialchars($menu[4]) ?> bg-opacity-10 text-<?= htmlspecialchars($menu[4]) ?>" style="width:60px;height:60px;flex:0 0 60px;">
-                      <i class="bi <?= htmlspecialchars($menu[2]) ?> fs-3"></i>
-                    </span>
-                    <span class="flex-grow-1 min-width-0">
-                      <strong class="d-block fs-6 mb-1"><?= htmlspecialchars($menu[0]) ?></strong>
-                      <small class="text-muted"><?= htmlspecialchars($menu[3]) ?></small>
-                    </span>
-                    <i class="bi bi-arrow-up-right text-primary fs-5"></i>
-                  </div>
+            <div class="management-grid">
+              <?php foreach ($platformMenus as $menu): ?>
+                <a href="<?= BASE_URL . $menu[1] ?>" class="management-tile <?= htmlspecialchars($menu[4], ENT_QUOTES, 'UTF-8') ?>">
+                  <span class="management-icon">
+                    <i class="bi <?= htmlspecialchars($menu[2], ENT_QUOTES, 'UTF-8') ?>"></i>
+                  </span>
+                  <span class="management-text">
+                    <strong><?= htmlspecialchars($menu[0], ENT_QUOTES, 'UTF-8') ?></strong>
+                    <small><?= htmlspecialchars($menu[3], ENT_QUOTES, 'UTF-8') ?></small>
+                  </span>
+                  <i class="bi bi-arrow-up-right management-arrow" aria-hidden="true"></i>
                 </a>
-              </div>
-            <?php endforeach; ?>
+              <?php endforeach; ?>
+            </div>
           </div>
         </div>
 
