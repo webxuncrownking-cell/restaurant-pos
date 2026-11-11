@@ -8,56 +8,36 @@ $currentPath = (new \App\Core\Request())->getPath();
 $canManageBranding = $restaurant !== null && ($isPlatform || \App\Core\Auth::roleSlug() === 'owner');
 
 $navGroups = [
-  'Workspace' => [
-    ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
-    ['label' => 'Menu Management', 'route' => '/menu', 'icon' => 'bi-journal-richtext'],
-    ['label' => 'Combo Meals', 'route' => '/combos', 'icon' => 'bi-boxes'],
-    ['label' => 'Scheduled Menu Pricing', 'route' => '/pricing', 'icon' => 'bi-clock-history'],
-    ['label' => 'Customer CRM', 'route' => '/customers', 'icon' => 'bi-people'],
-    ['label' => 'Inventory', 'route' => '/inventory', 'icon' => 'bi-box-seam'],
-    ['label' => 'Expiry & Wastage Tracking', 'route' => '/expiry', 'icon' => 'bi-calendar2-x'],
-    ['label' => 'Suppliers & Purchase Orders', 'route' => '/procurement', 'icon' => 'bi-truck'],
-    ['label' => 'Tables & Floor Plan', 'route' => '/tables', 'icon' => 'bi-grid-3x3-gap'],
-    ['label' => 'Reservations & Waitlist', 'route' => '/reservations', 'icon' => 'bi-calendar2-check'],
+  'Overview' => [
+    ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-grid-1x2'],
   ],
-  'Operations' => [
-    ['label' => 'POS Terminals', 'route' => '/devices', 'icon' => 'bi-tablet-landscape'],
+  'Daily Operations' => [
+    ['label' => 'POS Terminal', 'route' => '/pos', 'icon' => 'bi-display', 'primary' => true],
+    ['label' => 'Orders & Bills', 'route' => '/bills', 'icon' => 'bi-receipt'],
     ['label' => 'Cashier Shifts', 'route' => '/shifts', 'icon' => 'bi-safe2'],
-    ['label' => 'Open Bills & Split Payments', 'route' => '/bills', 'icon' => 'bi-receipt-cutoff'],
-    ['label' => 'Reports & Analytics', 'route' => '/reports', 'icon' => 'bi-graph-up-arrow'],
-    ['label' => 'Operating Expenses', 'route' => '/expenses', 'icon' => 'bi-wallet2'],
+    ['label' => 'Tables', 'route' => '/tables', 'icon' => 'bi-grid-3x3-gap'],
   ],
-  'Account' => [
-    ['label' => 'Subscription & Billing', 'route' => '/billing', 'icon' => 'bi-credit-card-2-front'],
+  'Management' => [
+    ['label' => 'Menu', 'route' => '/menu', 'icon' => 'bi-journal-richtext'],
+    ['label' => 'Inventory', 'route' => '/inventory', 'icon' => 'bi-box-seam'],
   ],
-  'System' => [
-    ['label' => 'System Diagnostics', 'route' => '/install', 'icon' => 'bi-gear'],
+  'Insights' => [
+    ['label' => 'Analytics', 'route' => '/reports', 'icon' => 'bi-graph-up-arrow'],
   ],
 ];
 
-// Keep navigation consistent with the active user's tenant-scoped permissions.
-// Hiding a link is only the UI layer; controllers must continue enforcing access too.
 $navPermissionMap = [
-  '/menu' => 'menu.manage_catalog',
-  '/combos' => 'menu.manage_catalog',
-  '/pricing' => 'menu.manage_catalog',
-  '/customers' => 'reports.view_sales',
-  '/inventory' => 'inventory.view_stock',
-  '/expiry' => 'inventory.adjust',
-  '/procurement' => 'inventory.stock_in',
-  '/tables' => 'tables.view_status',
-  '/reservations' => 'tables.view_status',
-  '/devices' => 'users.manage_staff',
-  '/shifts' => 'shifts.open_close',
+  '/pos' => 'pos.create_order',
   '/bills' => 'pos.process_payment',
+  '/shifts' => 'shifts.open_close',
+  '/tables' => 'tables.view_status',
+  '/menu' => 'menu.manage_catalog',
+  '/inventory' => 'inventory.view_stock',
   '/reports' => 'reports.view_sales',
-  '/expenses' => 'reports.view_sales',
-  '/billing' => 'subscription.manage',
-  '/install' => 'platform.only',
 ];
 
-if ($isPlatform) {
-  // Platform superadmins get platform-level navigation only.
+if ($isPlatform && $restaurant === null) {
+  // Platform superadmins get platform-level navigation only when no tenant is selected.
   $navGroups = [
     'Overview' => [
       ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
@@ -74,13 +54,11 @@ if ($isPlatform) {
     ],
   ];
 } else {
-  // Restaurant accounts see only menus allowed by their role permissions.
+  // Restaurant workspaces expose only the essential daily-use pages.
   foreach ($navGroups as $group => $items) {
     $navGroups[$group] = array_values(array_filter($items, static function (array $item) use ($navPermissionMap): bool {
       $route = (string)($item['route'] ?? '');
-      if ($route === '/install') return false;
-      if ($route === '/billing') return \App\Core\Auth::roleSlug() === 'owner';
-      if ($route === '/reservations') return in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true);
+      if ($route === '/dashboard') return true;
       if (isset($navPermissionMap[$route])) return \App\Core\Auth::can($navPermissionMap[$route]);
       return true;
     }));
@@ -88,12 +66,16 @@ if ($isPlatform) {
   }
 
   if ($canManageBranding) {
+    $navGroups['Account'] = $navGroups['Account'] ?? [];
     $navGroups['Account'][] = ['label' => 'Settings', 'route' => '/settings', 'icon' => 'bi-gear'];
   }
 
-  $canViewKitchen = $restaurant !== null && (in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true) || \App\Core\Auth::can('kitchen.view_kds'));
+  $canViewKitchen = $restaurant !== null && (
+    in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true)
+    || \App\Core\Auth::can('kitchen.view_kds')
+  );
   if ($canViewKitchen) {
-    $navGroups['Operations'][] = ['label' => 'Kitchen Display', 'route' => '/kitchen', 'icon' => 'bi-fire'];
+    $navGroups['Daily Operations'][] = ['label' => 'Kitchen Display', 'route' => '/kitchen', 'icon' => 'bi-fire'];
   }
 }
 
@@ -128,10 +110,6 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
       </span>
     </a>
 
-    <div class="app-sidebar-context">
-      <span class="context-dot" aria-hidden="true"></span>
-      <span><?= $isPlatform && !$restaurant ? 'Platform management' : 'Workspace is ready' ?></span>
-    </div>
 
     <nav class="app-sidebar-nav">
       <?php foreach ($navGroups as $groupLabel => $items): ?>
@@ -141,7 +119,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
             $itemPath = explode('#', (string)$item['route'], 2)[0];
             $active = $currentPath === $itemPath || str_starts_with($currentPath, $itemPath . '/');
           ?>
-            <a class="app-nav-link <?= $active ? 'active' : '' ?>"
+            <a class="app-nav-link <?= $active ? 'active' : '' ?> <?= !empty($item['primary']) ? 'app-nav-link-primary' : '' ?>"
                href="<?= BASE_URL . $item['route'] ?>"
                title="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>"
                aria-label="<?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?>"
@@ -155,16 +133,6 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
     </nav>
 
     <div class="app-sidebar-bottom">
-      <?php if (!$isPlatform && \App\Core\Auth::can('pos.create_order')): ?>
-      <a class="app-sidebar-pos" href="<?= BASE_URL ?>/pos" title="Open POS Terminal" aria-label="Open POS Terminal">
-        <span class="pos-icon"><i class="bi bi-display" aria-hidden="true"></i></span>
-        <span class="flex-grow-1">
-          <strong>Open POS Terminal</strong>
-          <small>Go to cashier workspace</small>
-        </span>
-        <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
-      </a>
-      <?php endif; ?>
       <div class="app-sidebar-version">ServeFlow POS <span class="mx-1">·</span> Restaurant Management</div>
     </div>
   </aside>
@@ -181,18 +149,12 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
           <i class="bi bi-list" aria-hidden="true"></i>
         </button>
         <div class="app-page-context">
-          <small><?= $isPlatform && !$restaurant ? 'PLATFORM OVERVIEW' : 'RESTAURANT MANAGEMENT' ?></small>
+          <small><?= $isPlatform && !$restaurant ? 'PLATFORM OVERVIEW' : 'SERVEFLOW WORKSPACE' ?></small>
           <strong><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></strong>
         </div>
       </div>
 
       <div class="app-topbar-actions">
-        <label class="app-theme-switch" for="appThemeToggle" title="Switch between light and dark appearance">
-          <i class="bi bi-sun" aria-hidden="true"></i>
-          <input type="checkbox" id="appThemeToggle" role="switch" aria-label="Dark mode" aria-checked="false">
-          <span class="app-theme-switch-track" aria-hidden="true"></span>
-          <i class="bi bi-moon-stars" aria-hidden="true"></i>
-        </label>
         <span class="status-pill app-connectivity"><span class="context-dot" aria-hidden="true"></span> Online</span>
         <?php if ($restaurant): ?>
           <?php if ($isSubValid): ?>
@@ -226,7 +188,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
               <li><h6 class="dropdown-header">Signed in as <?= htmlspecialchars((string)($user['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h6></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2 text-secondary"></i>Change Password</a></li>
-              <?php if ($isPlatform): ?><li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li><?php endif; ?>
+              <?php if ($isPlatform && $restaurant === null): ?><li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li><?php endif; ?>
               <?php if ($canManageBranding): ?>
                 <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
               <?php endif; ?>
