@@ -167,7 +167,6 @@ class DashboardController
                         [$restaurantId]
                     );
                 }
-            }
             } catch (\Throwable $e) {
                 $data['db_error'] = $e->getMessage();
             }
