@@ -1995,3 +1995,135 @@ body {
     text-align:center !important;
   }
 }
+
+
+/* =========================================================
+   ServeFlow global refinement - November 2026
+   ========================================================= */
+
+/* Focus states: keep controls clear without changing link borders */
+.app-main .btn:focus-visible,
+.app-topbar-pos:focus-visible,
+.app-user-button:focus-visible,
+.app-mobile-toggle:focus-visible,
+.app-signout-link:focus-visible {
+    outline: 0 !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .18) !important;
+}
+
+/* Sign Out remains a standard dropdown action */
+.app-signout-link,
+.app-signout-link:visited {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #dc2626 !important;
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: background-color .16s ease, color .16s ease;
+}
+
+.app-signout-link:hover,
+.app-signout-link:active {
+    color: #b91c1c !important;
+    background: #fef2f2 !important;
+}
+
+.app-signout-link:focus-visible {
+    color: #b91c1c !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, .14) !important;
+}
+
+/* Platform management cards - target the actual dashboard markup */
+.platform-workspace .platform-management-card {
+    min-height: 148px;
+    border: 1px solid #e5eaf2 !important;
+    border-radius: 17px !important;
+    background: #ffffff;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, .045) !important;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.platform-workspace .platform-management-card .card-body {
+    min-height: 148px;
+    padding: 25px !important;
+    gap: 19px !important;
+}
+
+.platform-workspace .platform-management-card .card-body > span:first-child {
+    width: 72px !important;
+    height: 72px !important;
+    flex: 0 0 72px !important;
+    border-radius: 17px !important;
+}
+
+.platform-workspace .platform-management-card .card-body > span:first-child .bi {
+    font-size: 2rem !important;
+}
+
+.platform-workspace .platform-management-card .card-body strong {
+    display: block;
+    color: #172033;
+    font-size: 1.08rem !important;
+    font-weight: 750;
+    line-height: 1.35;
+}
+
+.platform-workspace .platform-management-card .card-body small {
+    display: block;
+    margin-top: 5px;
+    color: #718096;
+    font-size: .88rem;
+    line-height: 1.5;
+}
+
+.platform-workspace .platform-management-card .card-body > .bi-arrow-up-right {
+    flex: 0 0 auto;
+    font-size: 1.25rem !important;
+}
+
+.platform-workspace .platform-management-card:hover {
+    transform: translateY(-3px);
+    border-color: #cbdaf3 !important;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .09) !important;
+}
+
+.platform-workspace .platform-management-card:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, .17),
+                0 8px 22px rgba(15, 23, 42, .07) !important;
+}
+
+/* Give dashboard section headings stronger hierarchy */
+.platform-workspace h3 {
+    font-size: 1.2rem;
+    font-weight: 750;
+}
+
+@media (max-width: 767.98px) {
+    .platform-workspace .platform-management-card,
+    .platform-workspace .platform-management-card .card-body {
+        min-height: 116px;
+    }
+
+    .platform-workspace .platform-management-card .card-body {
+        padding: 17px !important;
+        gap: 13px !important;
+    }
+
+    .platform-workspace .platform-management-card .card-body > span:first-child {
+        width: 56px !important;
+        height: 56px !important;
+        flex-basis: 56px !important;
+    }
+
+    .platform-workspace .platform-management-card .card-body strong {
+        font-size: .98rem !important;
+    }
+
+    .platform-workspace .platform-management-card .card-body small {
+        font-size: .8rem;
+    }
+}

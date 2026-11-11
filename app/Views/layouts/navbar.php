@@ -87,7 +87,7 @@ $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
                 <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2"></i>Settings</a></li>
               <?php endif; ?>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item rounded-2 py-2 text-danger" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
+              <li><a class="dropdown-item rounded-2 py-2 app-signout-link" href="<?= BASE_URL ?>/logout"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
             </ul>
           </div>
         <?php endif; ?>
