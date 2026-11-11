@@ -210,7 +210,7 @@
         $showRecentOrders = !empty($can_view_order_activity);
         $showStockAlerts = !empty($can_view_inventory);
         $showOrderFinancials = !empty($can_view_order_financials);
-        $showSingleDashboardPanel = $showRecentOrders xor $showStockAlerts;
+        $showSingleDashboardPanel = ($showRecentOrders && !$showStockAlerts) || (!$showRecentOrders && $showStockAlerts);
       ?>
       <?php if ($showRecentOrders || $showStockAlerts): ?>
         <div class="sf-dashboard-lower<?= $showSingleDashboardPanel ? ' sf-dashboard-lower-single' : '' ?>">
