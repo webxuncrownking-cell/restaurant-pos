@@ -36,8 +36,8 @@ $navPermissionMap = [
   '/reports' => 'reports.view_sales',
 ];
 
-if ($isPlatform) {
-  // Platform superadmins get platform-level navigation only.
+if ($isPlatform && $restaurant === null) {
+  // Platform superadmins get platform-level navigation only when no tenant is selected.
   $navGroups = [
     'Overview' => [
       ['label' => 'Dashboard', 'route' => '/dashboard', 'icon' => 'bi-speedometer2'],
