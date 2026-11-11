@@ -188,7 +188,7 @@ $roleLabel = $user['role_name'] ?? $user['role'] ?? ($isPlatform ? 'Platform Adm
               <li><h6 class="dropdown-header">Signed in as <?= htmlspecialchars((string)($user['username'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h6></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/change-password"><i class="bi bi-key me-2 text-secondary"></i>Change Password</a></li>
-              <?php if ($isPlatform): ?><li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li><?php endif; ?>
+              <?php if ($isPlatform && $restaurant === null): ?><li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/install"><i class="bi bi-activity me-2 text-secondary"></i>System Diagnostics</a></li><?php endif; ?>
               <?php if ($canManageBranding): ?>
                 <li><a class="dropdown-item rounded-2 py-2" href="<?= BASE_URL ?>/settings"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
               <?php endif; ?>
