@@ -1,4 +1,5 @@
 <div class="container-fluid px-4 py-4">
+  <?php $isPlatformOverview = !empty($is_platform) && empty($_SESSION['restaurant_id']); ?>
 
   <!-- Flash Alerts -->
   <?php if (!empty($flashes)): ?>
@@ -14,7 +15,7 @@
   <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
     <div>
       <h2 class="h3 fw-bold text-dark mb-1">
-        <?php if ($is_platform): ?>
+        <?php if ($isPlatformOverview): ?>
           <i class="bi bi-clouds text-primary me-2"></i>Platform Overview
         <?php else: ?>
           <i class="bi bi-shop text-primary me-2"></i><?= htmlspecialchars($restaurant['name'] ?? 'Restaurant Dashboard', ENT_QUOTES, 'UTF-8') ?>
@@ -43,7 +44,7 @@
     </div>
   </div>
 
-  <?php if ($is_platform && empty($_SESSION['restaurant_id'])): ?>
+  <?php if ($isPlatformOverview): ?>
     <!-- PLATFORM SUPERADMIN VIEW -->
     <div class="row g-3 mb-4" id="platform-analytics">
       <div class="col-12 col-sm-6 col-xl-4">
