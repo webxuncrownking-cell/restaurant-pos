@@ -70,8 +70,67 @@ include APP_ROOT . '/app/Views/layouts/header.php';
   .pos-cashier-btn { padding:4px 10px 4px 5px; background:#fff; border:1px solid #dfe5ee; color:#334155; max-width:235px; }
   .pos-cashier-avatar { display:grid; place-items:center; width:29px; height:29px; border-radius:9px; color:var(--terminal-primary); background:color-mix(in srgb,var(--terminal-primary) 10%,white); }
   .pos-cashier-name { max-width:155px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .pos-header .dropdown-menu { padding:7px; border:1px solid #e4e9f1; border-radius:13px; box-shadow:0 16px 38px rgba(16,24,40,.13); }
-  .pos-header .dropdown-item { border-radius:8px; padding:9px 10px; font-size:.82rem; }
+  /* Keep the cashier dropdown readable even when the global theme sets light text. */
+  .pos-header .dropdown-menu {
+    display:none;
+    min-width:250px;
+    padding:8px;
+    color:#263247!important;
+    background:#fff!important;
+    border:1px solid #e4e9f1;
+    border-radius:13px;
+    box-shadow:0 16px 38px rgba(16,24,40,.13);
+  }
+  .pos-header .dropdown-menu.show { display:block; }
+  .pos-header .dropdown-menu .dropdown-header {
+    display:block!important;
+    padding:9px 11px;
+    color:#718096!important;
+    font-size:.72rem;
+    font-weight:800;
+    line-height:1.4;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+  .pos-header .dropdown-menu .dropdown-item {
+    display:flex!important;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    min-height:40px;
+    padding:9px 11px;
+    border-radius:8px;
+    color:#344054!important;
+    background:transparent!important;
+    font-size:.84rem;
+    font-weight:600;
+    line-height:1.4;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+  .pos-header .dropdown-menu .dropdown-item i {
+    display:inline-block!important;
+    flex:0 0 18px;
+    width:18px;
+    color:#64748b!important;
+    opacity:1!important;
+    visibility:visible!important;
+    text-align:center;
+  }
+  .pos-header .dropdown-menu .dropdown-item:hover,
+  .pos-header .dropdown-menu .dropdown-item:focus {
+    color:#174ea6!important;
+    background:#eff6ff!important;
+  }
+  .pos-header .dropdown-menu .dropdown-item.text-danger,
+  .pos-header .dropdown-menu .dropdown-item.text-danger i {
+    color:#dc3545!important;
+  }
+  .pos-header .dropdown-menu .dropdown-divider {
+    margin:7px 0;
+    border-top:1px solid #e6eaf1!important;
+    opacity:1;
+  }
   #posBackToSaaS:not(.d-none) { color:#5c6678!important; border:1px solid #e0e5ed!important; background:#fff!important; }
 
   #posOfflineGuardNotice, #posSyncNotice {
