@@ -39,7 +39,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body px-4">
-            <input type="hidden" name="_csrf_token" value="<?= \App\\Core\\CSRF::getToken() ?>">
+            <input type="hidden" name="_csrf_token" value="<?= \App\Core\CSRF::getToken() ?>">
             <div class="row g-3">
               <div class="col-12 col-md-6">
                 <label class="form-label fw-semibold">Full name</label>
