@@ -2127,3 +2127,9 @@ body {
         font-size: .8rem;
     }
 }
+
+/* ServeFlow activation modal: blur the dashboard behind the blocking dialog. */
+body:has(#serveflowActivationModal.show) .modal-backdrop.show {
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
