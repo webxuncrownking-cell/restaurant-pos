@@ -6,7 +6,9 @@
 .terminal-login-page {
   --terminal-brand:#1769d2;
   --terminal-brand-dark:#1555ad;
+  width:100%;
   min-height:100vh;
+  box-sizing:border-box;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -15,9 +17,17 @@
   background:linear-gradient(135deg,#f4f7fc 0%,#eaf1fb 100%);
   color:#172033;
 }
+.terminal-login-shell {
+  width:min(100%,620px);
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  box-sizing:border-box;
+}
 .terminal-login-brand {
   width:100%;
-  max-width:620px;
+  max-width:none;
   text-align:center;
   margin:0 auto 28px;
 }
@@ -49,7 +59,8 @@
 }
 .terminal-login-card {
   width:100%;
-  max-width:620px;
+  max-width:none;
+  box-sizing:border-box;
   background:#fff;
   border:1px solid #e2e9f3;
   border-radius:24px;
@@ -111,11 +122,25 @@
 .terminal-login-submit:focus-visible,.pin-key:focus-visible,.terminal-login-change:focus-visible {
   outline:3px solid rgba(23,105,210,.28);outline-offset:2px;
 }
-.terminal-login-links { width:100%;max-width:620px;text-align:center;margin-top:22px;font-size:.95rem; }
+.terminal-login-links {
+  display:block;
+  position:static;
+  float:none;
+  clear:both;
+  flex:0 0 auto;
+  width:100%;
+  max-width:none;
+  box-sizing:border-box;
+  text-align:center;
+  margin:22px 0 0!important;
+  padding:0 8px;
+  font-size:.95rem;
+}
 .terminal-login-links a { color:var(--terminal-brand);text-decoration:none;font-weight:700; }
 .terminal-login-links a:hover { text-decoration:underline; }
 @media(max-width:520px) {
  .terminal-login-page{padding:28px 12px 24px;justify-content:flex-start}
+ .terminal-login-shell{width:100%;max-width:440px}
  .terminal-login-brand{margin-bottom:22px}
  .terminal-login-brand-icon{width:70px;height:70px;border-radius:18px;font-size:2.15rem;margin-bottom:13px}
  .terminal-login-brand h1{font-size:1.85rem}
@@ -125,11 +150,12 @@
  .pin-keypad{max-width:340px;gap:9px}
  .pin-key{height:64px}
  .pin-dot{width:14px;height:14px}
- .terminal-login-links{margin-top:18px;font-size:.88rem}
+ .terminal-login-links{margin:18px 0 0!important;font-size:.88rem}
 }
 </style>
 
 <div class="terminal-login-page">
+ <div class="terminal-login-shell">
  <div class="terminal-login-brand">
   <div class="terminal-login-brand-icon"><i class="bi bi-shop"></i></div>
   <h1>ServeFlow POS</h1>
@@ -203,9 +229,10 @@
  </div>
 
  <div class="terminal-login-links">
-    <a href="<?= BASE_URL ?>/login">Owner / Admin sign in</a>
-    <span class="text-muted mx-2">·</span>
-    <a href="<?= BASE_URL ?>/register">Register restaurant</a>
+  <a href="<?= BASE_URL ?>/login">Owner / Admin sign in</a>
+  <span class="text-muted mx-2">·</span>
+  <a href="<?= BASE_URL ?>/register">Register restaurant</a>
+ </div>
  </div>
 </div>
 
