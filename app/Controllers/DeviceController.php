@@ -35,6 +35,17 @@ class DeviceController
 
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $canManageStaff = BillingService::hasFeature($restaurantId, 'staff_management');
+        $staffLimit = BillingService::getStaffLimit($restaurantId);
+        $staffCountRow = Database::fetchOne(
+            "SELECT COUNT(*) AS total
+             FROM users u
+             JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+             WHERE u.restaurant_id = :restaurant_id
+               AND u.status = 'active' AND u.deleted_at IS NULL
+               AND r.slug <> 'owner'",
+            [':restaurant_id' => $restaurantId]
+        );
+        $staffCount = (int)($staffCountRow['total'] ?? 0);
         $staffMembers = Database::fetchAll(
             "SELECT u.id, u.full_name, u.username, u.email, u.status, r.name AS role_name,
                     CASE WHEN u.offline_pin_salt IS NOT NULL AND u.offline_pin_hash IS NOT NULL
@@ -55,7 +66,9 @@ class DeviceController
         Response::render('devices/staff_pins', [
             'staffMembers' => $staffMembers,
             'staffRoles' => $staffRoles,
-            'canManageStaff' => $canManageStaff
+            'canManageStaff' => $canManageStaff,
+            'staffLimit' => $staffLimit,
+            'staffCount' => $staffCount
         ]);
     }
 
@@ -104,6 +117,25 @@ class DeviceController
         if (!$role) {
             $_SESSION['flash_error'] = 'Choose a valid staff role for this restaurant.';
             Response::redirect('/staff-pins');
+        }
+
+        $staffLimit = BillingService::getStaffLimit($restaurantId);
+        if ($staffLimit > 0) {
+            $staffCountRow = Database::fetchOne(
+                "SELECT COUNT(*) AS total
+                 FROM users u
+                 JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+                 WHERE u.restaurant_id = :restaurant_id
+                   AND u.status = 'active' AND u.deleted_at IS NULL
+                   AND r.slug <> 'owner'",
+                [':restaurant_id' => $restaurantId]
+            );
+            $staffCount = (int)($staffCountRow['total'] ?? 0);
+            if ($staffCount >= $staffLimit) {
+                $_SESSION['flash_error'] = "Your current subscription allows up to {$staffLimit} active staff accounts. Upgrade your plan to add more.";
+                Response::redirect('/staff-pins');
+                return;
+            }
         }
 
         $duplicate = Database::fetchOne(
