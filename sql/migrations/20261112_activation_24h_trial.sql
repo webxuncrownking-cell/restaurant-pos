@@ -15,3 +15,17 @@ SET @serveflow_trial_ddl = IF(
 PREPARE serveflow_trial_stmt FROM @serveflow_trial_ddl;
 EXECUTE serveflow_trial_stmt;
 DEALLOCATE PREPARE serveflow_trial_stmt;
+
+-- Existing owners who already submitted proof and are still awaiting review
+-- also receive one 24-hour provisional access window from this migration.
+UPDATE restaurants r
+SET r.activation_status = 'activated',
+    r.activation_trial_until = DATE_ADD(NOW(), INTERVAL 1 DAY)
+WHERE r.activation_status = 'pending'
+  AND EXISTS (
+      SELECT 1
+      FROM activation_payment_submissions p
+      WHERE p.restaurant_id = r.id
+        AND p.status = 'pending'
+  )
+  AND r.activation_trial_until IS NULL;
