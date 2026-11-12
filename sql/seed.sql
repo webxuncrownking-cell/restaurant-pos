@@ -19,12 +19,12 @@ VALUES (
 ) ON DUPLICATE KEY UPDATE `password_hash` = VALUES(`password_hash`);
 
 -- 2. SaaS Subscription Plans
-INSERT INTO `subscription_plans` (`id`, `name`, `slug`, `description`, `price_monthly`, `price_annually`, `max_terminals`, `max_products`, `features_json`, `is_active`)
+INSERT INTO `subscription_plans` (`id`, `name`, `slug`, `description`, `price_monthly`, `price_annually`, `max_terminals`, `max_products`, `max_staff`, `features_json`, `is_active`)
 VALUES
-(1, 'Starter Carinderia', 'starter', 'Essential offline POS for single-terminal eateries', 990.00, 9900.00, 1, 50, '{"offline_pwa":true,"table_mgmt":false,"recipe_bom":true,"reports":true,"multi_device":false,"staff_management":true,"kitchen_display":false}', 1),
-(2, 'Standard Restaurant', 'standard', 'Complete multi-terminal POS with table management & recipe tracking', 1990.00, 19900.00, 3, 200, '{"offline_pwa":true,"table_mgmt":true,"recipe_bom":true,"reports":true,"multi_device":true,"staff_management":true,"kitchen_display":true}', 1),
-(3, 'Enterprise / Franchise', 'enterprise', 'Unlimited terminals, multi-branch analytics & priority sync', 3990.00, 39900.00, 10, 1000, '{"offline_pwa":true,"table_mgmt":true,"recipe_bom":true,"reports":true,"multi_device":true,"staff_management":true,"api_access":true,"kitchen_display":true}', 1)
-ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
+(1, 'Starter Carinderia', 'starter', 'Essential POS for small eateries', 990.00, 9900.00, 1, 50, 2, '{"offline_pwa":true,"table_mgmt":false,"recipe_bom":false,"reports":true,"multi_device":false,"multi_terminal":false,"staff_management":true,"kitchen_display":false,"advanced_reports":false,"customer_crm":false,"loyalty":false,"combo_meals":false,"scheduled_pricing":false,"reservations":false,"expenses":false,"suppliers":false,"purchase_orders":false,"recipe_costing":false,"expiry_wastage":false,"api_access":false}', 1),
+(2, 'Standard Restaurant', 'standard', 'Full restaurant operations with kitchen and table management', 1990.00, 19900.00, 3, 200, 10, '{"offline_pwa":true,"table_mgmt":true,"recipe_bom":true,"reports":true,"multi_device":true,"multi_terminal":true,"staff_management":true,"kitchen_display":true,"advanced_reports":true,"customer_crm":false,"loyalty":false,"combo_meals":true,"scheduled_pricing":true,"reservations":true,"expenses":true,"suppliers":true,"purchase_orders":true,"recipe_costing":true,"expiry_wastage":true,"api_access":false}', 1),
+(3, 'Enterprise / Franchise', 'enterprise', 'Advanced multi-terminal operations and integration access', 3990.00, 39900.00, 10, 1000, 0, '{"offline_pwa":true,"table_mgmt":true,"recipe_bom":true,"reports":true,"multi_device":true,"multi_terminal":true,"staff_management":true,"kitchen_display":true,"advanced_reports":true,"customer_crm":true,"loyalty":true,"combo_meals":true,"scheduled_pricing":true,"reservations":true,"expenses":true,"suppliers":true,"purchase_orders":true,"recipe_costing":true,"expiry_wastage":true,"api_access":true}', 1)
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `max_staff` = VALUES(`max_staff`);
 
 -- 3. Tenant Restaurants
 -- Restaurant 1: Mang Juan's Carinderia
