@@ -57,6 +57,14 @@
                       <input class="form-control" type="number" min="0" max="10000000" step="0.01" required name="plans[<?= $planId ?>][annually]" value="<?= htmlspecialchars((string)$plan['price_annually'], ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     <div class="col-md-4">
+                      <label class="form-label fw-semibold">Maximum POS terminals</label>
+                      <input class="form-control" type="number" min="1" max="500" step="1" required name="plans[<?= $planId ?>][max_terminals]" value="<?= (int)$plan['max_terminals'] ?>">
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Maximum menu products</label>
+                      <input class="form-control" type="number" min="1" max="1000000" step="1" required name="plans[<?= $planId ?>][max_products]" value="<?= (int)$plan['max_products'] ?>">
+                    </div>
+                    <div class="col-md-4">
                       <label class="form-label fw-semibold">Maximum staff accounts</label>
                       <input class="form-control" type="number" min="0" max="5000" step="1" required name="plans[<?= $planId ?>][max_staff]" value="<?= (int)($plan['max_staff'] ?? 0) ?>">
                       <div class="form-text">Enter 0 for unlimited. The owner account is not counted.</div>
