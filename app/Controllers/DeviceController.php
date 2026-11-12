@@ -43,8 +43,95 @@ class DeviceController
              ORDER BY full_name ASC",
             [':restaurant_id' => $restaurantId]
         );
+        $staffRoles = Database::fetchAll(
+            "SELECT id, name, slug FROM roles
+             WHERE restaurant_id = :restaurant_id AND slug <> 'owner'
+             ORDER BY name ASC",
+            [':restaurant_id' => $restaurantId]
+        );
 
-        Response::render('devices/staff_pins', ['staffMembers' => $staffMembers]);
+        Response::render('devices/staff_pins', [
+            'staffMembers' => $staffMembers,
+            'staffRoles' => $staffRoles
+        ]);
+    }
+
+    /**
+     * Create a tenant-scoped staff account. Owners cannot create another owner.
+     */
+    public function createStaff(Request $request): void
+    {
+        Auth::requireLogin();
+        if (Auth::isPlatformAdmin() || Auth::roleSlug() !== 'owner') {
+            Response::forbidden('Only the restaurant owner can create staff accounts.');
+        }
+        CSRF::validateToken($request->post('_csrf_token'));
+
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $fullName = trim((string)$request->post('full_name', ''));
+        $username = trim((string)$request->post('username', ''));
+        $email = trim((string)$request->post('email', ''));
+        $password = (string)$request->post('password', '');
+        $roleId = (int)$request->post('role_id', 0);
+        $pin = trim((string)$request->post('pin', ''));
+
+        if ($restaurantId <= 0 || $fullName === '' || strlen($fullName) > 100 ||
+            !preg_match('/^[A-Za-z0-9._-]{3,50}$/D', $username) ||
+            $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100 ||
+            strlen($password) < 8 || strlen($password) > 200 ||
+            $roleId <= 0 || ($pin !== '' && !preg_match('/^[0-9]{4,6}$/D', $pin))) {
+            $_SESSION['flash_error'] = 'Enter a valid name, username (3–50 characters), email, password (at least 8 characters), role, and optional 4–6 digit PIN.';
+            Response::redirect('/staff-pins');
+        }
+
+        $role = Database::fetchOne(
+            "SELECT id FROM roles WHERE id = :role_id AND restaurant_id = :restaurant_id AND slug <> 'owner' LIMIT 1",
+            [':role_id' => $roleId, ':restaurant_id' => $restaurantId]
+        );
+        if (!$role) {
+            $_SESSION['flash_error'] = 'Choose a valid staff role for this restaurant.';
+            Response::redirect('/staff-pins');
+        }
+
+        $duplicate = Database::fetchOne(
+            "SELECT id FROM users
+             WHERE restaurant_id = :restaurant_id AND deleted_at IS NULL
+               AND (username = :username OR email = :email) LIMIT 1",
+            [':restaurant_id' => $restaurantId, ':username' => $username, ':email' => $email]
+        );
+        if ($duplicate) {
+            $_SESSION['flash_error'] = 'That username or email is already used by an account in this restaurant.';
+            Response::redirect('/staff-pins');
+        }
+
+        $pinSalt = null;
+        $pinHash = null;
+        if ($pin !== '') {
+            $pinSalt = bin2hex(random_bytes(16));
+            $pinHash = hash_pbkdf2('sha256', $pin, hex2bin($pinSalt), 10000, 64);
+        }
+
+        Database::query(
+            "INSERT INTO users
+                (restaurant_id, role_id, username, email, password_hash, offline_pin_salt,
+                 offline_pin_hash, full_name, status, must_change_password)
+             VALUES
+                (:restaurant_id, :role_id, :username, :email, :password_hash, :pin_salt,
+                 :pin_hash, :full_name, 'active', 1)",
+            [
+                ':restaurant_id' => $restaurantId,
+                ':role_id' => $roleId,
+                ':username' => $username,
+                ':email' => $email,
+                ':password_hash' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
+                ':pin_salt' => $pinSalt,
+                ':pin_hash' => $pinHash,
+                ':full_name' => $fullName
+            ]
+        );
+
+        $_SESSION['flash_success'] = 'Staff account created. The staff member must change the temporary password at first sign-in.';
+        Response::redirect('/staff-pins');
     }
 
     /**
