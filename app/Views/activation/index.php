@@ -28,7 +28,14 @@
       <div class="small text-muted">No automatic monthly subscription or trial is started.</div>
     </div>
     <?php if ($restaurant['activation_status'] === 'activated'): ?>
-      <div class="alert alert-success">Your restaurant is activated. <a href="<?= BASE_URL ?>/dashboard">Continue to dashboard</a>.</div>
+      <?php if (!empty($restaurant['activation_trial_until'])): ?>
+        <div class="alert alert-info">
+          <strong>Temporary access enabled.</strong> Your payment is awaiting verification. Your account has access for 24 hours, until <?= htmlspecialchars(date('M d, Y h:i A', strtotime($restaurant['activation_trial_until']))) ?>.
+          <a href="<?= BASE_URL ?>/dashboard">Continue to dashboard</a>.
+        </div>
+      <?php else: ?>
+        <div class="alert alert-success">Your restaurant is activated. <a href="<?= BASE_URL ?>/dashboard">Continue to dashboard</a>.</div>
+      <?php endif; ?>
     <?php else: ?>
       <?php if ($payment_instructions !== ''): ?><div class="alert alert-info"><strong>Payment instructions</strong><br><?= nl2br(htmlspecialchars($payment_instructions)) ?></div><?php endif; ?>
       <?php if ($restaurant['activation_status'] === 'pending'): ?><div class="alert alert-warning">Your payment is awaiting review. You may submit again if your previous details were incorrect.</div><?php endif; ?>
