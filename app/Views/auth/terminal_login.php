@@ -4,78 +4,104 @@
 ?>
 <style>
 .terminal-login-page {
-  min-height:100vh; display:flex; align-items:center; justify-content:center;
-  padding:30px 18px; color:#fff;
-  background:linear-gradient(145deg,#38a5ed 0%,#2787ed 48%,#2466e8 100%);
+  --terminal-brand:#1769d2;
+  --terminal-brand-dark:#1555ad;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px 18px;
+  background:linear-gradient(135deg,#f4f7fc 0%,#eaf1fb 100%);
+  color:#172033;
 }
 .terminal-login-card {
-  width:100%; max-width:470px; border:0; border-radius:26px; overflow:hidden;
-  background:rgba(255,255,255,.20); box-shadow:0 22px 55px rgba(10,55,130,.22);
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  width:100%;
+  max-width:420px;
+  background:#fff;
+  border:1px solid #e2e9f3;
+  border-radius:22px;
+  box-shadow:0 18px 48px rgba(24,53,94,.11);
+  overflow:hidden;
 }
-.terminal-login-head { padding:28px 30px 12px; text-align:center; color:#fff; }
+.terminal-login-head { padding:28px 30px 18px;text-align:center; }
 .terminal-login-icon {
-  width:72px;height:72px;display:inline-flex;align-items:center;justify-content:center;
-  color:#fff;font-size:2.6rem;margin-bottom:10px;
+  width:54px;height:54px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:15px;background:#eaf2ff;color:var(--terminal-brand);
+  font-size:1.8rem;margin-bottom:12px;
 }
-.terminal-login-head h1 { color:#fff!important;font-size:1.8rem;font-weight:800;letter-spacing:-.035em; }
-.terminal-login-head p { color:rgba(255,255,255,.94)!important;font-size:1.05rem; }
-.terminal-login-body { padding:18px 30px 30px; color:#fff; }
-.terminal-login-title { color:#fff;font-size:1.12rem;font-weight:700;text-align:center;margin-bottom:8px; }
-.terminal-login-subtitle { color:rgba(255,255,255,.92);font-size:.95rem;text-align:center;margin-bottom:22px; }
-.terminal-login-alert { color:#163b63; }
+.terminal-login-head h1 {
+  margin:0;color:#172033;font-size:1.55rem;font-weight:800;letter-spacing:-.04em;
+}
+.terminal-login-head p { margin:5px 0 0;color:#718096;font-size:.9rem; }
+.terminal-login-body { padding:18px 30px 26px; }
+.terminal-login-title { color:#172033;font-size:1.08rem;font-weight:750;text-align:center;margin-bottom:5px; }
+.terminal-login-subtitle { color:#718096;font-size:.88rem;text-align:center;margin-bottom:20px; }
+.terminal-login-alert { font-size:.9rem;border-radius:11px; }
 .terminal-login-user {
   display:flex;align-items:center;justify-content:center;gap:10px;
-  margin:0 auto 16px;color:#fff;font-size:1.05rem;font-weight:700;
+  margin:0 auto 8px;color:#24364f;font-size:1rem;font-weight:750;
 }
 .terminal-login-user .user-avatar {
-  width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,.24);border:1px solid rgba(255,255,255,.45);font-size:1.1rem;
+  width:36px;height:36px;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;
+  background:#eaf2ff;color:var(--terminal-brand);font-size:1.05rem;
 }
-.terminal-login-page .form-label { color:#fff;font-weight:700;font-size:.95rem;margin-bottom:8px; }
-.terminal-login-page .form-control {
-  min-height:54px;border:1px solid rgba(255,255,255,.5);border-radius:13px;
-  background:rgba(255,255,255,.96);color:#20334d;font-size:1rem;padding:12px 15px;
-}
-.terminal-login-page .form-control:focus { border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.2); }
 .terminal-login-change {
   display:block;margin:0 auto 18px;padding:4px 8px;border:0;background:transparent;
-  color:#fff;text-decoration:underline;font-weight:600;font-size:.9rem;
+  color:var(--terminal-brand);font-weight:700;font-size:.84rem;
 }
-.terminal-login-remember { display:flex;align-items:center;justify-content:center;gap:9px;color:#fff;font-size:.9rem;margin:14px 0 20px; }
-.terminal-login-remember input { width:18px;height:18px;accent-color:#fff; }
-.pin-dots { display:flex;justify-content:center;gap:11px;margin:12px 0 20px; }
-.pin-dot { width:15px;height:15px;border:2px solid rgba(255,255,255,.8);border-radius:50%;background:transparent; }
-.pin-dot.filled { background:#fff;border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.12); }
-.pin-entry { text-align:center;letter-spacing:.45em;font-size:1.35rem!important;font-weight:700; }
-.pin-keypad { display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:330px;margin:0 auto 22px; }
+.terminal-login-page .form-label { color:#34445c;font-weight:700;font-size:.88rem;margin-bottom:7px; }
+.terminal-login-page .form-control {
+  min-height:48px;border:1px solid #d8e1ee;border-radius:11px;
+  background:#f8fafd;color:#1d2b42;font-size:.95rem;padding:11px 13px;
+}
+.terminal-login-page .form-control:focus {
+  border-color:#7eaceb;box-shadow:0 0 0 3px rgba(23,105,210,.12);background:#fff;
+}
+.pin-instruction { text-align:center;color:#53647c;font-size:.9rem;font-weight:650;margin:8px 0 13px; }
+.pin-capture {
+  position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;
+  overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;
+}
+.pin-dots { display:flex;justify-content:center;gap:13px;margin:0 0 18px; }
+.pin-dot {
+  width:13px;height:13px;border:2px solid #b7c7dc;border-radius:50%;
+  background:#fff;transition:background .12s,border-color .12s,transform .12s;
+}
+.pin-dot.filled { background:var(--terminal-brand);border-color:var(--terminal-brand);transform:scale(1.04); }
+.pin-keypad { display:grid;grid-template-columns:repeat(3,1fr);gap:9px;max-width:282px;margin:0 auto 18px; }
 .pin-key {
-  width:100%;aspect-ratio:1/1;max-height:82px;border:0;border-radius:50%;
-  background:#edf5ff;color:#34445c;font-size:1.65rem;font-weight:500;
-  box-shadow:0 5px 10px rgba(15,55,110,.14);transition:transform .12s,background .12s;
+  width:100%;height:58px;border:1px solid #e0e8f3;border-radius:13px;
+  background:#f8fafd;color:#263b59;font-size:1.25rem;font-weight:700;
+  transition:background .12s,border-color .12s,transform .12s;
 }
-.pin-key:hover { background:#fff;transform:translateY(-2px); }
-.pin-key:active { transform:scale(.96); }
-.pin-key.utility { font-size:1.25rem; }
+.pin-key:hover { background:#eaf2ff;border-color:#b8d1f5;color:var(--terminal-brand); }
+.pin-key:active { transform:scale(.97); }
+.pin-key.utility { color:#5d6e85;font-size:1rem; }
 .pin-key-spacer { visibility:hidden; }
-.terminal-login-submit {
-  min-height:56px;border:0;border-radius:13px;background:#fff;color:#2168d8;
-  font-size:1rem;font-weight:800;box-shadow:0 7px 18px rgba(15,55,110,.14);
+.terminal-login-remember {
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  color:#53647c;font-size:.83rem;margin:12px 0 17px;
 }
-.terminal-login-submit:hover { background:#f1f6ff;color:#174fae; }
-.terminal-login-links { text-align:center;margin-top:22px;font-size:.92rem; }
-.terminal-login-links a { color:#fff;text-decoration:none;font-weight:700; }
+.terminal-login-remember input { width:16px;height:16px;accent-color:var(--terminal-brand); }
+.terminal-login-submit {
+  min-height:50px;border:0;border-radius:11px;background:var(--terminal-brand);color:#fff;
+  font-size:.95rem;font-weight:750;box-shadow:0 5px 12px rgba(23,105,210,.18);
+}
+.terminal-login-submit:hover { background:var(--terminal-brand-dark);color:#fff; }
+.terminal-login-submit:focus-visible,.pin-key:focus-visible,.terminal-login-change:focus-visible {
+  outline:3px solid rgba(23,105,210,.28);outline-offset:2px;
+}
+.terminal-login-help { text-align:center;color:#8793a5;font-size:.78rem;margin-top:14px; }
+.terminal-login-links { text-align:center;margin-top:17px;font-size:.83rem; }
+.terminal-login-links a { color:var(--terminal-brand);text-decoration:none;font-weight:700; }
 .terminal-login-links a:hover { text-decoration:underline; }
-.terminal-login-help { text-align:center;color:rgba(255,255,255,.9);font-size:.82rem;margin-top:14px; }
 @media(max-width:480px) {
- .terminal-login-page{padding:18px 14px;align-items:center}
- .terminal-login-card{max-width:410px;border-radius:22px}
- .terminal-login-head{padding:22px 20px 8px}
- .terminal-login-body{padding:14px 22px 24px}
- .terminal-login-icon{width:60px;height:60px;font-size:2.2rem}
- .terminal-login-head h1{font-size:1.55rem}
- .pin-keypad{gap:10px;max-width:290px}
- .pin-key{max-height:72px;font-size:1.45rem}
+ .terminal-login-page{padding:16px 12px;align-items:center}
+ .terminal-login-card{max-width:390px;border-radius:19px}
+ .terminal-login-head{padding:22px 22px 14px}
+ .terminal-login-body{padding:15px 22px 22px}
+ .pin-keypad{gap:8px;max-width:270px}
+ .pin-key{height:54px}
 }
 </style>
 
@@ -83,12 +109,13 @@
  <div class="terminal-login-card">
   <div class="terminal-login-head">
    <div class="terminal-login-icon"><i class="bi bi-shop"></i></div>
-   <h1 class="mb-1">ServeFlow POS</h1>
-   <p class="mb-0">Restaurant operations, made simple.</p>
+   <h1>ServeFlow POS</h1>
+   <p>Restaurant operations, made simple.</p>
   </div>
+
   <div class="terminal-login-body">
-   <div class="terminal-login-title">Cashier PIN Sign In</div>
-   <div class="terminal-login-subtitle">Enter your staff PIN to open the POS terminal.</div>
+   <div class="terminal-login-title">Staff Sign In</div>
+   <div class="terminal-login-subtitle">Enter your staff PIN to continue to the POS.</div>
 
    <?php if (!empty($flashes)): ?>
     <?php foreach ($flashes as $flash): ?>
@@ -108,17 +135,19 @@
       <span id="rememberedStaffName"><?= htmlspecialchars($rememberedLogin, ENT_QUOTES, 'UTF-8') ?></span>
      </div>
      <input type="hidden" id="rememberedLogin" name="login" value="<?= htmlspecialchars($rememberedLogin, ENT_QUOTES, 'UTF-8') ?>">
-     <button type="button" class="terminal-login-change" id="switchStaffButton">Switch account</button>
+     <button type="button" class="terminal-login-change" id="switchStaffButton">Not you? Switch account</button>
     </div>
 
     <div id="staffLoginField" <?= $hasRememberedLogin ? 'hidden' : '' ?> class="mb-3">
      <label class="form-label" for="loginInput">Staff username or email</label>
-     <input class="form-control" id="loginInput" name="<?= $hasRememberedLogin ? 'alternate_login' : 'login' ?>" maxlength="100" placeholder="Enter staff username" autocomplete="username" <?= $hasRememberedLogin ? '' : 'required' ?>>
+     <input class="form-control" id="loginInput" name="<?= $hasRememberedLogin ? 'alternate_login' : 'login' ?>" maxlength="100" placeholder="Enter your username" autocomplete="username" <?= $hasRememberedLogin ? '' : 'required' ?>>
     </div>
 
-    <label class="form-label d-block text-center" for="pin">Enter Staff PIN</label>
-    <input class="form-control pin-entry mb-2" id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" required autocomplete="one-time-code" placeholder="Enter 4–6 digit PIN" aria-label="Staff PIN">
-    <div class="pin-dots" aria-hidden="true">
+    <div class="pin-instruction">Enter your 4–6 digit PIN</div>
+    <input class="pin-capture" id="pin" name="pin" type="password" inputmode="numeric"
+      pattern="[0-9]{4,6}" minlength="4" maxlength="6" required autocomplete="one-time-code"
+      aria-label="Staff PIN" tabindex="0">
+    <div class="pin-dots" id="pinDots" aria-label="PIN entry progress">
      <span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span>
      <span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span>
     </div>
@@ -135,7 +164,7 @@
      <button type="button" class="pin-key" data-digit="9">9</button>
      <span class="pin-key-spacer" aria-hidden="true"></span>
      <button type="button" class="pin-key" data-digit="0">0</button>
-     <button type="button" class="pin-key utility" id="deletePin" aria-label="Delete last PIN digit"><i class="bi bi-backspace-fill"></i></button>
+     <button type="button" class="pin-key utility" id="deletePin" aria-label="Delete last PIN digit"><i class="bi bi-backspace"></i></button>
     </div>
 
     <label class="terminal-login-remember">
@@ -143,13 +172,15 @@
      <span>Remember this username on this device</span>
     </label>
 
-    <button type="submit" class="btn terminal-login-submit w-100"><i class="bi bi-unlock me-2"></i>Verify PIN &amp; Open POS</button>
+    <button type="submit" class="btn terminal-login-submit w-100">
+     <i class="bi bi-box-arrow-in-right me-2"></i>Sign In to POS
+    </button>
    </form>
 
-   <div class="terminal-login-help">Forgot your PIN? Contact your restaurant owner or administrator.</div>
+   <div class="terminal-login-help">Forgot your PIN? Contact your restaurant administrator.</div>
    <div class="terminal-login-links">
     <a href="<?= BASE_URL ?>/login">Owner / Admin sign in</a>
-    <span class="mx-2">·</span>
+    <span class="text-muted mx-2">·</span>
     <a href="<?= BASE_URL ?>/register">Register restaurant</a>
    </div>
   </div>
@@ -168,19 +199,20 @@
   const loginField = document.getElementById('staffLoginField');
   const loginInput = document.getElementById('loginInput');
   const switchButton = document.getElementById('switchStaffButton');
-  const rememberCheckbox = form.querySelector('input[name="remember_login"]');
 
   function updateDots() {
     const count = pin.value.length;
     dots.forEach((dot, index) => dot.classList.toggle('filled', index < count));
   }
 
+  function addDigit(digit) {
+    if (pin.value.length >= 6) return;
+    pin.value += digit;
+    updateDots();
+  }
+
   document.querySelectorAll('[data-digit]').forEach(button => {
-    button.addEventListener('click', () => {
-      if (pin.value.length >= 6) return;
-      pin.value += button.dataset.digit;
-      updateDots();
-    });
+    button.addEventListener('click', () => addDigit(button.dataset.digit));
   });
 
   document.getElementById('deletePin').addEventListener('click', () => {
@@ -191,6 +223,17 @@
   pin.addEventListener('input', () => {
     pin.value = pin.value.replace(/\D/g, '').slice(0, 6);
     updateDots();
+  });
+
+  pin.addEventListener('keydown', event => {
+    if (/^[0-9]$/.test(event.key)) {
+      event.preventDefault();
+      addDigit(event.key);
+    } else if (event.key === 'Backspace') {
+      event.preventDefault();
+      pin.value = pin.value.slice(0, -1);
+      updateDots();
+    }
   });
 
   if (switchButton) {
@@ -205,20 +248,23 @@
   }
 
   form.addEventListener('submit', event => {
-    const login = remembered.hidden ? loginInput.value.trim() : rememberedLogin.value.trim();
+    const login = remembered && !remembered.hidden
+      ? rememberedLogin.value.trim()
+      : loginInput.value.trim();
+
     if (!login) {
       event.preventDefault();
-      loginInput.focus();
+      if (loginInput) loginInput.focus();
       return;
     }
+
     if (!/^[0-9]{4,6}$/.test(pin.value)) {
       event.preventDefault();
-      pin.focus();
+      document.querySelector('.pin-key')?.focus();
       return;
     }
-    if (!remembered.hidden) {
-      rememberedLogin.disabled = false;
-    }
+
+    if (remembered && !remembered.hidden) rememberedLogin.disabled = false;
   });
 
   updateDots();
