@@ -25,6 +25,7 @@ class PlatformPricingController
         'recipe_costing' => 'Recipe costing',
         'expiry_wastage' => 'Expiry & wastage tracking',
         'multi_terminal' => 'Multi-terminal management',
+        'kitchen_display' => 'Kitchen Display',
         'api_access' => 'API access',
     ];
 
@@ -77,7 +78,7 @@ class PlatformPricingController
             self::upsertSetting('activation_fee_php', number_format((float)$activationFee, 2, '.', ''));
             self::upsertSetting('activation_payment_instructions', $instructions);
 
-            $existingPlans = Database::fetchAll("SELECT id, features_json FROM subscription_plans");
+            $existingPlans = Database::fetchAll("SELECT id, features_json, max_terminals, max_products FROM subscription_plans");
             $existingById = [];
             foreach ($existingPlans as $row) $existingById[(int)$row['id']] = $row;
 
@@ -89,9 +90,13 @@ class PlatformPricingController
                 $monthly = $price['monthly'] ?? null;
                 $annual = $price['annually'] ?? null;
                 $maxStaff = $price['max_staff'] ?? null;
+                $maxTerminals = $price['max_terminals'] ?? null;
+                $maxProducts = $price['max_products'] ?? null;
                 $submittedFeatures = $price['features'] ?? [];
                 if (!is_array($submittedFeatures) || !is_numeric($monthly) || !is_numeric($annual)
-                    || !filter_var($maxStaff, FILTER_VALIDATE_INT) && (string)$maxStaff !== '0'
+                    || (!filter_var($maxStaff, FILTER_VALIDATE_INT) && (string)$maxStaff !== '0')
+                    || !filter_var($maxTerminals, FILTER_VALIDATE_INT) || (int)$maxTerminals < 1 || (int)$maxTerminals > 500
+                    || !filter_var($maxProducts, FILTER_VALIDATE_INT) || (int)$maxProducts < 1 || (int)$maxProducts > 1000000
                     || (int)$maxStaff < 0 || (int)$maxStaff > 5000
                     || (float)$monthly < 0 || (float)$annual < 0
                     || (float)$monthly > 1000000 || (float)$annual > 10000000) {
@@ -107,10 +112,12 @@ class PlatformPricingController
                 }
 
                 Database::query(
-                    "UPDATE subscription_plans SET price_monthly = ?, price_annually = ?, max_staff = ?, features_json = ? WHERE id = ?",
+                    "UPDATE subscription_plans SET price_monthly = ?, price_annually = ?, max_terminals = ?, max_products = ?, max_staff = ?, features_json = ? WHERE id = ?",
                     [
                         number_format((float)$monthly, 2, '.', ''),
                         number_format((float)$annual, 2, '.', ''),
+                        (int)$maxTerminals,
+                        (int)$maxProducts,
                         (int)$maxStaff,
                         json_encode($features, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
                         $id
