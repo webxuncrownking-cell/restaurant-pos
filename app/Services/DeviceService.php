@@ -77,6 +77,26 @@ class DeviceService
             throw new InvalidArgumentException('Device name is required.');
         }
 
+        $plan = Database::fetchOne(
+            "SELECT p.max_terminals
+             FROM subscriptions s
+             JOIN subscription_plans p ON p.id = s.plan_id
+             WHERE s.restaurant_id = ?
+             ORDER BY s.id DESC LIMIT 1",
+            [$restaurantId]
+        );
+        $terminalLimit = max(1, (int)($plan['max_terminals'] ?? 1));
+        $activeDevices = Database::fetchOne(
+            "SELECT COUNT(*) AS total FROM pos_devices
+             WHERE restaurant_id = ? AND status = 'active'",
+            [$restaurantId]
+        );
+        if ((int)($activeDevices['total'] ?? 0) >= $terminalLimit) {
+            throw new InvalidArgumentException(
+                "Your current subscription allows up to {$terminalLimit} active POS terminal(s). Upgrade your plan to register another terminal."
+            );
+        }
+
         $uuid = self::generateUuidV4();
         $rawToken = self::generateRawToken();
         $tokenHash = self::hashToken($rawToken);
