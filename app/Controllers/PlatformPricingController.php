@@ -37,7 +37,7 @@ class PlatformPricingController
         $values = [];
         foreach ($settings as $setting) $values[$setting['setting_key']] = $setting['setting_value'];
 
-        $plans = Database::fetchAll("SELECT id, name, slug, description, price_monthly, price_annually, features_json, is_active FROM subscription_plans ORDER BY price_monthly ASC, id ASC");
+        $plans = Database::fetchAll("SELECT id, name, slug, description, price_monthly, price_annually, max_terminals, max_products, max_staff, features_json, is_active FROM subscription_plans ORDER BY price_monthly ASC, id ASC");
         foreach ($plans as &$plan) {
             $decoded = json_decode((string)($plan['features_json'] ?? '{}'), true);
             $plan['features'] = is_array($decoded) ? $decoded : [];
