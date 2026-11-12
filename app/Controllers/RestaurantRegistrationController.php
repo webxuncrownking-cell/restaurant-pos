@@ -96,6 +96,58 @@ class RestaurantRegistrationController
                 [$restaurantId, $roleId]
             );
 
+            // Provision the standard staff roles for every newly registered restaurant.
+            // Permission assignments are tenant-scoped and intentionally least-privilege.
+            $defaultStaffRoles = [
+                'manager' => [
+                    'name' => 'Restaurant Manager',
+                    'description' => 'Manages floor, inventory, menu, shifts, and overrides',
+                    'permissions' => [
+                        'pos.create_order', 'pos.process_payment', 'pos.apply_discount',
+                        'orders.cancel_void', 'orders.issue_refund',
+                        'tables.view_status', 'tables.manage_tables',
+                        'kitchen.view_kds', 'kitchen.update_state',
+                        'inventory.view_stock', 'inventory.stock_in', 'inventory.adjust',
+                        'menu.manage_catalog', 'menu.manage_recipes',
+                        'shifts.open_close', 'shifts.cash_drop',
+                        'reports.view_sales', 'reports.view_ledger'
+                    ]
+                ],
+                'cashier' => [
+                    'name' => 'Cashier / POS Staff',
+                    'description' => 'Operates the POS, processes payments, and manages cashier shifts',
+                    'permissions' => [
+                        'pos.create_order', 'pos.process_payment',
+                        'tables.view_status', 'shifts.open_close', 'shifts.cash_drop'
+                    ]
+                ],
+                'kitchen' => [
+                    'name' => 'Kitchen Cook',
+                    'description' => 'Views kitchen orders and updates preparation status',
+                    'permissions' => ['kitchen.view_kds', 'kitchen.update_state']
+                ],
+                'waiter' => [
+                    'name' => 'Waiter / Floor Staff',
+                    'description' => 'Creates table orders and views table service status',
+                    'permissions' => ['pos.create_order', 'tables.view_status']
+                ]
+            ];
+
+            foreach ($defaultStaffRoles as $roleSlug => $roleConfig) {
+                Database::query(
+                    "INSERT INTO roles (restaurant_id, name, slug, description) VALUES (?, ?, ?, ?)",
+                    [$restaurantId, $roleConfig['name'], $roleSlug, $roleConfig['description']]
+                );
+                $staffRoleId = (int)$pdo->lastInsertId();
+                $permissionCodes = $roleConfig['permissions'];
+                $placeholders = implode(',', array_fill(0, count($permissionCodes), '?'));
+                Database::query(
+                    "INSERT INTO role_permissions (restaurant_id, role_id, permission_id)
+                     SELECT ?, ?, id FROM permissions WHERE code IN ({$placeholders})",
+                    array_merge([$restaurantId, $staffRoleId], $permissionCodes)
+                );
+            }
+
             Database::query(
                 "INSERT INTO users (restaurant_id, role_id, username, email, password_hash, full_name, status, must_change_password)
                  VALUES (?, ?, ?, ?, ?, ?, 'active', 0)",
