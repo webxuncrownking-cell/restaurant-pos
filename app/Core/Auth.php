@@ -53,7 +53,7 @@ class Auth
             } else {
                 $tenantId = (int)Session::get('restaurant_id');
                 $sql = "SELECT u.id, u.restaurant_id, u.role_id, u.username, u.email, u.full_name, u.status, u.must_change_password,
-                               r.name AS role_name, r.slug AS role_slug, rest.name AS restaurant_name, rest.activation_status
+                               r.name AS role_name, r.slug AS role_slug, rest.name AS restaurant_name, rest.activation_status, rest.activation_trial_until
                         FROM users u
                         JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
                         JOIN restaurants rest ON rest.id = u.restaurant_id
@@ -144,6 +144,36 @@ class Auth
         // Pending restaurant activation: owners may access only the activation page and sign out.
         if (!self::isPlatformAdmin()) {
             $user = self::user();
+
+            // A submitted activation payment grants a 24-hour provisional access window.
+            // Expire it on the first authenticated request at or after the deadline.
+            $trialUntil = (string)($user['activation_trial_until'] ?? '');
+            if (
+                $user &&
+                ($user['activation_status'] ?? '') === 'activated' &&
+                $trialUntil !== '' &&
+                strtotime($trialUntil) !== false &&
+                strtotime($trialUntil) <= time()
+            ) {
+                try {
+                    Database::query(
+                        "UPDATE restaurants
+                         SET activation_status = 'pending', activation_trial_until = NULL
+                         WHERE id = ? AND activation_status = 'activated'
+                           AND activation_trial_until IS NOT NULL
+                           AND activation_trial_until <= NOW()",
+                        [(int)$user['restaurant_id']]
+                    );
+                } catch (\\Throwable $expiryError) {
+                    error_log('[ServeFlow activation trial expiry] ' . $expiryError->getMessage());
+                }
+
+                // Fail closed for this request even if the database update needs retrying.
+                self::$user['activation_status'] = 'pending';
+                self::$user['activation_trial_until'] = null;
+                $user = self::$user;
+            }
+
             if (($user['activation_status'] ?? 'activated') !== 'activated') {
                 $currentPath = (new Request())->getPath();
                 if (($user['role_slug'] ?? '') !== 'owner') {
