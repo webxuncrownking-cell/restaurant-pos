@@ -21,12 +21,57 @@
     <?php unset($_SESSION['flash_error']); ?>
   <?php endif; ?>
 
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 px-4 pt-4 pb-2">
+      <h2 class="h5 fw-bold mb-1"><i class="bi bi-person-plus text-primary me-2"></i>Add staff member</h2>
+      <p class="text-muted small mb-0">Create a staff login and assign its restaurant role.</p>
+    </div>
+    <div class="card-body px-4 pb-4">
+      <form method="POST" action="<?= BASE_URL ?>/staff-pins/create" class="row g-3">
+        <input type="hidden" name="_csrf_token" value="<?= \\App\\Core\\CSRF::getToken() ?>">
+        <div class="col-12 col-md-6 col-xl-3">
+          <label class="form-label fw-semibold">Full name</label>
+          <input class="form-control" name="full_name" maxlength="100" required>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <label class="form-label fw-semibold">Username</label>
+          <input class="form-control" name="username" minlength="3" maxlength="50" pattern="[A-Za-z0-9._-]{3,50}" required>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <label class="form-label fw-semibold">Email address</label>
+          <input class="form-control" type="email" name="email" maxlength="100" required>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <label class="form-label fw-semibold">Staff role</label>
+          <select class="form-select" name="role_id" required>
+            <option value="">Select role</option>
+            <?php foreach (($staffRoles ?? []) as $role): ?>
+              <option value="<?= (int)$role['id'] ?>"><?= htmlspecialchars((string)$role['name'], ENT_QUOTES, 'UTF-8') ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label fw-semibold">Temporary password</label>
+          <input class="form-control" type="password" name="password" minlength="8" maxlength="200" autocomplete="new-password" required>
+          <div class="form-text">At least 8 characters. Staff must change it at first sign-in.</div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-4">
+          <label class="form-label fw-semibold">Terminal PIN <span class="text-muted fw-normal">(optional)</span></label>
+          <input class="form-control" type="password" name="pin" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" autocomplete="new-password" placeholder="4–6 digits">
+        </div>
+        <div class="col-12 col-xl-4 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100"><i class="bi bi-person-plus me-1"></i>Create staff account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="card border-0 shadow-sm">
     <div class="card-header bg-white border-0 px-4 pt-4 pb-2">
       <div class="d-flex align-items-center justify-content-between">
         <div>
           <h2 class="h5 fw-bold mb-1">Staff accounts</h2>
-          <p class="text-muted small mb-0">Edit account details or update a staff member's terminal PIN.</p>
+          <p class="text-muted small mb-0">Review staff access, update account details, or reset terminal PINs.</p>
         </div>
         <span class="badge rounded-pill text-bg-light"><?= count($staffMembers) ?> staff</span>
       </div>
@@ -37,6 +82,7 @@
           <tr>
             <th class="ps-4">Staff member</th>
             <th>Username</th>
+            <th>Role</th>
             <th>Status</th>
             <th>Terminal PIN</th>
             <th class="text-end pe-4">Action</th>
@@ -44,7 +90,7 @@
         </thead>
         <tbody>
         <?php if (empty($staffMembers)): ?>
-          <tr><td colspan="5" class="text-center text-muted py-5">No staff accounts found.</td></tr>
+          <tr><td colspan="6" class="text-center text-muted py-5">No staff accounts found. Use the form above to add your first staff member.</td></tr>
         <?php else: foreach ($staffMembers as $staff): ?>
           <tr>
             <td class="ps-4">
@@ -52,6 +98,7 @@
               <div class="small text-muted"><?= htmlspecialchars((string)($staff['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?></div>
             </td>
             <td><?= htmlspecialchars((string)$staff['username'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><span class="badge bg-light text-dark"><?= htmlspecialchars((string)($staff['role_name'] ?? 'Staff'), ENT_QUOTES, 'UTF-8') ?></span></td>
             <td><span class="badge rounded-pill <?= $staff['status'] === 'active' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' ?>"><?= htmlspecialchars(ucfirst((string)$staff['status']), ENT_QUOTES, 'UTF-8') ?></span></td>
             <td>
               <?php if (!empty($staff['pin_configured'])): ?>
