@@ -2128,14 +2128,11 @@ body {
     }
 }
 
-/* ServeFlow activation modal: blur the dashboard beneath the Bootstrap modal. */
-body:has(#serveflowActivationModal.show) > .app-shell {
+/* Blur only dashboard content behind the activation dialog; keep the dialog sharp. */
+body:has(#serveflowActivationModal.show)
+.container-fluid:has(> #serveflowActivationModal.show)
+> :not(#serveflowActivationModal) {
     filter: blur(6px);
-    transform: translateZ(0);
     pointer-events: none;
     user-select: none;
-}
-body:has(#serveflowActivationModal.show) #serveflowActivationModal,
-body:has(#serveflowActivationModal.show) .modal-backdrop {
-    filter: none;
 }
