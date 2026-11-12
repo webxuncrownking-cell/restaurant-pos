@@ -1,7 +1,20 @@
-    <footer class="app-footer">
-      <span>&copy; <?= date('Y') ?> ServeFlow POS. All rights reserved.</span>
-      <span><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Restaurant operations platform</span>
-    </footer>
+    <?php
+      $currentRequestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+      $currentRequestPage = basename(rtrim($currentRequestPath, '/'));
+      $hideFormPageFooter = in_array($currentRequestPage, [
+        'login',
+        'register',
+        'terminal-login',
+        'change-password',
+        'activation'
+      ], true);
+    ?>
+    <?php if (!$hideFormPageFooter): ?>
+      <footer class="app-footer">
+        <span>&copy; <?= date('Y') ?> ServeFlow POS. All rights reserved.</span>
+        <span><i class="bi bi-shield-check me-1" aria-hidden="true"></i> Restaurant operations platform</span>
+      </footer>
+    <?php endif; ?>
   </main>
 </div>
 
