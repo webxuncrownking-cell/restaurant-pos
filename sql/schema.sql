@@ -123,6 +123,7 @@ CREATE TABLE `subscription_plans` (
   `price_annually` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `max_terminals` SMALLINT UNSIGNED NOT NULL DEFAULT 2,
   `max_products` INT UNSIGNED NOT NULL DEFAULT 100,
+  `max_staff` SMALLINT UNSIGNED NOT NULL DEFAULT 2 COMMENT '0 means unlimited; owner is excluded',
   `features_json` JSON NOT NULL,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
