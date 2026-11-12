@@ -71,6 +71,8 @@ class DeviceController
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $fullName = trim((string)$request->post('full_name', ''));
         $username = trim((string)$request->post('username', ''));
+        // Staff accounts do not require an email address. The users table
+        // requires a value, so use a non-deliverable internal placeholder.
         $email = trim((string)$request->post('email', ''));
         $password = (string)$request->post('password', '');
         $roleId = (int)$request->post('role_id', 0);
@@ -78,11 +80,15 @@ class DeviceController
 
         if ($restaurantId <= 0 || $fullName === '' || strlen($fullName) > 100 ||
             !preg_match('/^[A-Za-z0-9._-]{3,50}$/D', $username) ||
-            $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100 ||
+            ($email !== '' && (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100)) ||
             strlen($password) < 8 || strlen($password) > 200 ||
             $roleId <= 0 || ($pin !== '' && !preg_match('/^[0-9]{4,6}$/D', $pin))) {
-            $_SESSION['flash_error'] = 'Enter a valid name, username (3–50 characters), email, password (at least 8 characters), role, and optional 4–6 digit PIN.';
+            $_SESSION['flash_error'] = 'Enter a valid name, username (3–50 characters), password (at least 8 characters), role, and optional 4–6 digit PIN.';
             Response::redirect('/staff-pins');
+        }
+
+        if ($email === '') {
+            $email = strtolower($username) . '@staff.invalid';
         }
 
         $role = Database::fetchOne(
