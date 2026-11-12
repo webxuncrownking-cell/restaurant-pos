@@ -119,6 +119,7 @@ class BillingService
             'advanced_reports' => ['advanced_reports', 'reports'],
             'recipe_costing' => ['recipe_costing', 'recipe_bom'],
             'multi_terminal' => ['multi_terminal', 'multi_device'],
+            'staff_management' => ['staff_management'],
         ];
         $keys = $aliases[$feature] ?? [$feature];
         foreach ($keys as $key) {
