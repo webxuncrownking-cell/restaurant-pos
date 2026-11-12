@@ -180,7 +180,33 @@ class BillingService
             [$restaurantId]
         );
 
-        return max(0, (int)($row['max_staff'] ?? 0));
+        // No subscription row means the activated default-access fallback:
+        // one additional staff account. A stored value of 0 means unlimited.
+        return $row ? max(0, (int)$row['max_staff']) : 1;
+    }
+
+    /**
+     * Maximum number of menu products allowed by the current plan.
+     * A value of 0 means unlimited.
+     */
+    public static function getProductLimit(int $restaurantId): int
+    {
+        if ($restaurantId <= 0) return 0;
+
+        $row = Database::fetchOne(
+            "SELECT p.max_products
+             FROM subscriptions s
+             JOIN subscription_plans p ON p.id = s.plan_id
+             WHERE s.restaurant_id = ?
+             ORDER BY s.id DESC LIMIT 1",
+            [$restaurantId]
+        );
+
+        if ($row) return max(0, (int)$row['max_products']);
+
+        // Activated accounts without a subscription receive the default
+        // catalog allowance only while their basic reports entitlement is active.
+        return self::hasFeature($restaurantId, 'reports') ? 50 : 0;
     }
 
     /**
