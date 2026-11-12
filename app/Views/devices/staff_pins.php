@@ -22,11 +22,24 @@
   <?php endif; ?>
 
   <?php if (!empty($canManageStaff)): ?>
-  <div class="d-flex justify-content-end mb-3">
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div class="small text-muted">
+      <?php if ((int)($staffLimit ?? 0) === 0): ?>
+        <strong><?= (int)($staffCount ?? 0) ?></strong> active staff accounts · Unlimited on your plan
+      <?php else: ?>
+        <strong><?= (int)($staffCount ?? 0) ?> / <?= (int)$staffLimit ?></strong> active staff accounts included in your plan
+      <?php endif; ?>
+    </div>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal" <?= ((int)($staffLimit ?? 0) > 0 && (int)($staffCount ?? 0) >= (int)$staffLimit) ? 'disabled' : '' ?>>
       <i class="bi bi-person-plus me-1"></i> Add Staff
     </button>
   </div>
+  <?php if ((int)($staffLimit ?? 0) > 0 && (int)($staffCount ?? 0) >= (int)$staffLimit): ?>
+    <div class="alert alert-warning small mb-3" role="status">
+      You've reached your plan's <?= (int)$staffLimit ?>-staff limit. Upgrade your subscription to add more staff accounts.
+      <a href="<?= BASE_URL ?>/billing" class="alert-link">View plans</a>.
+    </div>
+  <?php endif; ?>
   <?php else: ?>
   <div class="alert alert-info d-flex align-items-start gap-2 mb-3" role="status">
     <i class="bi bi-info-circle mt-1"></i>
