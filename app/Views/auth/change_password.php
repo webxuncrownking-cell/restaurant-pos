@@ -55,6 +55,22 @@ html[data-theme="dark"] .password-page-wrap .form-control::placeholder { color:#
   @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; width:44px; height:44px; padding:4px; } .auth-theme-control button { width:34px; height:34px; flex-basis:34px; } }
 
 
+
+/* Larger, clearer password update form */
+.password-page-wrap > .container { max-width: 620px !important; }
+.password-page-wrap .password-brand-title { font-size: 2.25rem !important; }
+.password-page-wrap .auth-brand-icon { width: 78px !important; height: 78px !important; }
+.password-page-wrap .card-header { padding: 23px 30px !important; }
+.password-page-wrap .card-header h2 { font-size: 1.2rem !important; }
+.password-page-wrap .card-body { padding: 32px !important; }
+.password-page-wrap .card-body > p { font-size: 1rem !important; line-height: 1.6; }
+.password-page-wrap .form-label { font-size: 1rem !important; margin-bottom: 9px; }
+.password-page-wrap .form-control { min-height: 56px !important; font-size: 1rem !important; padding: 12px 15px !important; }
+.password-page-wrap .btn-warning { min-height: 58px !important; font-size: 1.05rem !important; }
+@media(max-width:575.98px) {
+  .password-page-wrap { padding: 28px 14px !important; }
+  .password-page-wrap .card-body { padding: 24px 20px !important; }
+}
 </style>
 
 <div class="auth-theme-control" role="group" aria-label="Appearance">
