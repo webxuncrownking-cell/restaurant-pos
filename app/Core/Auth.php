@@ -53,7 +53,8 @@ class Auth
             } else {
                 $tenantId = (int)Session::get('restaurant_id');
                 $sql = "SELECT u.id, u.restaurant_id, u.role_id, u.username, u.email, u.full_name, u.status, u.must_change_password,
-                               r.name AS role_name, r.slug AS role_slug, rest.name AS restaurant_name, rest.activation_status, rest.activation_trial_until
+                               r.name AS role_name, r.slug AS role_slug, rest.name AS restaurant_name, rest.activation_status, rest.activation_trial_until,
+                               CASE WHEN rest.activation_trial_until IS NOT NULL AND rest.activation_trial_until <= NOW() THEN 1 ELSE 0 END AS activation_trial_expired
                         FROM users u
                         JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
                         JOIN restaurants rest ON rest.id = u.restaurant_id
@@ -147,13 +148,10 @@ class Auth
 
             // A submitted activation payment grants a 24-hour provisional access window.
             // Expire it on the first authenticated request at or after the deadline.
-            $trialUntil = (string)($user['activation_trial_until'] ?? '');
             if (
                 $user &&
                 ($user['activation_status'] ?? '') === 'activated' &&
-                $trialUntil !== '' &&
-                strtotime($trialUntil) !== false &&
-                strtotime($trialUntil) <= time()
+                (int)($user['activation_trial_expired'] ?? 0) === 1
             ) {
                 try {
                     Database::query(
@@ -171,6 +169,7 @@ class Auth
                 // Fail closed for this request even if the database update needs retrying.
                 self::$user['activation_status'] = 'pending';
                 self::$user['activation_trial_until'] = null;
+                self::$user['activation_trial_expired'] = 0;
                 $user = self::$user;
             }
 
