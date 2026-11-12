@@ -66,6 +66,25 @@ html[data-theme="dark"] .login-page-wrap .form-control::placeholder { color:#839
   @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; width:44px; height:44px; padding:4px; } .auth-theme-control button { width:34px; height:34px; flex-basis:34px; } }
 
 
+
+/* Larger, easier-to-read authentication form */
+.login-page-wrap .login-column { max-width: 560px !important; }
+.login-page-wrap .login-brand-title { font-size: 2.25rem !important; }
+.login-page-wrap .login-brand-subtitle { font-size: 1rem !important; }
+.login-page-wrap .auth-brand-icon { width: 78px !important; height: 78px !important; }
+.login-page-wrap .card-header { padding: 22px 30px !important; }
+.login-page-wrap .card-header h5 { font-size: 1.2rem !important; }
+.login-page-wrap .card-body { padding: 32px !important; }
+.login-page-wrap .form-label { font-size: 1rem !important; margin-bottom: 9px; }
+.login-page-wrap .form-control { min-height: 56px !important; font-size: 1rem !important; padding-top: 12px !important; padding-bottom: 12px !important; }
+.login-page-wrap .input-group-text { min-width: 52px !important; font-size: 1.1rem !important; }
+.login-page-wrap .btn-warning { min-height: 58px !important; font-size: 1.05rem !important; }
+.login-page-wrap a, .login-page-wrap .text-muted { font-size: .95rem !important; }
+@media(max-width:575.98px) {
+  .login-page-wrap { padding: 28px 16px !important; }
+  .login-page-wrap .card-body { padding: 24px 20px !important; }
+  .login-page-wrap .login-brand-title { font-size: 1.9rem !important; }
+}
 </style>
 
 <div class="auth-theme-control" role="group" aria-label="Appearance">
