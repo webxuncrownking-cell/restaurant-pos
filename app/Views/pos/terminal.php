@@ -2746,6 +2746,28 @@ html[data-theme="dark"] body:has(.pos-workspace) .product-card {
     margin-top:0 !important;
   }
 }
+
+  /* High-contrast cashier avatar: keep the person icon blue on its pale tile. */
+  body .pos-header .pos-cashier-btn .pos-cashier-avatar {
+    display:inline-grid !important;
+    place-items:center !important;
+    flex:0 0 42px !important;
+    width:42px !important;
+    height:42px !important;
+    border-radius:12px !important;
+    background:#eaf2ff !important;
+    color:#1769d2 !important;
+  }
+  body .pos-header .pos-cashier-btn .pos-cashier-avatar i,
+  body .pos-header .pos-cashier-btn .pos-cashier-avatar .bi {
+    display:inline-block !important;
+    color:#1769d2 !important;
+    -webkit-text-fill-color:#1769d2 !important;
+    opacity:1 !important;
+    visibility:visible !important;
+    font-size:1.2rem !important;
+    line-height:1 !important;
+  }
 </style>
 
 <!-- Modern POS Header Bar -->
