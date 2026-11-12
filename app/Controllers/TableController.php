@@ -14,6 +14,7 @@ use App\Core\TenantContext;
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Services\TableService;
+use App\Services\BillingService;
 use App\Services\TableQrService;
 use Exception;
 
