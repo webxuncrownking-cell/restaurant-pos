@@ -218,8 +218,8 @@
 /* Reduce the cashier PIN panel further for a more compact login layout. */
 .terminal-login-page .terminal-login-shell,
 .terminal-login-page .terminal-login-card {
-  width: min(100%, 560px) !important;
-  max-width: 560px !important;
+  width: min(100%, 450px) !important;
+  max-width: 450px !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
