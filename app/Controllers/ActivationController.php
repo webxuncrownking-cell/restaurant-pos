@@ -180,7 +180,7 @@ class ActivationController
         Auth::requireLogin();
         if (!Auth::isPlatformAdmin()) Response::forbidden('Platform administrator access required.');
         $rows = Database::fetchAll(
-            "SELECT p.*, r.name AS restaurant_name, r.slug, u.full_name AS submitted_by_name
+            "SELECT p.*, r.name AS restaurant_name, r.slug, r.activation_trial_until, u.full_name AS submitted_by_name
              FROM activation_payment_submissions p
              JOIN restaurants r ON r.id = p.restaurant_id
              JOIN users u ON u.id = p.submitted_by AND u.restaurant_id = p.restaurant_id
