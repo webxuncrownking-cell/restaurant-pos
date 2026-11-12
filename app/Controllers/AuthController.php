@@ -218,6 +218,6 @@ class AuthController
     {
         Auth::logout();
         Session::setFlash('info', 'You have been signed out successfully.');
-        Response::redirect('/terminal-login');
+        Response::redirect('/login');
     }
 }
