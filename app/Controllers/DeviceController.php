@@ -96,9 +96,9 @@ class DeviceController
 
         $duplicate = Database::fetchOne(
             "SELECT id FROM users
-             WHERE restaurant_id = :restaurant_id AND deleted_at IS NULL
+             WHERE deleted_at IS NULL
                AND (username = :username OR email = :email) LIMIT 1",
-            [':restaurant_id' => $restaurantId, ':username' => $username, ':email' => $email]
+            [':username' => $username, ':email' => $email]
         );
         if ($duplicate) {
             $_SESSION['flash_error'] = 'That username or email is already used by an account in this restaurant.';
