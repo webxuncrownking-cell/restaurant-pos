@@ -127,6 +127,23 @@ class MenuController
             return;
         }
         $restaurantId = (int)$restaurant['id'];
+
+        // Enforce the plan's catalog allowance on the server, not only in pricing UI.
+        $productLimit = BillingService::getProductLimit($restaurantId);
+        if ($productLimit > 0) {
+            $productCountRow = Database::fetchOne(
+                "SELECT COUNT(*) AS total FROM products WHERE restaurant_id = ?",
+                [$restaurantId]
+            );
+            $productCount = (int)($productCountRow['total'] ?? 0);
+            if ($productCount >= $productLimit) {
+                Response::redirect('/menu?error=' . urlencode(
+                    "Your current plan allows up to {$productLimit} products. Upgrade your plan to add more."
+                ));
+                return;
+            }
+        }
+
         $this->ensureKitchenStationColumn();
         $imageColumnReady = $this->hasProductImageColumn();
         $imageUpload = $_FILES['product_image'] ?? null;
