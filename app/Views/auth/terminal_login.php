@@ -103,6 +103,30 @@
  .pin-keypad{gap:8px;max-width:270px}
  .pin-key{height:54px}
 }
+
+/* Final layout refinements: larger keypad card and clearer controls */
+.terminal-login-card { max-width:620px; border-radius:26px; }
+.terminal-login-head { padding:36px 42px 18px; }
+.terminal-login-icon { width:68px; height:68px; font-size:2rem; }
+.terminal-login-head h1 { font-size:2rem; }
+.terminal-login-body { padding:24px 48px 38px; }
+.terminal-login-user { font-size:1.12rem; }
+.pin-dots { gap:15px; margin-bottom:22px; }
+.pin-dot { width:16px; height:16px; }
+.pin-keypad { max-width:390px; gap:13px; }
+.pin-key { height:76px; border-radius:16px; font-size:1.55rem; }
+.pin-key.confirm { background:#eaf2ff; border-color:#c8dcfa; color:var(--terminal-brand); }
+.terminal-login-remember { font-size:.92rem; margin:16px 0 20px; }
+.terminal-login-submit { min-height:58px; font-size:1.05rem; }
+.terminal-login-links { max-width:620px; margin-top:22px; font-size:.95rem; }
+@media(max-width:520px) {
+ .terminal-login-card { max-width:440px; }
+ .terminal-login-head { padding:26px 24px 14px; }
+ .terminal-login-body { padding:18px 24px 28px; }
+ .pin-keypad { max-width:340px; gap:9px; }
+ .pin-key { height:64px; }
+ .terminal-login-links { font-size:.88rem; }
+}
 </style>
 
 <div class="terminal-login-page">
@@ -161,7 +185,6 @@
      <button type="button" class="pin-key" data-digit="7">7</button>
      <button type="button" class="pin-key" data-digit="8">8</button>
      <button type="button" class="pin-key" data-digit="9">9</button>
-     <span class="pin-key-spacer" aria-hidden="true"></span>
      <button type="button" class="pin-key" data-digit="0">0</button>
      <button type="button" class="pin-key utility" id="deletePin" aria-label="Delete last PIN digit"><i class="bi bi-backspace"></i></button>
      <button type="button" class="pin-key confirm" id="confirmPin" aria-label="Submit PIN"><i class="bi bi-check-lg"></i></button>
