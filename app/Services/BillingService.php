@@ -116,7 +116,7 @@ class BillingService
         // Feature aliases keep older plan JSON compatible without granting
         // unrelated premium modules.
         $aliases = [
-            'advanced_reports' => ['advanced_reports', 'reports'],
+            'advanced_reports' => ['advanced_reports'],
             'recipe_costing' => ['recipe_costing', 'recipe_bom'],
             'multi_terminal' => ['multi_terminal', 'multi_device'],
             'staff_management' => ['staff_management'],
@@ -133,7 +133,7 @@ class BillingService
         $planSlug = strtolower((string)($subscription['plan_slug'] ?? ''));
         $tierFeatures = [
             'pro' => [
-                'advanced_reports', 'customer_crm', 'loyalty', 'combo_meals',
+                'advanced_reports', 'customer_crm', 'loyalty', 'combo_meals', 'api_access',
                 'scheduled_pricing', 'reservations', 'expenses'
             ],
             'business' => [
