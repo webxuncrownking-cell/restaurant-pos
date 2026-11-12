@@ -492,7 +492,7 @@
       <section class="dashboard-recent">
         <div class="recent-heading">
           <div>
-            <h2><?= $roleSlug === 'kitchen' ? 'Kitchen orders' : 'Your service tools' ?></h2>
+            <h2><?= ($roleSlug === 'kitchen' && $hasKitchenDisplay) ? 'Kitchen orders' : 'Your service tools' ?></h2>
             <p><?= $roleSlug === 'kitchen' ? 'Open the kitchen display to view and update incoming orders.' : 'Use the management shortcuts available for your role.' ?></p>
           </div>
         </div>
