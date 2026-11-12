@@ -21,12 +21,21 @@
     <?php unset($_SESSION['flash_error']); ?>
   <?php endif; ?>
 
+  <?php if (!empty($canManageStaff)): ?>
   <div class="d-flex justify-content-end mb-3">
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal">
       <i class="bi bi-person-plus me-1"></i> Add Staff
     </button>
   </div>
+  <?php else: ?>
+  <div class="alert alert-info d-flex align-items-start gap-2 mb-3" role="status">
+    <i class="bi bi-info-circle mt-1"></i>
+    <div><strong>Staff management is not included in your current plan.</strong> Upgrade your subscription to create and manage staff accounts.</div>
+    <a class="btn btn-sm btn-outline-primary ms-auto" href="<?= BASE_URL ?>/billing">View plans</a>
+  </div>
+  <?php endif; ?>
 
+  <?php if (!empty($canManageStaff)): ?>
   <div class="modal fade" id="createStaffModal" tabindex="-1" aria-labelledby="createStaffModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 shadow">
@@ -77,6 +86,8 @@
       </div>
     </div>
   </div>
+
+  <?php endif; ?>
 
   <div class="card border-0 shadow-sm">
     <div class="card-header bg-white border-0 px-4 pt-4 pb-2">
