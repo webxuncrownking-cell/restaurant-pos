@@ -79,16 +79,37 @@
               <?php if ($isCurrent): ?>
                 <button class="btn btn-outline-primary w-100 disabled" disabled>Active Plan</button>
               <?php else: ?>
-                <form method="POST" action="<?= BASE_URL ?>/billing/payment/submit" enctype="multipart/form-data" class="border rounded-3 p-3">
-                  <?= \App\Core\CSRF::formField() ?>
-                  <input type="hidden" name="plan_id" value="<?= (int)$p['id'] ?>">
-                  <div class="mb-2"><label class="form-label small fw-semibold">Billing cycle</label><select class="form-select form-select-sm" name="billing_cycle"><option value="monthly">Monthly</option><option value="annually">Annual</option></select></div>
-                  <div class="mb-2"><label class="form-label small fw-semibold">Payment method</label><select class="form-select form-select-sm" name="payment_method" required><option value="">Choose</option><option value="gcash">GCash</option><option value="bank_transfer">Bank transfer</option><option value="cash_deposit">Cash deposit</option><option value="other">Other</option></select></div>
-                  <div class="mb-2"><input class="form-control form-control-sm" name="transaction_reference" maxlength="120" placeholder="Transaction reference" required></div>
-                  <div class="mb-2"><input class="form-control form-control-sm" name="payer_name" maxlength="120" placeholder="Payer name" required></div>
-                  <div class="mb-3"><input class="form-control form-control-sm" type="file" name="payment_proof" accept=".jpg,.jpeg,.png,.webp,.pdf" required><div class="form-text">Receipt required; max 5 MB.</div></div>
-                  <button type="submit" class="btn btn-primary w-100 fw-semibold">Submit payment for review</button>
-                </form>
+                <button type="button" class="btn btn-primary w-100 fw-semibold" data-bs-toggle="modal" data-bs-target="#subscribePlan<?= (int)$p['id'] ?>">
+                  <i class="bi bi-credit-card me-1"></i> Choose this plan
+                </button>
+                <div class="modal fade" id="subscribePlan<?= (int)$p['id'] ?>" tabindex="-1" aria-labelledby="subscribePlanLabel<?= (int)$p['id'] ?>" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                      <form method="POST" action="<?= BASE_URL ?>/billing/payment/submit" enctype="multipart/form-data">
+                        <div class="modal-header border-0 px-4 pt-4">
+                          <div>
+                            <h2 class="modal-title h5 fw-bold" id="subscribePlanLabel<?= (int)$p['id'] ?>">Subscribe to <?= htmlspecialchars($p['name']) ?></h2>
+                            <p class="text-muted small mb-0">Submit your payment details for administrator verification.</p>
+                          </div>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body px-4">
+                          <?= \App\Core\CSRF::formField() ?>
+                          <input type="hidden" name="plan_id" value="<?= (int)$p['id'] ?>">
+                          <div class="mb-3"><label class="form-label small fw-semibold">Billing cycle</label><select class="form-select" name="billing_cycle"><option value="monthly">Monthly</option><option value="annually">Annual</option></select></div>
+                          <div class="mb-3"><label class="form-label small fw-semibold">Payment method</label><select class="form-select" name="payment_method" required><option value="">Choose payment method</option><option value="gcash">GCash</option><option value="bank_transfer">Bank transfer</option><option value="cash_deposit">Cash deposit</option><option value="other">Other</option></select></div>
+                          <div class="mb-3"><label class="form-label small fw-semibold">Transaction reference</label><input class="form-control" name="transaction_reference" maxlength="120" required></div>
+                          <div class="mb-3"><label class="form-label small fw-semibold">Payer name</label><input class="form-control" name="payer_name" maxlength="120" required></div>
+                          <div class="mb-2"><label class="form-label small fw-semibold">Proof of payment</label><input class="form-control" type="file" name="payment_proof" accept=".jpg,.jpeg,.png,.webp,.pdf" required><div class="form-text">JPG, PNG, WEBP, or PDF; maximum 5 MB.</div></div>
+                        </div>
+                        <div class="modal-footer border-0 px-4 pb-4">
+                          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                          <button type="submit" class="btn btn-primary fw-semibold">Submit payment for review</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>         </form>
               <?php endif; ?>
             </div>
           </div>
