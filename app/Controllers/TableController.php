@@ -71,6 +71,7 @@ class TableController
     public function migrateQr(Request $request): void
     {
         Auth::requireAuth();
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'table_mgmt', 'Floor & Tables');
         CSRF::validateToken($request->post('_csrf_token'));
         if (!Auth::isPlatformAdmin() && !in_array(Auth::roleSlug(), ['owner', 'manager'], true)) {
             Response::forbidden('Only a restaurant owner or manager can enable table QR ordering.');
@@ -93,6 +94,7 @@ class TableController
     public function qrPage(Request $request, array $params): void
     {
         Auth::requireAuth();
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'table_mgmt', 'Floor & Tables');
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $tableId = filter_var($params['id'] ?? null, FILTER_VALIDATE_INT);
         if ($restaurantId <= 0 || !$tableId || $tableId < 1) {
@@ -127,6 +129,7 @@ class TableController
     public function create(Request $request): void
     {
         Auth::requireAuth();
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'table_mgmt', 'Floor & Tables');
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
 
@@ -153,6 +156,7 @@ class TableController
     public function updateStatus(Request $request): void
     {
         Auth::requireAuth();
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'table_mgmt', 'Floor & Tables');
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
 
@@ -175,6 +179,7 @@ class TableController
     public function transferOrder(Request $request): void
     {
         Auth::requireAuth();
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'table_mgmt', 'Floor & Tables');
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $orderId = filter_var($request->post('order_id'), FILTER_VALIDATE_INT);
@@ -199,6 +204,7 @@ class TableController
     public function mergeOrders(Request $request): void
     {
         Auth::requireAuth();
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'table_mgmt', 'Floor & Tables');
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $targetOrderId = filter_var($request->post('target_order_id'), FILTER_VALIDATE_INT);
@@ -225,6 +231,7 @@ class TableController
     public function delete(Request $request): void
     {
         Auth::requireAuth();
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'table_mgmt', 'Floor & Tables');
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
 
