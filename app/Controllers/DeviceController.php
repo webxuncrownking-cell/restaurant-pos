@@ -47,8 +47,8 @@ class DeviceController
         );
         $staffRoles = Database::fetchAll(
             "SELECT id, name, slug FROM roles
-             WHERE restaurant_id = :restaurant_id AND slug <> 'owner'
-             ORDER BY name ASC",
+             WHERE restaurant_id = :restaurant_id AND slug IN ('manager', 'cashier')
+             ORDER BY CASE slug WHEN 'manager' THEN 1 WHEN 'cashier' THEN 2 ELSE 3 END",
             [':restaurant_id' => $restaurantId]
         );
 
@@ -98,7 +98,7 @@ class DeviceController
         }
 
         $role = Database::fetchOne(
-            "SELECT id FROM roles WHERE id = :role_id AND restaurant_id = :restaurant_id AND slug <> 'owner' LIMIT 1",
+            "SELECT id FROM roles WHERE id = :role_id AND restaurant_id = :restaurant_id AND slug IN ('manager', 'cashier') LIMIT 1",
             [':role_id' => $roleId, ':restaurant_id' => $restaurantId]
         );
         if (!$role) {
