@@ -56,6 +56,11 @@
                       <label class="form-label fw-semibold">Annual price (PHP)</label>
                       <input class="form-control" type="number" min="0" max="10000000" step="0.01" required name="plans[<?= $planId ?>][annually]" value="<?= htmlspecialchars((string)$plan['price_annually'], ENT_QUOTES, 'UTF-8') ?>">
                     </div>
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Maximum staff accounts</label>
+                      <input class="form-control" type="number" min="0" max="5000" step="1" required name="plans[<?= $planId ?>][max_staff]" value="<?= (int)($plan['max_staff'] ?? 0) ?>">
+                      <div class="form-text">Enter 0 for unlimited. The owner account is not counted.</div>
+                    </div>
                   </div>
                   <h6 class="fw-bold mb-3">Premium modules included in this plan</h6>
                   <div class="row g-2">
