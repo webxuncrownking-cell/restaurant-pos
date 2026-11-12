@@ -58,6 +58,27 @@ html[data-theme="dark"] .register-page-wrap .form-control::placeholder { color:#
   @media(max-width:575.98px) { .auth-theme-control { top:12px; right:12px; width:44px; height:44px; padding:4px; } .auth-theme-control button { width:34px; height:34px; flex-basis:34px; } }
 
 
+
+/* Larger, clearer restaurant registration form */
+.register-page-wrap > .container { max-width: 860px !important; }
+.register-page-wrap .register-brand-title { font-size: 2.25rem !important; }
+.register-page-wrap .auth-brand-icon { width: 78px !important; height: 78px !important; }
+.register-page-wrap .card-header { padding: 23px 32px !important; }
+.register-page-wrap .card-header h2 { font-size: 1.25rem !important; }
+.register-page-wrap .card-body { padding: clamp(28px, 4vw, 42px) !important; }
+.register-page-wrap .form-label { font-size: 1rem !important; margin-bottom: 9px; }
+.register-page-wrap .form-control,
+.register-page-wrap .form-select { min-height: 56px !important; font-size: 1rem !important; padding: 12px 15px !important; }
+.register-page-wrap .form-text { font-size: .9rem !important; margin-top: 7px; }
+.register-page-wrap .alert { font-size: .95rem !important; }
+.register-page-wrap .btn-warning { min-height: 60px !important; font-size: 1.05rem !important; }
+.register-page-wrap > .container > p { font-size: 1rem !important; }
+@media(max-width:575.98px) {
+  .register-page-wrap { padding: 28px 14px !important; }
+  .register-page-wrap .card-header { padding: 19px 20px !important; }
+  .register-page-wrap .card-body { padding: 24px 20px !important; }
+  .register-page-wrap .register-brand-title { font-size: 1.9rem !important; }
+}
 </style>
 
 <div class="auth-theme-control" role="group" aria-label="Appearance">
