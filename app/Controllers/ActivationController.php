@@ -49,10 +49,26 @@ class ActivationController
     private static function ensureDefaultActivatedSubscription(int $restaurantId): void
     {
         $existing = Database::fetchOne(
-            "SELECT id FROM subscriptions WHERE restaurant_id = ? ORDER BY id DESC LIMIT 1",
+            "SELECT s.id, p.slug AS plan_slug
+             FROM subscriptions s
+             JOIN subscription_plans p ON p.id = s.plan_id
+             WHERE s.restaurant_id = ? ORDER BY s.id DESC LIMIT 1",
             [$restaurantId]
         );
-        if ($existing) return;
+        if ($existing) {
+            // Preserve paid plans. A rejected default-access subscription can
+            // be reactivated when the owner submits a new activation payment.
+            if (($existing['plan_slug'] ?? '') === 'default-activated') {
+                Database::query(
+                    "UPDATE subscriptions
+                     SET status = 'active', current_period_start = NOW(),
+                         current_period_end = '9999-12-31 23:59:59', grace_period_days = 0
+                     WHERE id = ?",
+                    [(int)$existing['id']]
+                );
+            }
+            return;
+        }
 
         $plan = Database::fetchOne(
             "SELECT id FROM subscription_plans WHERE slug = 'default-activated' AND is_active = 1 LIMIT 1"
@@ -254,6 +270,13 @@ class ActivationController
             } else {
                 Database::query(
                     "UPDATE restaurants SET activation_status = 'rejected', activation_trial_until = NULL WHERE id = ? AND (activation_trial_until IS NOT NULL OR activation_status <> 'activated')",
+                    [(int)$submission['restaurant_id']]
+                );
+                Database::query(
+                    "UPDATE subscriptions s
+                     JOIN subscription_plans p ON p.id = s.plan_id
+                     SET s.status = 'expired', s.current_period_end = NOW()
+                     WHERE s.restaurant_id = ? AND p.slug = 'default-activated'",
                     [(int)$submission['restaurant_id']]
                 );
             }
