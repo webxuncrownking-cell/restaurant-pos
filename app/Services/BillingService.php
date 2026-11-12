@@ -139,7 +139,7 @@ class BillingService
             'business' => [
                 'advanced_reports', 'customer_crm', 'loyalty', 'combo_meals',
                 'scheduled_pricing', 'reservations', 'expenses', 'suppliers',
-                'purchase_orders', 'recipe_costing', 'expiry_wastage', 'multi_terminal'
+                'purchase_orders', 'recipe_costing', 'expiry_wastage', 'multi_terminal', 'api_access'
             ],
         ];
         return in_array($feature, $tierFeatures[$planSlug] ?? [], true);
