@@ -2128,8 +2128,14 @@ body {
     }
 }
 
-/* ServeFlow activation modal: blur the dashboard behind the blocking dialog. */
-body:has(#serveflowActivationModal.show) .modal-backdrop.show {
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+/* ServeFlow activation modal: blur the dashboard beneath the Bootstrap modal. */
+body:has(#serveflowActivationModal.show) > .app-shell {
+    filter: blur(6px);
+    transform: translateZ(0);
+    pointer-events: none;
+    user-select: none;
+}
+body:has(#serveflowActivationModal.show) #serveflowActivationModal,
+body:has(#serveflowActivationModal.show) .modal-backdrop {
+    filter: none;
 }
