@@ -28,7 +28,7 @@
     </div>
     <div class="card-body px-4 pb-4">
       <form method="POST" action="<?= BASE_URL ?>/staff-pins/create" class="row g-3">
-        <input type="hidden" name="_csrf_token" value="<?= \\App\\Core\\CSRF::getToken() ?>">
+        <input type="hidden" name="_csrf_token" value="<?= \App\Core\CSRF::getToken() ?>">
         <div class="col-12 col-md-6 col-xl-3">
           <label class="form-label fw-semibold">Full name</label>
           <input class="form-control" name="full_name" maxlength="100" required>
