@@ -10,7 +10,7 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:28px 18px;
+  padding:34px 18px;
   background:linear-gradient(135deg,#f4f7fc 0%,#eaf1fb 100%);
   color:#172033;
 }
@@ -114,8 +114,6 @@
   </div>
 
   <div class="terminal-login-body">
-   <div class="terminal-login-title">Staff Sign In</div>
-   <div class="terminal-login-subtitle">Enter your staff PIN to continue to the POS.</div>
 
    <?php if (!empty($flashes)): ?>
     <?php foreach ($flashes as $flash): ?>
@@ -135,6 +133,7 @@
       <span id="rememberedStaffName"><?= htmlspecialchars($rememberedLogin, ENT_QUOTES, 'UTF-8') ?></span>
      </div>
      <input type="hidden" id="rememberedLogin" name="login" value="<?= htmlspecialchars($rememberedLogin, ENT_QUOTES, 'UTF-8') ?>">
+     <input type="hidden" name="remember_login" value="1" id="keepRememberedLogin">
      <button type="button" class="terminal-login-change" id="switchStaffButton">Not you? Switch account</button>
     </div>
 
@@ -165,108 +164,73 @@
      <span class="pin-key-spacer" aria-hidden="true"></span>
      <button type="button" class="pin-key" data-digit="0">0</button>
      <button type="button" class="pin-key utility" id="deletePin" aria-label="Delete last PIN digit"><i class="bi bi-backspace"></i></button>
+     <button type="button" class="pin-key confirm" id="confirmPin" aria-label="Submit PIN"><i class="bi bi-check-lg"></i></button>
     </div>
 
-    <label class="terminal-login-remember">
-     <input type="checkbox" name="remember_login" value="1" <?= $hasRememberedLogin ? 'checked' : '' ?>>
+    <label class="terminal-login-remember" id="rememberOption" <?= $hasRememberedLogin ? 'hidden' : '' ?>>
+     <input type="checkbox" name="remember_login" value="1">
      <span>Remember this username on this device</span>
     </label>
 
-    <button type="submit" class="btn terminal-login-submit w-100">
+    <button type="submit" class="btn terminal-login-submit w-100" id="signInButton" <?= $hasRememberedLogin ? 'hidden' : '' ?>>
      <i class="bi bi-box-arrow-in-right me-2"></i>Sign In to POS
     </button>
    </form>
+  </div>
+ </div>
 
-   <div class="terminal-login-help">Forgot your PIN? Contact your restaurant administrator.</div>
-   <div class="terminal-login-links">
+ <div class="terminal-login-links">
     <a href="<?= BASE_URL ?>/login">Owner / Admin sign in</a>
     <span class="text-muted mx-2">·</span>
     <a href="<?= BASE_URL ?>/register">Register restaurant</a>
-   </div>
-  </div>
  </div>
 </div>
 
 <script>
 (function () {
-  const form = document.getElementById('terminalPinForm');
-  if (!form) return;
-
-  const pin = document.getElementById('pin');
-  const dots = Array.from(document.querySelectorAll('.pin-dot'));
-  const remembered = document.getElementById('rememberedStaff');
-  const rememberedLogin = document.getElementById('rememberedLogin');
-  const loginField = document.getElementById('staffLoginField');
-  const loginInput = document.getElementById('loginInput');
-  const switchButton = document.getElementById('switchStaffButton');
-
-  function updateDots() {
-    const count = pin.value.length;
-    dots.forEach((dot, index) => dot.classList.toggle('filled', index < count));
-  }
-
-  function addDigit(digit) {
-    if (pin.value.length >= 6) return;
-    pin.value += digit;
-    updateDots();
-  }
-
-  document.querySelectorAll('[data-digit]').forEach(button => {
-    button.addEventListener('click', () => addDigit(button.dataset.digit));
-  });
-
-  document.getElementById('deletePin').addEventListener('click', () => {
-    pin.value = pin.value.slice(0, -1);
-    updateDots();
-  });
-
-  pin.addEventListener('input', () => {
-    pin.value = pin.value.replace(/\D/g, '').slice(0, 6);
-    updateDots();
-  });
-
-  pin.addEventListener('keydown', event => {
-    if (/^[0-9]$/.test(event.key)) {
-      event.preventDefault();
-      addDigit(event.key);
-    } else if (event.key === 'Backspace') {
-      event.preventDefault();
-      pin.value = pin.value.slice(0, -1);
-      updateDots();
-    }
-  });
-
-  if (switchButton) {
-    switchButton.addEventListener('click', () => {
-      remembered.hidden = true;
-      loginField.hidden = false;
-      loginInput.name = 'login';
-      loginInput.required = true;
-      rememberedLogin.disabled = true;
-      loginInput.focus();
-    });
-  }
-
-  form.addEventListener('submit', event => {
-    const login = remembered && !remembered.hidden
-      ? rememberedLogin.value.trim()
-      : loginInput.value.trim();
-
-    if (!login) {
-      event.preventDefault();
-      if (loginInput) loginInput.focus();
-      return;
-    }
-
-    if (!/^[0-9]{4,6}$/.test(pin.value)) {
-      event.preventDefault();
-      document.querySelector('.pin-key')?.focus();
-      return;
-    }
-
-    if (remembered && !remembered.hidden) rememberedLogin.disabled = false;
-  });
-
-  updateDots();
+ const form=document.getElementById('terminalPinForm');
+ if(!form)return;
+ const pin=document.getElementById('pin');
+ const dots=Array.from(document.querySelectorAll('.pin-dot'));
+ const remembered=document.getElementById('rememberedStaff');
+ const rememberedLogin=document.getElementById('rememberedLogin');
+ const loginField=document.getElementById('staffLoginField');
+ const loginInput=document.getElementById('loginInput');
+ const switchButton=document.getElementById('switchStaffButton');
+ const rememberOption=document.getElementById('rememberOption');
+ const signInButton=document.getElementById('signInButton');
+ const keepRemembered=document.getElementById('keepRememberedLogin');
+ const rememberedOnLoad=!!(remembered&&!remembered.hidden);
+ let submitting=false;
+ function updateDots(){dots.forEach((dot,i)=>dot.classList.toggle('filled',i<pin.value.length));}
+ function submitPin(){
+  const login=remembered&&!remembered.hidden?rememberedLogin.value.trim():(loginInput?loginInput.value.trim():'');
+  if(submitting||!login||!/^\d{4,6}$/.test(pin.value))return;
+  submitting=true;form.requestSubmit();
+ }
+ function addDigit(digit){
+  if(submitting||pin.value.length>=6)return;
+  pin.value+=digit;updateDots();
+  if(rememberedOnLoad&&pin.value.length===6)window.setTimeout(submitPin,180);
+ }
+ document.querySelectorAll('[data-digit]').forEach(btn=>btn.addEventListener('click',()=>addDigit(btn.dataset.digit)));
+ document.getElementById('deletePin').addEventListener('click',()=>{if(submitting)return;pin.value=pin.value.slice(0,-1);updateDots();});
+ document.getElementById('confirmPin').addEventListener('click',submitPin);
+ pin.addEventListener('input',()=>{pin.value=pin.value.replace(/\D/g,'').slice(0,6);updateDots();});
+ pin.addEventListener('keydown',e=>{
+  if(/^\d$/.test(e.key)){e.preventDefault();addDigit(e.key);}
+  else if(e.key==='Backspace'){e.preventDefault();pin.value=pin.value.slice(0,-1);updateDots();}
+  else if(e.key==='Enter'){e.preventDefault();submitPin();}
+ });
+ if(switchButton)switchButton.addEventListener('click',()=>{
+  remembered.hidden=true;loginField.hidden=false;loginInput.name='login';loginInput.required=true;
+  rememberedLogin.disabled=true;if(keepRemembered)keepRemembered.disabled=true;
+  rememberOption.hidden=false;signInButton.hidden=false;loginInput.focus();
+ });
+ form.addEventListener('submit',e=>{
+  const login=remembered&&!remembered.hidden?rememberedLogin.value.trim():(loginInput?loginInput.value.trim():'');
+  if(!login||!/^\d{4,6}$/.test(pin.value)){e.preventDefault();submitting=false;if(!login&&loginInput)loginInput.focus();}
+ });
+ updateDots();
 })();
 </script>
