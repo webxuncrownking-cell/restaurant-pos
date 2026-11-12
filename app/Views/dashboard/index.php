@@ -243,7 +243,7 @@
   <?php else: ?>
     <!-- TENANT APP DASHBOARD -->
     <?php
-      $roleSlug = (string)(\\App\\Core\\Auth::roleSlug() ?? 'staff');
+      $roleSlug = (string)(\App\Core\Auth::roleSlug() ?? 'staff');
       $roleDashboard = [
           'owner' => ['title' => 'Owner Overview', 'description' => 'Your restaurant performance, team, and subscription at a glance.'],
           'manager' => ['title' => 'Manager Workspace', 'description' => 'Monitor daily operations, stock, sales, and team activity.'],
@@ -273,7 +273,7 @@
               'route' => '/tables',
               'icon' => 'bi-grid-3x3-gap',
               'color' => 'teal',
-              'allowed' => \\App\\Core\\Auth::can('tables.view_status')
+              'allowed' => \App\Core\Auth::can('tables.view_status')
           ],
           [
               'label' => 'View Orders & Bills',
@@ -362,15 +362,6 @@
       </div>
     </section>
 
-    <?php if (false): ?>
-    <section class="dashboard-welcome dashboard-welcome-date-only mb-3">
-      <div class="dashboard-date">
-        <i class="bi bi-calendar3"></i>
-        <?= date('l, F j, Y') ?>
-      </div>
-    </section>
-    <?php endif; ?>
-
     <?php if (!empty($db_error)): ?>
       <div class="alert alert-warning">
         Dashboard information could not be fully loaded. Please check the application logs.
@@ -396,6 +387,7 @@
           </div>
         </article>
 
+        <?php if (in_array($roleSlug, ['owner', 'manager'], true)): ?>
         <article class="dashboard-kpi">
           <div class="kpi-icon kpi-green"><i class="bi bi-graph-up-arrow"></i></div>
           <div class="kpi-copy">
@@ -404,7 +396,9 @@
             <small>Estimated gross profit</small>
           </div>
         </article>
+        <?php endif; ?>
 
+        <?php if (in_array($roleSlug, ['owner', 'manager'], true)): ?>
         <article class="dashboard-kpi">
           <div class="kpi-icon kpi-orange"><i class="bi bi-wallet2"></i></div>
           <div class="kpi-copy">
@@ -413,6 +407,7 @@
             <small>Payments for previous orders</small>
           </div>
         </article>
+        <?php endif; ?>
 
         <article class="dashboard-kpi">
           <div class="kpi-icon kpi-purple"><i class="bi bi-receipt-cutoff"></i></div>
