@@ -146,6 +146,28 @@ class BillingService
     }
 
     /**
+     * Maximum active non-owner staff accounts allowed by the current plan.
+     * A value of 0 means unlimited. Staff entitlement is checked separately.
+     */
+    public static function getStaffLimit(int $restaurantId): int
+    {
+        if ($restaurantId <= 0 || !self::hasFeature($restaurantId, 'staff_management')) {
+            return 0;
+        }
+
+        $row = Database::fetchOne(
+            "SELECT p.max_staff
+             FROM subscriptions s
+             JOIN subscription_plans p ON p.id = s.plan_id
+             WHERE s.restaurant_id = ?
+             ORDER BY s.id DESC LIMIT 1",
+            [$restaurantId]
+        );
+
+        return max(0, (int)($row['max_staff'] ?? 0));
+    }
+
+    /**
      * Return an entitlement snapshot for navigation and feature screens.
      */
     public static function getEntitlements(int $restaurantId): array
