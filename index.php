@@ -218,6 +218,7 @@ $router->post('/expenses/void', [ExpenseController::class, 'void']);
 
 // Phase 3: POS Terminals & Devices Routes
 $router->get('/staff-pins', [DeviceController::class, 'pinSettings']);
+$router->post('/staff-pins/create', [DeviceController::class, 'createStaff']);
 $router->post('/staff-pins', [DeviceController::class, 'saveStaffPin']);
 $router->post('/staff-pins/update', [DeviceController::class, 'updateStaffDetails']);
 $router->get('/devices', [DeviceController::class, 'index']);
