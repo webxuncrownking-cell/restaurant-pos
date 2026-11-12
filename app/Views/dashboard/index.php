@@ -335,20 +335,20 @@
               'allowed' => \App\Core\Auth::roleSlug() === 'owner'
           ],
           [
-              'label' => 'Settings',
-              'description' => 'Restaurant details and preferences',
-              'route' => '/settings',
-              'icon' => 'bi-gear',
-              'color' => 'slate',
-              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
-          ],
-          [
               'label' => 'Subscription & Billing',
               'description' => 'Manage your plan, payments, and invoices',
               'route' => '/billing',
               'icon' => 'bi-credit-card',
               'color' => 'blue',
-              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
+              'allowed' => \\App\\Core\\Auth::roleSlug() === 'owner'
+          ],
+          [
+              'label' => 'Settings',
+              'description' => 'Restaurant details and preferences',
+              'route' => '/settings',
+              'icon' => 'bi-gear',
+              'color' => 'slate',
+              'allowed' => \\App\\Core\\Auth::roleSlug() === 'owner'
           ],
       ];
       $visibleTiles = array_values(array_filter($tiles, static fn($tile) => $tile['allowed']));
