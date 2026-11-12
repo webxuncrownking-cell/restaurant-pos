@@ -11,6 +11,28 @@
 .pin-entry{font-size:1.45rem;letter-spacing:.35em;text-align:center;font-weight:700}
 .terminal-login-links a{color:#2563eb;text-decoration:none;font-weight:600}
 @media(max-width:480px){.terminal-login-body{padding:8px 20px 22px}.terminal-login-head{padding:24px 20px 16px}}
+
+/* Larger cashier PIN sign-in layout */
+.terminal-login-page { padding: 40px 20px !important; }
+.terminal-login-card { max-width: 560px !important; border-radius: 24px !important; }
+.terminal-login-head { padding: 34px 36px 24px !important; }
+.terminal-login-icon { width: 78px !important; height: 78px !important; font-size: 2.3rem !important; }
+.terminal-login-head h1 { font-size: 2.2rem !important; }
+.terminal-login-head p { font-size: 1rem !important; }
+.terminal-login-body { padding: 12px 36px 36px !important; }
+.terminal-login-body h2 { font-size: 1.3rem !important; }
+.terminal-login-body .text-muted { font-size: .95rem !important; }
+.terminal-login-page .form-label { font-size: 1rem !important; margin-bottom: 9px; }
+.terminal-login-page .form-control { min-height: 58px !important; font-size: 1.05rem !important; padding: 13px 16px !important; }
+.terminal-login-page .btn-primary { min-height: 60px !important; font-size: 1.05rem !important; }
+.pin-entry { font-size: 1.7rem !important; }
+.terminal-login-links { font-size: .95rem !important; }
+@media(max-width:480px) {
+  .terminal-login-page { padding: 22px 14px !important; }
+  .terminal-login-head { padding: 28px 22px 20px !important; }
+  .terminal-login-body { padding: 10px 22px 28px !important; }
+  .terminal-login-head h1 { font-size: 1.85rem !important; }
+}
 </style>
 <div class="terminal-login-page">
  <div class="terminal-login-card">
