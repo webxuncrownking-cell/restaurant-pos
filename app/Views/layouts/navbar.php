@@ -57,14 +57,11 @@ $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
       </div>
 
       <div class="app-topbar-actions">
-        <?php if ($restaurant): ?>
-          <?php if ($isSubValid): ?>
-            <span class="header-subscription"><i class="bi bi-shield-check"></i> Subscription Active</span>
-          <?php else: ?>
-            <span class="header-subscription header-subscription-warning">
-              <i class="bi bi-exclamation-triangle"></i> Grace Period: <?= (int)$graceDays ?>d left
-            </span>
-          <?php endif; ?>
+        <?php if ($restaurant && $user && !empty($user['activation_trial_until'])): ?>
+          <span class="header-subscription header-subscription-warning" title="Your payment is awaiting verification.">
+            <i class="bi bi-clock-history"></i>
+            Payment pending · Temporary access until <?= htmlspecialchars(date('M j, g:i A', strtotime($user['activation_trial_until'])), ENT_QUOTES, 'UTF-8') ?>
+          </span>
         <?php endif; ?>
 
         <?php if ($user): ?>
