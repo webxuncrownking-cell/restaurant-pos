@@ -174,6 +174,46 @@
  .pin-dot{width:14px;height:14px}
  .terminal-login-links{margin:18px 0 0!important;font-size:.88rem}
 }
+
+/* Keep the cashier login card compact with balanced space on every side. */
+.terminal-login-page .terminal-login-shell {
+  width: min(100%, 760px) !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  align-items: stretch !important;
+  box-sizing: border-box !important;
+}
+.terminal-login-page .terminal-login-card {
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+.terminal-login-page .terminal-login-body {
+  padding: 36px 48px 40px !important;
+  box-sizing: border-box !important;
+}
+.terminal-login-page .pin-keypad {
+  width: 100% !important;
+  max-width: 390px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+@media (max-width: 520px) {
+  .terminal-login-page .terminal-login-shell,
+  .terminal-login-page .terminal-login-card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .terminal-login-page .terminal-login-body {
+    padding: 24px 20px 28px !important;
+  }
+  .terminal-login-page .pin-keypad {
+    max-width: 100% !important;
+    gap: 9px !important;
+  }
+}
+
 </style>
 
 <div class="terminal-login-page">
