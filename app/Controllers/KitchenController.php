@@ -162,6 +162,7 @@ class KitchenController
             Session::setFlash('warning', 'Select a restaurant workspace before opening Kitchen Display.');
             Response::redirect('/dashboard');
         }
+        BillingService::requireFeature((int)$restaurantId, 'kitchen_display', 'Kitchen Display');
 
         return (int)$restaurantId;
     }
