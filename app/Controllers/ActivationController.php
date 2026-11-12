@@ -42,6 +42,34 @@ class ActivationController
         ], 'auth');
     }
 
+    /**
+     * Attach no-cost default activated entitlements. This is not a paid tier.
+     * Existing paid subscriptions are never overwritten.
+     */
+    private static function ensureDefaultActivatedSubscription(int $restaurantId): void
+    {
+        $existing = Database::fetchOne(
+            "SELECT id FROM subscriptions WHERE restaurant_id = ? ORDER BY id DESC LIMIT 1",
+            [$restaurantId]
+        );
+        if ($existing) return;
+
+        $plan = Database::fetchOne(
+            "SELECT id FROM subscription_plans WHERE slug = 'default-activated' AND is_active = 1 LIMIT 1"
+        );
+        if (!$plan) {
+            error_log('[ServeFlow activation] Default activated plan missing; run 20261112_default_activated_access.sql');
+            return;
+        }
+
+        Database::query(
+            "INSERT INTO subscriptions
+                (restaurant_id, plan_id, status, billing_cycle, current_period_start, current_period_end, grace_period_days)
+             VALUES (?, ?, 'active', 'monthly', NOW(), '9999-12-31 23:59:59', 0)",
+            [$restaurantId, (int)$plan['id']]
+        );
+    }
+
     public function submit(Request $request): void
     {
         Auth::requireLogin();
@@ -118,6 +146,7 @@ class ActivationController
                  WHERE id = ?",
                 [$restaurantId]
             );
+            self::ensureDefaultActivatedSubscription($restaurantId);
 
             // Send a best-effort Telegram alert after the payment record is saved.
             // A Telegram outage must never undo or block the owner's submission.
@@ -221,6 +250,7 @@ class ActivationController
                     "UPDATE restaurants SET activation_status = 'activated', activation_trial_until = NULL, activated_at = NOW(), activation_verified_by = ? WHERE id = ?",
                     [(int)Auth::id(), (int)$submission['restaurant_id']]
                 );
+                self::ensureDefaultActivatedSubscription((int)$submission['restaurant_id']);
             } else {
                 Database::query(
                     "UPDATE restaurants SET activation_status = 'rejected', activation_trial_until = NULL WHERE id = ? AND (activation_trial_until IS NOT NULL OR activation_status <> 'activated')",
