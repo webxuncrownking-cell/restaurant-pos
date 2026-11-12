@@ -22,7 +22,7 @@ class ActivationController
         }
         $restaurantId = (int)Auth::getRestaurantId();
         $restaurant = Database::fetchOne(
-            "SELECT id, name, slug, activation_status, activation_fee FROM restaurants WHERE id = ? AND deleted_at IS NULL",
+            "SELECT id, name, slug, activation_status, activation_trial_until, activation_fee FROM restaurants WHERE id = ? AND deleted_at IS NULL",
             [$restaurantId]
         );
         if (!$restaurant) Response::notFound('Restaurant account not found.');
@@ -109,7 +109,15 @@ class ActivationController
                  VALUES (?, ?, ?, ?, ?, ?, ?)",
                 [$restaurantId, $amount, $method, $reference, $payer, $relativeDir . '/' . $filename, (int)Auth::id()]
             );
-            Database::query("UPDATE restaurants SET activation_status = 'pending' WHERE id = ?", [$restaurantId]);
+            // Keep the payment submission pending for platform review, but grant
+            // the restaurant owner a provisional 24-hour access window.
+            Database::query(
+                "UPDATE restaurants
+                 SET activation_status = 'activated',
+                     activation_trial_until = DATE_ADD(NOW(), INTERVAL 1 DAY)
+                 WHERE id = ?",
+                [$restaurantId]
+            );
 
             // Send a best-effort Telegram alert after the payment record is saved.
             // A Telegram outage must never undo or block the owner's submission.
@@ -131,7 +139,7 @@ class ActivationController
                 error_log('[ServeFlow Telegram] ' . $notificationError->getMessage());
             }
 
-            Session::setFlash('success', 'Payment proof submitted. Your account will be activated after platform verification.');
+            Session::setFlash('success', 'Payment proof submitted. Your account now has temporary access for 24 hours while ServeFlow reviews your payment. Full activation will be confirmed after verification.');
         } catch (\Throwable $e) {
             @unlink($absoluteDir . '/' . $filename);
             error_log('[ServeFlow activation submission] ' . $e->getMessage());
@@ -210,12 +218,12 @@ class ActivationController
             );
             if ($decision === 'approved') {
                 Database::query(
-                    "UPDATE restaurants SET activation_status = 'activated', activated_at = NOW(), activation_verified_by = ? WHERE id = ?",
+                    "UPDATE restaurants SET activation_status = 'activated', activation_trial_until = NULL, activated_at = NOW(), activation_verified_by = ? WHERE id = ?",
                     [(int)Auth::id(), (int)$submission['restaurant_id']]
                 );
             } else {
                 Database::query(
-                    "UPDATE restaurants SET activation_status = 'rejected' WHERE id = ? AND activation_status <> 'activated'",
+                    "UPDATE restaurants SET activation_status = 'rejected', activation_trial_until = NULL WHERE id = ? AND activation_status <> 'activated'",
                     [(int)$submission['restaurant_id']]
                 );
             }
