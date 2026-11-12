@@ -66,12 +66,35 @@
                 <span class="text-muted">/ month</span>
               </div>
 
+              <?php $planFeatures = is_array($p['features'] ?? null) ? $p['features'] : []; ?>
               <ul class="list-unstyled small mb-4">
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Up to <strong><?= (int)$p['max_terminals'] ?> POS Terminals</strong></li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Up to <strong><?= (int)$p['max_products'] ?> Menu Products</strong></li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Offline PWA Sync & Storage</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Recipe BOM & Unit Inventory</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>7-Day Offline Grace Lease</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong><?= (int)$p['max_terminals'] ?></strong> POS terminal<?= (int)$p['max_terminals'] === 1 ? '' : 's' ?></li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong><?= number_format((int)$p['max_products']) ?></strong> menu products</li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong><?= (int)($p['max_staff'] ?? 0) === 0 ? 'Unlimited' : (int)$p['max_staff'] ?></strong> staff accounts <span class="text-muted">(owner excluded)</span></li>
+                <?php
+                  $planFeatureLabels = [
+                    'table_mgmt' => 'Floor & table management',
+                    'kitchen_display' => 'Kitchen Display',
+                    'advanced_reports' => 'Advanced analytics',
+                    'reservations' => 'Reservations & waitlist',
+                    'suppliers' => 'Supplier management',
+                    'purchase_orders' => 'Purchase orders',
+                    'recipe_costing' => 'Recipe costing',
+                    'expiry_wastage' => 'Expiry & wastage tracking',
+                    'expenses' => 'Expense tracking',
+                    'combo_meals' => 'Combo meals',
+                    'scheduled_pricing' => 'Scheduled pricing',
+                    'customer_crm' => 'Customer CRM',
+                    'loyalty' => 'Customer loyalty',
+                    'api_access' => 'API access',
+                  ];
+                ?>
+                <?php foreach ($planFeatureLabels as $featureKey => $featureLabel): ?>
+                  <?php if (!empty($planFeatures[$featureKey])): ?>
+                    <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><?= htmlspecialchars($featureLabel, ENT_QUOTES, 'UTF-8') ?></li>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Offline PWA sync & storage</li>
               </ul>
             </div>
 
