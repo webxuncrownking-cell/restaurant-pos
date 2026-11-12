@@ -164,7 +164,7 @@ class Auth
                            AND activation_trial_until <= NOW()",
                         [(int)$user['restaurant_id']]
                     );
-                } catch (\\Throwable $expiryError) {
+                } catch (\Throwable $expiryError) {
                     error_log('[ServeFlow activation trial expiry] ' . $expiryError->getMessage());
                 }
 
