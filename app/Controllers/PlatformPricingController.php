@@ -25,6 +25,7 @@ class PlatformPricingController
         'recipe_costing' => 'Recipe costing',
         'expiry_wastage' => 'Expiry & wastage tracking',
         'multi_terminal' => 'Multi-terminal management',
+        'api_access' => 'API access',
     ];
 
     public function index(Request $request): void
@@ -87,8 +88,11 @@ class PlatformPricingController
                 }
                 $monthly = $price['monthly'] ?? null;
                 $annual = $price['annually'] ?? null;
+                $maxStaff = $price['max_staff'] ?? null;
                 $submittedFeatures = $price['features'] ?? [];
                 if (!is_array($submittedFeatures) || !is_numeric($monthly) || !is_numeric($annual)
+                    || !filter_var($maxStaff, FILTER_VALIDATE_INT) && (string)$maxStaff !== '0'
+                    || (int)$maxStaff < 0 || (int)$maxStaff > 5000
                     || (float)$monthly < 0 || (float)$annual < 0
                     || (float)$monthly > 1000000 || (float)$annual > 10000000) {
                     throw new \InvalidArgumentException('One or more subscription plan prices or features are invalid.');
@@ -103,10 +107,11 @@ class PlatformPricingController
                 }
 
                 Database::query(
-                    "UPDATE subscription_plans SET price_monthly = ?, price_annually = ?, features_json = ? WHERE id = ?",
+                    "UPDATE subscription_plans SET price_monthly = ?, price_annually = ?, max_staff = ?, features_json = ? WHERE id = ?",
                     [
                         number_format((float)$monthly, 2, '.', ''),
                         number_format((float)$annual, 2, '.', ''),
+                        (int)$maxStaff,
                         json_encode($features, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
                         $id
                     ]
