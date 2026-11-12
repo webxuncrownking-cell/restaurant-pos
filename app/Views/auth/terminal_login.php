@@ -86,6 +86,24 @@
   line-height:1.4;
   font-weight:700;
 }
+.terminal-login-title {
+  margin:0 0 24px;
+  color:#1d2b42;
+  text-align:center;
+  font-size:1.35rem;
+  line-height:1.3;
+  font-weight:750;
+}
+.pin-instruction {
+  display:block;
+  width:100%;
+  margin:18px auto 12px;
+  color:#536783;
+  text-align:center;
+  font-size:1rem;
+  line-height:1.4;
+  font-weight:700;
+}
 .terminal-login-alert { font-size:.95rem;border-radius:11px; }
 .terminal-login-user {
   display:flex;align-items:center;justify-content:center;gap:11px;
@@ -164,7 +182,9 @@
  .terminal-login-brand h1{font-size:1.85rem}
  .terminal-login-brand p{font-size:.95rem}
  .terminal-login-card{max-width:440px;border-radius:20px}
- .terminal-login-body{padding:22px 22px 28px}
+.terminal-login-body{padding:22px 22px 28px}
+ .terminal-login-title{font-size:1.2rem;margin-bottom:20px}
+ .pin-instruction{margin-top:16px}
  .terminal-login-title{font-size:1.2rem;margin-bottom:20px}
  .pin-instruction{margin-top:16px}
  .pin-keypad{max-width:340px;gap:9px}
@@ -196,6 +216,7 @@
 
    <form method="POST" action="<?= BASE_URL ?>/terminal-login" autocomplete="off" id="terminalPinForm">
     <?= $csrf_field ?>
+    <h2 class="terminal-login-title">Staff Login</h2>
     <h2 class="terminal-login-title">Staff Login</h2>
 
     <div id="rememberedStaff" <?= $hasRememberedLogin ? '' : 'hidden' ?>>
