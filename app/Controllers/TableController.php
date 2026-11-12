@@ -25,7 +25,8 @@ class TableController
     public function index(Request $request): void
     {
         Auth::requireAuth();
-        $restaurantId = TenantContext::getRestaurantId();
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        BillingService::requireFeature($restaurantId, 'table_mgmt', 'Floor & Tables');
         $zone = $request->get('zone');
 
         $tables = TableService::getTables($restaurantId, $zone);
