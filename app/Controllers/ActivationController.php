@@ -223,7 +223,7 @@ class ActivationController
                 );
             } else {
                 Database::query(
-                    "UPDATE restaurants SET activation_status = 'rejected', activation_trial_until = NULL WHERE id = ? AND activation_status <> 'activated'",
+                    "UPDATE restaurants SET activation_status = 'rejected', activation_trial_until = NULL WHERE id = ? AND (activation_trial_until IS NOT NULL OR activation_status <> 'activated')",
                     [(int)$submission['restaurant_id']]
                 );
             }
