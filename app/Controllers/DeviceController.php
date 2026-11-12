@@ -65,6 +65,10 @@ class DeviceController
     public function createStaff(Request $request): void
     {
         Auth::requireLogin();
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        if (!BillingService::hasFeature($restaurantId, 'staff_management')) {
+            Response::forbidden('Staff management is not included in your current subscription.');
+        }
         if (Auth::isPlatformAdmin() || Auth::roleSlug() !== 'owner') {
             Response::forbidden('Only the restaurant owner can create staff accounts.');
         }
