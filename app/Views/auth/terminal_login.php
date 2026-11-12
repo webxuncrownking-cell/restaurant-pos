@@ -214,6 +214,44 @@
   }
 }
 
+
+/* Reduce the cashier PIN panel further for a more compact login layout. */
+.terminal-login-page .terminal-login-shell,
+.terminal-login-page .terminal-login-card {
+  width: min(100%, 560px) !important;
+  max-width: 560px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+.terminal-login-page .terminal-login-body {
+  padding: 30px 36px 34px !important;
+}
+.terminal-login-page .pin-keypad {
+  max-width: 330px !important;
+  gap: 11px !important;
+}
+.terminal-login-page .pin-key {
+  height: 68px !important;
+  border-radius: 14px !important;
+}
+@media (max-width: 520px) {
+  .terminal-login-page .terminal-login-shell,
+  .terminal-login-page .terminal-login-card {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .terminal-login-page .terminal-login-body {
+    padding: 22px 18px 26px !important;
+  }
+  .terminal-login-page .pin-keypad {
+    max-width: 100% !important;
+    gap: 9px !important;
+  }
+  .terminal-login-page .pin-key {
+    height: 62px !important;
+  }
+}
+
 </style>
 
 <div class="terminal-login-page">
