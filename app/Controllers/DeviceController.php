@@ -36,6 +36,11 @@ class DeviceController
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $canManageStaff = BillingService::hasFeature($restaurantId, 'staff_management');
         $staffLimit = BillingService::getStaffLimit($restaurantId);
+        // An activated account without a paid/default subscription is limited
+        // to one active staff account in addition to its owner.
+        if ($canManageStaff && $staffLimit === 0) {
+            $staffLimit = 1;
+        }
         $staffCountRow = Database::fetchOne(
             "SELECT COUNT(*) AS total
              FROM users u
@@ -120,6 +125,9 @@ class DeviceController
         }
 
         $staffLimit = BillingService::getStaffLimit($restaurantId);
+        if (BillingService::hasFeature($restaurantId, 'staff_management') && $staffLimit === 0) {
+            $staffLimit = 1;
+        }
         if ($staffLimit > 0) {
             $staffCountRow = Database::fetchOne(
                 "SELECT COUNT(*) AS total
