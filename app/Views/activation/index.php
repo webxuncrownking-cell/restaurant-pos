@@ -1,5 +1,19 @@
 <?php include APP_ROOT . '/app/Views/layouts/header.php'; ?>
-<div class="container py-4" style="max-width:820px">
+<style>
+.activation-form-page { max-width: 920px !important; padding-top: 36px !important; padding-bottom: 36px !important; }
+.activation-form-page > .card .card-body { padding: 36px !important; }
+.activation-form-page .form-label { font-size: 1rem !important; font-weight: 700; margin-bottom: 9px; }
+.activation-form-page .form-control,
+.activation-form-page .form-select { min-height: 56px; padding: 12px 15px; font-size: 1rem; }
+.activation-form-page .btn-lg { min-height: 60px; font-size: 1.05rem; }
+.activation-form-page .card h1 { font-size: 1.8rem; }
+.activation-form-page p,
+.activation-form-page .form-text { font-size: .95rem; line-height: 1.6; }
+@media(max-width:575.98px) {
+  .activation-form-page > .card .card-body { padding: 22px !important; }
+}
+</style>
+<div class="container activation-form-page py-4" style="max-width:920px">
   <?php if (!empty($flashes)): foreach ($flashes as $flash): ?>
     <div class="alert alert-<?= htmlspecialchars($flash['type']) ?>"><?= htmlspecialchars($flash['message']) ?></div>
   <?php endforeach; endif; ?>
