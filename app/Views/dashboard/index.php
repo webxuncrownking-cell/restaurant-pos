@@ -247,6 +247,7 @@
       $restaurantId = (int)(\App\Core\TenantContext::getRestaurantId() ?? 0);
       $hasTableManagement = \App\Services\BillingService::hasFeature($restaurantId, 'table_mgmt');
       $hasKitchenDisplay = \App\Services\BillingService::hasFeature($restaurantId, 'kitchen_display');
+      $hasStaffManagement = \App\Services\BillingService::hasFeature($restaurantId, 'staff_management');
       $roleDashboard = [
           'owner' => ['title' => 'Owner Overview', 'description' => 'Your restaurant performance, team, and subscription at a glance.'],
           'manager' => ['title' => 'Manager Workspace', 'description' => 'Monitor daily operations, stock, sales, and team activity.'],
@@ -333,7 +334,7 @@
               'route' => '/staff-pins',
               'icon' => 'bi-people',
               'color' => 'indigo',
-              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
+              'allowed' => \App\Core\Auth::roleSlug() === 'owner' && $hasStaffManagement
           ],
           [
               'label' => 'Subscription & Billing',
