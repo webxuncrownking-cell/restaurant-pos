@@ -70,7 +70,7 @@
               <ul class="list-unstyled small mb-4">
                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong><?= (int)$p['max_terminals'] ?></strong> POS terminal<?= (int)$p['max_terminals'] === 1 ? '' : 's' ?></li>
                 <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong><?= number_format((int)$p['max_products']) ?></strong> menu products</li>
-                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong><?= (int)($p['max_staff'] ?? 0) === 0 ? 'Unlimited' : (int)$p['max_staff'] ?></strong> staff accounts <span class="text-muted">(owner excluded)</span></li>
+                <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong><?= (int)($p['max_staff'] ?? 0) === 0 ? 'Unlimited' : (int)$p['max_staff'] ?></strong> additional staff accounts <span class="text-muted">(owner excluded)</span></li>
                 <?php
                   $planFeatureLabels = [
                     'table_mgmt' => 'Floor & table management',
