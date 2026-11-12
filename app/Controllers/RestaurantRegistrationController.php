@@ -98,10 +98,11 @@ class RestaurantRegistrationController
 
             // Provision the standard staff roles for every newly registered restaurant.
             // Permission assignments are tenant-scoped and intentionally least-privilege.
+            // Standard restaurants need only Manager and Cashier staff logins.
             $defaultStaffRoles = [
                 'manager' => [
                     'name' => 'Restaurant Manager',
-                    'description' => 'Manages floor, inventory, menu, shifts, and overrides',
+                    'description' => 'Manages daily restaurant operations, inventory, orders, and reports',
                     'permissions' => [
                         'pos.create_order', 'pos.process_payment', 'pos.apply_discount',
                         'orders.cancel_void', 'orders.issue_refund',
@@ -120,16 +121,6 @@ class RestaurantRegistrationController
                         'pos.create_order', 'pos.process_payment',
                         'tables.view_status', 'shifts.open_close', 'shifts.cash_drop'
                     ]
-                ],
-                'kitchen' => [
-                    'name' => 'Kitchen Cook',
-                    'description' => 'Views kitchen orders and updates preparation status',
-                    'permissions' => ['kitchen.view_kds', 'kitchen.update_state']
-                ],
-                'waiter' => [
-                    'name' => 'Waiter / Floor Staff',
-                    'description' => 'Creates table orders and views table service status',
-                    'permissions' => ['pos.create_order', 'tables.view_status']
                 ]
             ];
 
