@@ -23,9 +23,9 @@ $movementBadges = [
 <style>
 .inventory-ledger-page {
     width: 100%;
-    max-width: 1720px;
-    margin: 0 auto;
-    padding: 30px clamp(16px, 2.2vw, 36px) 42px;
+    max-width: none;
+    margin: 0;
+    padding: 30px clamp(18px, 2vw, 32px) 42px;
     color: #172033;
 }
 .inventory-ledger-page,
