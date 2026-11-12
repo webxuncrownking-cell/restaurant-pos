@@ -243,6 +243,17 @@
   <?php else: ?>
     <!-- TENANT APP DASHBOARD -->
     <?php
+      $roleSlug = (string)(\\App\\Core\\Auth::roleSlug() ?? 'staff');
+      $roleDashboard = [
+          'owner' => ['title' => 'Owner Overview', 'description' => 'Your restaurant performance, team, and subscription at a glance.'],
+          'manager' => ['title' => 'Manager Workspace', 'description' => 'Monitor daily operations, stock, sales, and team activity.'],
+          'cashier' => ['title' => 'Cashier Workspace', 'description' => 'Access the POS, customer bills, and your cash shift tools.'],
+          'kitchen' => ['title' => 'Kitchen Workspace', 'description' => 'Focus on incoming orders and kitchen preparation.'],
+          'waiter' => ['title' => 'Service Workspace', 'description' => 'Access order entry and table service tools.']
+      ];
+      $roleDashboardInfo = $roleDashboard[$roleSlug] ?? ['title' => 'Staff Workspace', 'description' => 'Access the tools assigned to your restaurant role.'];
+      $canSeeFinancialSnapshot = in_array($roleSlug, ['owner', 'manager', 'cashier'], true);
+      $canSeeRecentOrders = in_array($roleSlug, ['owner', 'manager', 'cashier'], true);
       $currency = (string)($restaurant['currency_symbol'] ?? '₱');
       $money = static function ($amount) use ($currency): string {
           return $currency . number_format((float)$amount, 2);
@@ -255,6 +266,14 @@
               'icon' => 'bi-shop-window',
               'color' => 'blue',
               'allowed' => \App\Core\Auth::can('pos.create_order')
+          ],
+          [
+              'label' => 'Floor & Tables',
+              'description' => 'View table availability and service status',
+              'route' => '/tables',
+              'icon' => 'bi-grid-3x3-gap',
+              'color' => 'teal',
+              'allowed' => \\App\\Core\\Auth::can('tables.view_status')
           ],
           [
               'label' => 'View Orders & Bills',
@@ -335,12 +354,22 @@
       $visibleTiles = array_values(array_filter($tiles, static fn($tile) => $tile['allowed']));
     ?>
 
+    <section class="dashboard-welcome mb-3">
+      <div>
+        <div class="dashboard-date"><i class="bi bi-calendar3"></i> <?= date('l, F j, Y') ?></div>
+        <h1 class="h3 fw-bold mt-2 mb-1"><?= htmlspecialchars($roleDashboardInfo['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="text-muted mb-0"><?= htmlspecialchars($roleDashboardInfo['description'], ENT_QUOTES, 'UTF-8') ?></p>
+      </div>
+    </section>
+
+    <?php if (false): ?>
     <section class="dashboard-welcome dashboard-welcome-date-only mb-3">
       <div class="dashboard-date">
         <i class="bi bi-calendar3"></i>
         <?= date('l, F j, Y') ?>
       </div>
     </section>
+    <?php endif; ?>
 
     <?php if (!empty($db_error)): ?>
       <div class="alert alert-warning">
@@ -348,6 +377,7 @@
       </div>
     <?php endif; ?>
 
+    <?php if ($canSeeFinancialSnapshot): ?>
     <section class="mb-4">
       <div class="dashboard-section-heading">
         <div>
@@ -394,6 +424,7 @@
         </article>
       </div>
     </section>
+    <?php endif; ?>
 
     <div class="dashboard-main-grid">
       <section class="dashboard-management">
@@ -419,6 +450,7 @@
         </div>
       </section>
 
+      <?php if ($canSeeRecentOrders): ?>
       <section class="dashboard-recent">
         <div class="recent-heading">
           <div>
@@ -460,6 +492,24 @@
           <?php endif; ?>
         </div>
       </section>
+      <?php else: ?>
+      <section class="dashboard-recent">
+        <div class="recent-heading">
+          <div>
+            <h2><?= $roleSlug === 'kitchen' ? 'Kitchen orders' : 'Your service tools' ?></h2>
+            <p><?= $roleSlug === 'kitchen' ? 'Open the kitchen display to view and update incoming orders.' : 'Use the management shortcuts available for your role.' ?></p>
+          </div>
+        </div>
+        <div class="recent-empty">
+          <i class="bi <?= $roleSlug === 'kitchen' ? 'bi-fire' : 'bi-grid' ?>"></i>
+          <strong><?= $roleSlug === 'kitchen' ? 'Kitchen Display' : 'Role-based workspace' ?></strong>
+          <span><?= $roleSlug === 'kitchen' ? 'Your kitchen queue is available in the Kitchen Display.' : 'Your dashboard only shows the tools assigned to your role.' ?></span>
+          <?php if ($roleSlug === 'kitchen'): ?>
+            <a class="btn btn-primary btn-sm mt-3" href="<?= BASE_URL ?>/kitchen">Open Kitchen Display</a>
+          <?php endif; ?>
+        </div>
+      </section>
+      <?php endif; ?>
     </div>
   <?php endif; ?>
 
