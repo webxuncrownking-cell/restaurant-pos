@@ -157,10 +157,10 @@ class DeviceController
         }
 
         $staff = Database::fetchOne(
-            "SELECT id FROM users
-             WHERE id = :user_id AND restaurant_id = :restaurant_id
-               AND status = 'active' AND deleted_at IS NULL
-               AND role_id IN (SELECT id FROM roles WHERE restaurant_id = :restaurant_id AND slug <> 'owner')",
+            "SELECT u.id FROM users u
+             JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+             WHERE u.id = :user_id AND u.restaurant_id = :restaurant_id
+               AND u.status = 'active' AND u.deleted_at IS NULL AND r.slug <> 'owner'",
             [':user_id' => $userId, ':restaurant_id' => $restaurantId]
         );
         if (!$staff) {
