@@ -93,7 +93,23 @@ class BillingService
             [$restaurantId]
         );
 
-        if (!$subscription) return false;
+        // Accounts with no purchased subscription receive only the minimal
+        // default activated feature set after the restaurant activation workflow
+        // has granted an active access window. Missing/unapproved activation stays locked.
+        if (!$subscription) {
+            $restaurant = Database::fetchOne(
+                "SELECT activation_status, activation_trial_until
+                 FROM restaurants WHERE id = ? AND deleted_at IS NULL LIMIT 1",
+                [$restaurantId]
+            );
+            if (!$restaurant || ($restaurant['activation_status'] ?? '') !== 'activated') return false;
+            $trialUntil = trim((string)($restaurant['activation_trial_until'] ?? ''));
+            if ($trialUntil !== '' && strtotime($trialUntil) !== false && strtotime($trialUntil) <= time()) return false;
+            $defaultFeatures = [
+                'staff_management', 'reports'
+            ];
+            return in_array($feature, $defaultFeatures, true);
+        }
         $status = (string)($subscription['status'] ?? '');
         $periodEnd = strtotime((string)($subscription['current_period_end'] ?? ''));
         if (!$periodEnd) return false;
