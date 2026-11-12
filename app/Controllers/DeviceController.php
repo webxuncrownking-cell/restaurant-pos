@@ -34,6 +34,7 @@ class DeviceController
         }
 
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $canManageStaff = BillingService::hasFeature($restaurantId, 'staff_management');
         $staffMembers = Database::fetchAll(
             "SELECT u.id, u.full_name, u.username, u.email, u.status, r.name AS role_name,
                     CASE WHEN u.offline_pin_salt IS NOT NULL AND u.offline_pin_hash IS NOT NULL
@@ -53,7 +54,8 @@ class DeviceController
 
         Response::render('devices/staff_pins', [
             'staffMembers' => $staffMembers,
-            'staffRoles' => $staffRoles
+            'staffRoles' => $staffRoles,
+            'canManageStaff' => $canManageStaff
         ]);
     }
 
