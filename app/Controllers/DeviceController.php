@@ -35,12 +35,13 @@ class DeviceController
 
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $staffMembers = Database::fetchAll(
-            "SELECT id, full_name, username, email, status,
-                    CASE WHEN offline_pin_salt IS NOT NULL AND offline_pin_hash IS NOT NULL
+            "SELECT u.id, u.full_name, u.username, u.email, u.status, r.name AS role_name,
+                    CASE WHEN u.offline_pin_salt IS NOT NULL AND u.offline_pin_hash IS NOT NULL
                          THEN 1 ELSE 0 END AS pin_configured
-             FROM users
-             WHERE restaurant_id = :restaurant_id AND deleted_at IS NULL
-             ORDER BY full_name ASC",
+             FROM users u
+             JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+             WHERE u.restaurant_id = :restaurant_id AND u.deleted_at IS NULL
+             ORDER BY u.full_name ASC",
             [':restaurant_id' => $restaurantId]
         );
         $staffRoles = Database::fetchAll(
