@@ -340,7 +340,7 @@
               'route' => '/billing',
               'icon' => 'bi-credit-card',
               'color' => 'blue',
-              'allowed' => \App\\Core\\Auth::roleSlug() === 'owner'
+              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
           ],
           [
               'label' => 'Settings',
@@ -348,7 +348,7 @@
               'route' => '/settings',
               'icon' => 'bi-gear',
               'color' => 'slate',
-              'allowed' => \App\\Core\\Auth::roleSlug() === 'owner'
+              'allowed' => \App\Core\Auth::roleSlug() === 'owner'
           ],
       ];
       $visibleTiles = array_values(array_filter($tiles, static fn($tile) => $tile['allowed']));
