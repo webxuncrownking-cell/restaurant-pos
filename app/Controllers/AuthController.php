@@ -78,9 +78,15 @@ class AuthController
             Response::redirect('/dashboard');
         }
 
+        $rememberedLogin = trim((string)($_COOKIE['serveflow_remembered_staff'] ?? ''));
+        if (strlen($rememberedLogin) > 100) {
+            $rememberedLogin = '';
+        }
+
         Response::render('auth/terminal_login', [
             'flashes' => Session::getFlashes(),
             'csrf_field' => CSRF::formField(),
+            'remembered_login' => $rememberedLogin,
             'title' => 'Terminal PIN Sign In - ServeFlow POS'
         ], 'auth');
     }
@@ -121,6 +127,35 @@ class AuthController
         }
 
         unset($_SESSION['terminal_pin_attempts'], $_SESSION['terminal_pin_locked_until']);
+
+        // Remember only the staff username/email after successful PIN authentication.
+        // The PIN is never stored in a cookie or browser storage.
+        $rememberLogin = (string)$request->post('remember_login', '') === '1';
+        $cookiePath = parse_url(BASE_URL, PHP_URL_PATH) ?: '/';
+        $cookiePath = rtrim($cookiePath, '/') . '/';
+        $cookieSecure = (
+            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+            (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+        );
+
+        if ($rememberLogin) {
+            setcookie('serveflow_remembered_staff', substr($login, 0, 100), [
+                'expires' => time() + (180 * 24 * 60 * 60),
+                'path' => $cookiePath,
+                'secure' => $cookieSecure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+        } else {
+            setcookie('serveflow_remembered_staff', '', [
+                'expires' => time() - 3600,
+                'path' => $cookiePath,
+                'secure' => $cookieSecure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+        }
+
         Auth::login($result['user'], false);
 
         if (($result['user']['activation_status'] ?? 'activated') !== 'activated') {
