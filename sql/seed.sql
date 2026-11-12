@@ -21,8 +21,8 @@ VALUES (
 -- 2. SaaS Subscription Plans
 INSERT INTO `subscription_plans` (`id`, `name`, `slug`, `description`, `price_monthly`, `price_annually`, `max_terminals`, `max_products`, `features_json`, `is_active`)
 VALUES
-(1, 'Starter Carinderia', 'starter', 'Essential offline POS for single-terminal eateries', 990.00, 9900.00, 1, 50, '{"offline_pwa":true,"table_mgmt":false,"recipe_bom":true,"reports":true,"multi_device":false,"staff_management":true}', 1),
-(2, 'Standard Restaurant', 'standard', 'Complete multi-terminal POS with table management & recipe tracking', 1990.00, 19900.00, 3, 200, '{"offline_pwa":true,"table_mgmt":true,"recipe_bom":true,"reports":true,"multi_device":true,"staff_management":true}', 1),
+(1, 'Starter Carinderia', 'starter', 'Essential offline POS for single-terminal eateries', 990.00, 9900.00, 1, 50, '{"offline_pwa":true,"table_mgmt":false,"recipe_bom":true,"reports":true,"multi_device":false,"staff_management":true,"kitchen_display":false}', 1),
+(2, 'Standard Restaurant', 'standard', 'Complete multi-terminal POS with table management & recipe tracking', 1990.00, 19900.00, 3, 200, '{"offline_pwa":true,"table_mgmt":true,"recipe_bom":true,"reports":true,"multi_device":true,"staff_management":true,"kitchen_display":true}', 1),
 (3, 'Enterprise / Franchise', 'enterprise', 'Unlimited terminals, multi-branch analytics & priority sync', 3990.00, 39900.00, 10, 1000, '{"offline_pwa":true,"table_mgmt":true,"recipe_bom":true,"reports":true,"multi_device":true,"staff_management":true,"api_access":true}', 1)
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
