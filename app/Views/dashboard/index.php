@@ -244,12 +244,13 @@
     <!-- TENANT APP DASHBOARD -->
     <?php
       $roleSlug = (string)(\App\Core\Auth::roleSlug() ?? 'staff');
+      $restaurantId = (int)(\App\Core\TenantContext::getRestaurantId() ?? 0);
+      $hasTableManagement = \App\Services\BillingService::hasFeature($restaurantId, 'table_mgmt');
+      $hasKitchenDisplay = \App\Services\BillingService::hasFeature($restaurantId, 'kitchen_display');
       $roleDashboard = [
           'owner' => ['title' => 'Owner Overview', 'description' => 'Your restaurant performance, team, and subscription at a glance.'],
           'manager' => ['title' => 'Manager Workspace', 'description' => 'Monitor daily operations, stock, sales, and team activity.'],
           'cashier' => ['title' => 'Cashier Workspace', 'description' => 'Access the POS, customer bills, and your cash shift tools.'],
-          'kitchen' => ['title' => 'Kitchen Workspace', 'description' => 'Focus on incoming orders and kitchen preparation.'],
-          'waiter' => ['title' => 'Service Workspace', 'description' => 'Access order entry and table service tools.']
       ];
       $roleDashboardInfo = $roleDashboard[$roleSlug] ?? ['title' => 'Staff Workspace', 'description' => 'Access the tools assigned to your restaurant role.'];
       $canSeeFinancialSnapshot = in_array($roleSlug, ['owner', 'manager', 'cashier'], true);
@@ -273,7 +274,7 @@
               'route' => '/tables',
               'icon' => 'bi-grid-3x3-gap',
               'color' => 'teal',
-              'allowed' => \App\Core\Auth::can('tables.view_status')
+              'allowed' => $hasTableManagement && \App\Core\Auth::can('tables.view_status')
           ],
           [
               'label' => 'View Orders & Bills',
@@ -313,8 +314,8 @@
               'route' => '/kitchen',
               'icon' => 'bi-fire',
               'color' => 'orange',
-              'allowed' => (
-                  in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'kitchen'], true)
+              'allowed' => $hasKitchenDisplay && (
+                  in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true)
                   || \App\Core\Auth::can('kitchen.view_kds')
               )
           ],
