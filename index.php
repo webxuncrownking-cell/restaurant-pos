@@ -78,7 +78,7 @@ $router->get('/', function (Request $req) {
     if (Auth::check()) {
         Response::redirect('/dashboard');
     } else {
-        Response::redirect('/terminal-login');
+        Response::redirect('/login');
     }
 });
 
