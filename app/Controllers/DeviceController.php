@@ -36,11 +36,6 @@ class DeviceController
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $canManageStaff = BillingService::hasFeature($restaurantId, 'staff_management');
         $staffLimit = BillingService::getStaffLimit($restaurantId);
-        // An activated account without a paid/default subscription is limited
-        // to one active staff account in addition to its owner.
-        if ($canManageStaff && $staffLimit === 0) {
-            $staffLimit = 1;
-        }
         $staffCountRow = Database::fetchOne(
             "SELECT COUNT(*) AS total
              FROM users u
@@ -125,9 +120,6 @@ class DeviceController
         }
 
         $staffLimit = BillingService::getStaffLimit($restaurantId);
-        if (BillingService::hasFeature($restaurantId, 'staff_management') && $staffLimit === 0) {
-            $staffLimit = 1;
-        }
         if ($staffLimit > 0) {
             $staffCountRow = Database::fetchOne(
                 "SELECT COUNT(*) AS total
@@ -271,6 +263,31 @@ class DeviceController
         if (!$staff) {
             $_SESSION['flash_error'] = 'The selected staff account was not found in this restaurant.';
             Response::redirect('/staff-pins');
+        }
+
+        // Reactivating an inactive account consumes an active staff seat.
+        $currentStatus = Database::fetchOne(
+            "SELECT status FROM users WHERE id = :user_id AND restaurant_id = :restaurant_id LIMIT 1",
+            [':user_id' => $userId, ':restaurant_id' => $restaurantId]
+        );
+        if ($status === 'active' && ($currentStatus['status'] ?? '') !== 'active') {
+            $staffLimit = BillingService::getStaffLimit($restaurantId);
+            if ($staffLimit > 0) {
+                $activeCount = Database::fetchOne(
+                    "SELECT COUNT(*) AS total
+                     FROM users u
+                     JOIN roles r ON r.id = u.role_id AND r.restaurant_id = u.restaurant_id
+                     WHERE u.restaurant_id = :restaurant_id
+                       AND u.status = 'active' AND u.deleted_at IS NULL
+                       AND r.slug <> 'owner'",
+                    [':restaurant_id' => $restaurantId]
+                );
+                if ((int)($activeCount['total'] ?? 0) >= $staffLimit) {
+                    $_SESSION['flash_error'] = "Your current subscription allows up to {$staffLimit} active staff accounts. Deactivate another staff account or upgrade your plan.";
+                    Response::redirect('/staff-pins');
+                    return;
+                }
+            }
         }
 
         $duplicate = Database::fetchOne(
