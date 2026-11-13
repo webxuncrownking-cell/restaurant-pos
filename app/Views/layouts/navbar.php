@@ -57,13 +57,6 @@ $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
       </div>
 
       <div class="app-topbar-actions">
-        <?php if ($restaurant && $user && !empty($user['activation_trial_until'])): ?>
-          <span class="header-subscription header-subscription-warning" title="Your payment is awaiting verification.">
-            <i class="bi bi-clock-history"></i>
-            Payment pending · Temporary access until <?= htmlspecialchars((new \DateTimeImmutable((string)$user['activation_trial_until'], new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone('Asia/Manila'))->format('M j, g:i A'), ENT_QUOTES, 'UTF-8') ?>
-          </span>
-        <?php endif; ?>
-
         <?php if ($user): ?>
           <div class="dropdown">
             <button class="app-user-button" type="button" data-bs-toggle="dropdown" aria-expanded="false">
