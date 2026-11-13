@@ -365,13 +365,7 @@
       </div>
     <?php endif; ?>
 
-    <section class="dashboard-welcome mb-3">
-      <div>
-        <div class="dashboard-date"><i class="bi bi-calendar3"></i> <?= date('l, F j, Y') ?></div>
-        <h1 class="h3 fw-bold mt-2 mb-1"><?= htmlspecialchars($roleDashboardInfo['title'], ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0"><?= htmlspecialchars($roleDashboardInfo['description'], ENT_QUOTES, 'UTF-8') ?></p>
-      </div>
-    </section>
+
 
 
 
