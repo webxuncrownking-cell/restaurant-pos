@@ -20,23 +20,25 @@ class ReportController
 {
     public function index(Request $request): void
     {
-        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'advanced_reports', 'Advanced analytics and reports');
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reports', 'Sales reports');
         Auth::requireAuth();
-        $restaurantId = TenantContext::getRestaurantId();
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $hasAdvancedReports = BillingService::hasFeature($restaurantId, 'advanced_reports');
+        $hasExpenseReports = $hasAdvancedReports && BillingService::hasFeature($restaurantId, 'expenses');
         [$startDate, $endDate] = $this->getDateRange($request);
 
         $kpis = ReportService::getKpiSummary($restaurantId, $startDate, $endDate);
         $dailyTrend = ReportService::getDailySalesTrendForRange($restaurantId, $startDate, $endDate);
         $paymentMethods = ReportService::getPaymentMethodBreakdown($restaurantId, $startDate, $endDate);
         $topProducts = ReportService::getTopSellingProducts($restaurantId, 10, $startDate, $endDate);
-        $profitability = ReportService::getProductProfitability($restaurantId, $startDate, $endDate);
+        $profitability = $hasAdvancedReports ? ReportService::getProductProfitability($restaurantId, $startDate, $endDate) : [];
         $cashierStats = ReportService::getCashierPerformance($restaurantId, $startDate, $endDate);
         $adjustments = ReportService::getFinancialAdjustments($restaurantId, $startDate, $endDate);
-        $shiftReconciliation = ReportService::getShiftReconciliation($restaurantId, $startDate, $endDate);
+        $shiftReconciliation = $hasAdvancedReports ? ReportService::getShiftReconciliation($restaurantId, $startDate, $endDate) : [];
         // Expense tracking is an optional module on existing installations.
         // Keep the reports page usable before its table has been prepared.
         $expenseSummary = ['total' => 0.0, 'count' => 0, 'available' => false];
-        try {
+        if ($hasExpenseReports) try {
             $expenseRow = \App\Core\Database::fetchOne(
                 "SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS entries
                  FROM restaurant_expenses
@@ -54,8 +56,10 @@ class ReportController
             // Table not created yet; expense total remains unavailable, not zero sales.
         }
 
-        // Explainable sales insights from existing tenant-scoped report data (no external AI service).
+        // Advanced interpretation and forecasting are reserved for paid tiers.
         $insights = [];
+        $demandForecast = [];
+        if ($hasAdvancedReports) {
         $dailyValues = array_map(static fn(array $row): float => (float)($row['daily_revenue'] ?? 0), $dailyTrend);
         $dailyCount = count($dailyValues);
         if ($dailyCount >= 4) {
@@ -144,13 +148,13 @@ class ReportController
             ];
         }
 
-        $demandForecast = [];
         try {
             $demandForecast = ReportService::getProductDemandForecast($restaurantId, $startDate, $endDate, 10);
         } catch (\Throwable $ignored) {
             // Older or partially migrated databases may not have order-line history ready.
         }
 
+        }
         Response::render('reports/index', [
             'startDate' => $startDate,
             'endDate' => $endDate,
@@ -165,13 +169,15 @@ class ReportController
             'expenseSummary' => $expenseSummary,
             'insights' => $insights,
             'forecast' => $forecast,
-            'demandForecast' => $demandForecast
+            'demandForecast' => $demandForecast,
+            'hasAdvancedReports' => $hasAdvancedReports,
+            'hasExpenseReports' => $hasExpenseReports
         ]);
     }
 
     public function dataJson(Request $request): void
     {
-        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'advanced_reports', 'Advanced analytics and reports');
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reports', 'Sales reports');
         Auth::requireAuth();
         $restaurantId = TenantContext::getRestaurantId();
         [$startDate, $endDate] = $this->getDateRange($request);
@@ -189,11 +195,15 @@ class ReportController
      */
     public function exportCsv(Request $request): void
     {
-        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'advanced_reports', 'Advanced analytics and reports');
+        BillingService::requireFeature((int)(TenantContext::getRestaurantId() ?? 0), 'reports', 'Sales reports');
         Auth::requireAuth();
-        $restaurantId = TenantContext::getRestaurantId();
+        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         [$startDate, $endDate] = $this->getDateRange($request);
         $type = strtolower(trim((string)$request->get('type', 'sales')));
+        if (!in_array($type, ['sales', 'cashiers'], true)) {
+            $requiredFeature = $type === 'expenses' ? 'expenses' : 'advanced_reports';
+            BillingService::requireFeature($restaurantId, $requiredFeature, $type === 'expenses' ? 'Expense reports' : 'Advanced analytics and reports');
+        }
 
         switch ($type) {
             case 'profitability':
