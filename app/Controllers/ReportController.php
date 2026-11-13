@@ -212,12 +212,7 @@ class ReportController
             return;
         }
 
-        /* legacy export gate removed
-        if (!in_array($type, ['sales', 'cashiers'], true)) {
-            $requiredFeature = $type === 'expenses' ? 'expenses' : 'advanced_reports';
-            BillingService::requireFeature($restaurantId, $requiredFeature, $type === 'expenses' ? 'Expense reports' : 'Advanced analytics and reports');
-        }
-        */
+
 
         switch ($type) {
             case 'profitability':
