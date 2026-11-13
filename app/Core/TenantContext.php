@@ -57,7 +57,7 @@ class TenantContext
         }
 
         try {
-            $sql = "SELECT r.*, s.status AS subscription_status, s.current_period_end, s.grace_period_days, sp.name AS plan_name
+            $sql = "SELECT r.*, s.status AS subscription_status, s.current_period_end, s.grace_period_days, sp.name AS plan_name, sp.slug AS plan_slug
                     FROM restaurants r
                     LEFT JOIN subscriptions s ON s.restaurant_id = r.id
                     LEFT JOIN subscription_plans sp ON sp.id = s.plan_id
@@ -99,7 +99,7 @@ class TenantContext
     public static function getGraceDaysRemaining(): int
     {
         $resto = self::getRestaurant();
-        if (!$resto || empty($resto['current_period_end'])) {
+        if (!$resto || empty($resto['current_period_end']) || ($resto['plan_slug'] ?? '') === 'default-activated') {
             return 0;
         }
 
