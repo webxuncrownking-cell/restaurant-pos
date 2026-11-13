@@ -135,7 +135,6 @@ class ReportController
 
         // Simple, explainable baseline estimate from recent recorded sales.
         // This is not machine learning and does not claim to account for seasonality.
-        $forecast = ['available' => false, 'average_daily_sales' => 0.0, 'estimated_next_7_days' => 0.0, 'days_used' => 0, 'basis' => ''];
         $forecastRows = array_slice($dailyTrend, -7);
         $forecastValues = array_map(static fn(array $row): float => max(0.0, (float)($row['daily_revenue'] ?? 0)), $forecastRows);
         if (count($forecastValues) >= 5) {
