@@ -60,7 +60,7 @@ $restaurantTagline = trim((string)($restaurant['tagline'] ?? ''));
         <?php if ($restaurant && $user && !empty($user['activation_trial_until'])): ?>
           <span class="header-subscription header-subscription-warning" title="Your payment is awaiting verification.">
             <i class="bi bi-clock-history"></i>
-            Payment pending · Temporary access until <?= htmlspecialchars(date('M j, g:i A', strtotime($user['activation_trial_until'])), ENT_QUOTES, 'UTF-8') ?>
+            Payment pending · Temporary access until <?= htmlspecialchars((new \\DateTimeImmutable((string)$user['activation_trial_until'], new \\DateTimeZone('UTC')))->setTimezone(new \\DateTimeZone('Asia/Manila'))->format('M j, g:i A'), ENT_QUOTES, 'UTF-8') ?>
           </span>
         <?php endif; ?>
 
