@@ -120,7 +120,26 @@
                         <div class="modal-body px-4">
                           <?= \App\Core\CSRF::formField() ?>
                           <input type="hidden" name="plan_id" value="<?= (int)$p['id'] ?>">
-                          <div class="mb-3"><label class="form-label small fw-semibold">Billing cycle</label><select class="form-select" name="billing_cycle"><option value="monthly">Monthly</option><option value="annually">Annual</option></select></div>
+                          <div class="rounded-3 border bg-light p-3 mb-3">
+                            <div class="text-muted small fw-semibold text-uppercase mb-1">Subscription price</div>
+                            <div class="d-flex align-items-baseline gap-2">
+                              <span class="h3 fw-bold mb-0" id="subscriptionPrice<?= (int)$p['id'] ?>">₱<?= number_format((float)$p['price_monthly'], 2) ?></span>
+                              <span class="text-muted" id="subscriptionPricePeriod<?= (int)$p['id'] ?>">/ month</span>
+                            </div>
+                            <div class="small text-muted mt-1" id="subscriptionPriceNote<?= (int)$p['id'] ?>">Billed monthly</div>
+                          </div>
+                          <div class="mb-3">
+                            <label class="form-label small fw-semibold">Billing cycle</label>
+                            <select class="form-select" name="billing_cycle"
+                              data-monthly="<?= htmlspecialchars(number_format((float)$p['price_monthly'], 2, '.', ''), ENT_QUOTES, 'UTF-8') ?>"
+                              data-annually="<?= htmlspecialchars(number_format((float)$p['price_annually'], 2, '.', ''), ENT_QUOTES, 'UTF-8') ?>"
+                              data-price-target="subscriptionPrice<?= (int)$p['id'] ?>"
+                              data-period-target="subscriptionPricePeriod<?= (int)$p['id'] ?>"
+                              data-note-target="subscriptionPriceNote<?= (int)$p['id'] ?>">
+                              <option value="monthly">Monthly</option>
+                              <option value="annually">Annual</option>
+                            </select>
+                          </div>
                           <div class="mb-3"><label class="form-label small fw-semibold">Payment method</label><select class="form-select" name="payment_method" required><option value="">Choose payment method</option><option value="gcash">GCash</option><option value="bank_transfer">Bank transfer</option><option value="cash_deposit">Cash deposit</option><option value="other">Other</option></select></div>
                           <div class="mb-3"><label class="form-label small fw-semibold">Transaction reference</label><input class="form-control" name="transaction_reference" maxlength="120" required></div>
                           <div class="mb-3"><label class="form-label small fw-semibold">Payer name</label><input class="form-control" name="payer_name" maxlength="120" required></div>
@@ -205,5 +224,28 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('change', function (event) {
+  const select = event.target;
+  if (!select.matches('select[name="billing_cycle"][data-price-target]')) return;
+
+  const annual = select.value === 'annually';
+  const price = annual ? select.dataset.annually : select.dataset.monthly;
+  const priceTarget = document.getElementById(select.dataset.priceTarget);
+  const periodTarget = document.getElementById(select.dataset.periodTarget);
+  const noteTarget = document.getElementById(select.dataset.noteTarget);
+
+  if (priceTarget) {
+    const amount = Number(price || 0);
+    priceTarget.textContent = '₱' + amount.toLocaleString('en-PH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+  if (periodTarget) periodTarget.textContent = annual ? '/ year' : '/ month';
+  if (noteTarget) noteTarget.textContent = annual ? 'Billed annually' : 'Billed monthly';
+});
+</script>
 
 <?php include APP_ROOT . '/app/Views/layouts/footer.php'; ?>
