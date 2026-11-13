@@ -24,7 +24,7 @@ class ReportController
         Auth::requireAuth();
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         $hasAdvancedReports = BillingService::hasFeature($restaurantId, 'advanced_reports');
-        $hasExpenseReports = $hasAdvancedReports && BillingService::hasFeature($restaurantId, 'expenses');
+        $hasExpenseReports = BillingService::hasFeature($restaurantId, 'expenses');
         [$startDate, $endDate] = $this->getDateRange($request);
 
         $kpis = ReportService::getKpiSummary($restaurantId, $startDate, $endDate);
@@ -200,10 +200,24 @@ class ReportController
         $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
         [$startDate, $endDate] = $this->getDateRange($request);
         $type = strtolower(trim((string)$request->get('type', 'sales')));
+        $allowedBasicExports = ['sales', 'cashiers'];
+        $allowedAdvancedExports = ['profitability', 'reconciliation'];
+        $allowedExpenseExports = ['expenses'];
+        if (in_array($type, $allowedAdvancedExports, true)) {
+            BillingService::requireFeature($restaurantId, 'advanced_reports', 'Advanced analytics and reports');
+        } elseif (in_array($type, $allowedExpenseExports, true)) {
+            BillingService::requireFeature($restaurantId, 'expenses', 'Expense reports');
+        } elseif (!in_array($type, $allowedBasicExports, true)) {
+            Response::forbidden('This report export is not available.');
+            return;
+        }
+
+        /* legacy export gate removed
         if (!in_array($type, ['sales', 'cashiers'], true)) {
             $requiredFeature = $type === 'expenses' ? 'expenses' : 'advanced_reports';
             BillingService::requireFeature($restaurantId, $requiredFeature, $type === 'expenses' ? 'Expense reports' : 'Advanced analytics and reports');
         }
+        */
 
         switch ($type) {
             case 'profitability':
