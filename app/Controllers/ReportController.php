@@ -58,6 +58,7 @@ class ReportController
 
         // Advanced interpretation and forecasting are reserved for paid tiers.
         $insights = [];
+        $forecast = ['available' => false, 'average_daily_sales' => 0.0, 'estimated_next_7_days' => 0.0, 'days_used' => 0, 'basis' => ''];
         $demandForecast = [];
         if ($hasAdvancedReports) {
         $dailyValues = array_map(static fn(array $row): float => (float)($row['daily_revenue'] ?? 0), $dailyTrend);
