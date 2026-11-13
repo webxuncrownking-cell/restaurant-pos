@@ -356,14 +356,6 @@
       $visibleTiles = array_values(array_filter($tiles, static fn($tile) => $tile['allowed']));
     ?>
 
-    <section class="dashboard-welcome mb-3">
-      <div>
-        <div class="dashboard-date"><i class="bi bi-calendar3"></i> <?= date('l, F j, Y') ?></div>
-        <h1 class="h3 fw-bold mt-2 mb-1"><?= htmlspecialchars($roleDashboardInfo['title'], ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="text-muted mb-0"><?= htmlspecialchars($roleDashboardInfo['description'], ENT_QUOTES, 'UTF-8') ?></p>
-      </div>
-    </section>
-
     <?php if (!$is_platform && !empty($restaurant) && !empty($user['activation_trial_until'])): ?>
       <div class="alert d-flex align-items-center gap-2 py-2 px-3 mb-3 small border-0"
            role="status"
@@ -372,6 +364,16 @@
         <span class="fw-medium">Payment pending · Temporary access until <?= htmlspecialchars((new \DateTimeImmutable((string)$user['activation_trial_until'], new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone('Asia/Manila'))->format('M j, g:i A'), ENT_QUOTES, 'UTF-8') ?></span>
       </div>
     <?php endif; ?>
+
+    <section class="dashboard-welcome mb-3">
+      <div>
+        <div class="dashboard-date"><i class="bi bi-calendar3"></i> <?= date('l, F j, Y') ?></div>
+        <h1 class="h3 fw-bold mt-2 mb-1"><?= htmlspecialchars($roleDashboardInfo['title'], ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="text-muted mb-0"><?= htmlspecialchars($roleDashboardInfo['description'], ENT_QUOTES, 'UTF-8') ?></p>
+      </div>
+    </section>
+
+
 
     <?php if (!empty($db_error)): ?>
       <div class="alert alert-warning">
