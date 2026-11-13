@@ -369,7 +369,7 @@
            role="status"
            style="background-color:#fff1f2;color:#9f1239;">
         <i class="bi bi-clock-history flex-shrink-0" aria-hidden="true"></i>
-        <span class="fw-medium">Payment pending · Temporary access until <?= htmlspecialchars((new \\DateTimeImmutable((string)$user['activation_trial_until'], new \\DateTimeZone('UTC')))->setTimezone(new \\DateTimeZone('Asia/Manila'))->format('M j, g:i A'), ENT_QUOTES, 'UTF-8') ?></span>
+        <span class="fw-medium">Payment pending · Temporary access until <?= htmlspecialchars((new \DateTimeImmutable((string)$user['activation_trial_until'], new \DateTimeZone('UTC')))->setTimezone(new \DateTimeZone('Asia/Manila'))->format('M j, g:i A'), ENT_QUOTES, 'UTF-8') ?></span>
       </div>
     <?php endif; ?>
 
