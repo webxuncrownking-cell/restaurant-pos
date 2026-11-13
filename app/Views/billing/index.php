@@ -79,6 +79,7 @@
                     'reservations' => 'Reservations & waitlist',
                     'suppliers' => 'Supplier management',
                     'purchase_orders' => 'Purchase orders',
+                    'recipe_bom' => 'Recipe BOM & unit inventory',
                     'recipe_costing' => 'Recipe costing',
                     'expiry_wastage' => 'Expiry & wastage tracking',
                     'expenses' => 'Expense tracking',
