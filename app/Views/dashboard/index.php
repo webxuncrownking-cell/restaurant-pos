@@ -299,7 +299,7 @@
               'route' => '/reports',
               'icon' => 'bi-graph-up-arrow',
               'color' => 'green',
-              'allowed' => \App\Services\BillingService::hasFeature($restaurantId, 'advanced_reports') && \App\Core\Auth::can('reports.view_sales')
+              'allowed' => \App\Services\BillingService::hasFeature($restaurantId, 'reports') && \App\Core\Auth::can('reports.view_sales')
           ],
           [
               'label' => 'Inventory',
