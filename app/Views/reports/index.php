@@ -1,3 +1,4 @@
+<?php $hasAdvancedReports = !empty($hasAdvancedReports); $hasExpenseReports = !empty($hasExpenseReports); ?>
 <?php include APP_ROOT . '/app/Views/layouts/header.php'; ?>
 <?php include APP_ROOT . '/app/Views/layouts/navbar.php'; ?>
 
@@ -11,7 +12,7 @@
       <h1 class="h3 fw-bold mb-1">
         <i class="bi bi-graph-up-arrow text-primary me-2"></i>Sales & Business Reports
       </h1>
-      <p class="text-muted small mb-0">Track sales, food cost, item-level profit, refunds, wastage, and cashier cash variances.</p>
+      <p class="text-muted small mb-0">Review your complete sales history, orders, payment methods, and business performance.</p>
     </div>
     <div class="d-flex flex-column align-items-end gap-2">
       <form method="GET" action="<?= BASE_URL ?>/reports" class="d-flex flex-wrap align-items-center gap-2">
@@ -22,10 +23,14 @@
       </form>
       <div class="d-flex flex-wrap justify-content-end gap-2" aria-label="Export reports">
         <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=sales&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Sales CSV</a>
-        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=profitability&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Profitability CSV</a>
         <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=cashiers&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Cashiers CSV</a>
-        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=reconciliation&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Shifts CSV</a>
-        <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=expenses&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Expenses CSV</a>
+        <?php if ($hasAdvancedReports): ?>
+          <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=profitability&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Profitability CSV</a>
+          <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=reconciliation&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Shifts CSV</a>
+        <?php endif; ?>
+        <?php if ($hasExpenseReports): ?>
+          <a class="btn btn-outline-secondary btn-sm" href="<?= BASE_URL ?>/reports/export.csv?type=expenses&amp;start_date=<?= rawurlencode($startDate) ?>&amp;end_date=<?= rawurlencode($endDate) ?>"><i class="bi bi-filetype-csv me-1"></i> Expenses CSV</a>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -94,6 +99,7 @@
     </div>
   </div>
 
+  <?php if ($hasExpenseReports): ?>
   <!-- Operating expense summary for the selected period -->
   <div class="row g-3 mb-4">
     <div class="col-12 col-md-6 col-xl-4">
@@ -111,6 +117,9 @@
     </div>
   </div>
 
+  <?php endif; ?>
+
+  <?php if ($hasAdvancedReports): ?>
   <!-- Explainable predictive/decision-support insights from existing sales and cost snapshots -->
   <section class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-transparent border-0 py-3">
@@ -173,6 +182,8 @@
     </div>
   </section>
 
+  <?php endif; ?>
+
   <!-- Visual Charts Section -->
   <div class="row g-4 mb-4">
     <!-- Daily Revenue Trend (Line Chart) -->
@@ -200,6 +211,7 @@
     </div>
   </div>
 
+  <?php if ($hasAdvancedReports): ?>
   <!-- Item-level profitability -->
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-transparent py-3 border-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -232,6 +244,8 @@
       </table>
     </div>
   </div>
+
+  <?php endif; ?>
 
   <!-- Data Tables: Top Products & Cashier Performance -->
   <div class="row g-4">
@@ -311,6 +325,7 @@
     </div>
   </div>
 
+  <?php if ($hasAdvancedReports): ?>
   <!-- Closed cashier shift reconciliation -->
   <div class="card border-0 shadow-sm mt-4">
     <div class="card-header bg-transparent py-3 border-0 d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -340,6 +355,7 @@
       </table>
     </div>
   </div>
+  <?php endif; ?>
 </div>
 
 <!-- Chart.js Setup Scripts -->
