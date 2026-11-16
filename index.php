@@ -54,6 +54,7 @@ use App\Controllers\ReservationsController;
 use App\Controllers\PublicWaitlistController;
 use App\Controllers\PublicReservationController;
 use App\Controllers\BillsController;
+use App\Controllers\OrdersController;
 use App\Controllers\ExpenseController;
 use App\Controllers\TimePricingController;
 use App\Controllers\CustomerController;
@@ -190,6 +191,7 @@ $router->post('/reservations/waitlist/action', [ReservationsController::class, '
 
 // Open bills, partial payments and guest share allocation
 $router->get('/bills', [BillsController::class, 'index']);
+$router->get('/orders', [OrdersController::class, 'index']);
 $router->post('/bills/migrate', [BillsController::class, 'migrate']);
 $router->post('/bills/split', [BillsController::class, 'createEqualSplits']);
 $router->post('/bills/split-items', [BillsController::class, 'createItemSplits']);
