@@ -278,13 +278,21 @@
               'allowed' => $hasTableManagement && \App\Core\Auth::can('tables.view_status')
           ],
           [
-              'label' => 'View Orders & Bills',
-              'description' => 'Review orders and collect payments',
-              'route' => '/bills',
+              'label' => 'All Orders',
+              'description' => 'Monitor every order and its current status',
+              'route' => '/orders',
               'icon' => 'bi-receipt',
               'color' => 'orange',
-              'allowed' => \App\Core\Auth::can('pos.process_payment')
+              'allowed' => in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'cashier'], true) || \App\Core\Auth::can('orders.view_all')
           ],
+          [
+              'label' => 'Open Bills & Payments',
+              'description' => 'Review unpaid bills and collect payments',
+              'route' => '/bills',
+              'icon' => 'bi-wallet2',
+              'color' => 'green',
+              'allowed' => \App\Core\Auth::can('pos.process_payment')
+          ]
           [
               'label' => 'Product List',
               'description' => 'Manage menu items and products',
