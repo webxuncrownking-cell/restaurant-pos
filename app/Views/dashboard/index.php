@@ -319,12 +319,12 @@
           ],
           [
               'label' => 'Kitchen Display',
-              'description' => 'View and update kitchen orders',
+              'description' => 'Monitor kitchen orders and preparation status',
               'route' => '/kitchen',
               'icon' => 'bi-fire',
               'color' => 'orange',
               'allowed' => $hasKitchenDisplay && (
-                  in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager'], true)
+                  in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'cashier'], true)
                   || \App\Core\Auth::can('kitchen.view_kds')
               )
           ],
@@ -467,8 +467,8 @@
             <h2>Recent Orders</h2>
             <p>Latest restaurant transactions</p>
           </div>
-          <?php if (\App\Core\Auth::can('pos.process_payment')): ?>
-            <a href="<?= BASE_URL ?>/bills">View all <i class="bi bi-arrow-right"></i></a>
+          <?php if (in_array(\App\Core\Auth::roleSlug(), ['owner', 'manager', 'cashier'], true) || \App\Core\Auth::can('orders.view_all')): ?>
+            <a href="<?= BASE_URL ?>/orders">View all <i class="bi bi-arrow-right"></i></a>
           <?php endif; ?>
         </div>
 
