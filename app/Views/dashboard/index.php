@@ -292,7 +292,7 @@
               'icon' => 'bi-wallet2',
               'color' => 'green',
               'allowed' => \App\Core\Auth::can('pos.process_payment')
-          ]
+          ],
           [
               'label' => 'Product List',
               'description' => 'Manage menu items and products',
