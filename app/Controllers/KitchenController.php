@@ -40,6 +40,7 @@ class KitchenController
         // Response::render() signature. This view includes its own header/navbar/footer.
         $viewData = [
             'tickets' => $tickets,
+            'can_update' => !in_array((string)(Auth::roleSlug() ?? ''), ['cashier'], true) && (in_array((string)(Auth::roleSlug() ?? ''), ['owner', 'manager', 'kitchen'], true) || Auth::can('kitchen.update_state')),
             'counts' => $counts,
             'delayed_count' => $delayedCount,
             'ticket_signature' => KitchenService::ticketSignature($tickets),
@@ -139,7 +140,7 @@ class KitchenController
     {
         Auth::requireLogin();
         $role = (string)(Auth::roleSlug() ?? '');
-        $canView = in_array($role, ['owner', 'manager', 'kitchen'], true)
+        $canView = in_array($role, ['owner', 'manager', 'kitchen', 'cashier'], true)
             || Auth::can('kitchen.view_kds');
         if (Auth::isPlatformAdmin()) $canView = true;
 
@@ -151,8 +152,8 @@ class KitchenController
             if (Auth::isPlatformAdmin()) {
                 Response::forbidden('Kitchen ticket changes must be made by a staff account belonging to the selected restaurant.');
             }
-            $canUpdate = in_array($role, ['owner', 'manager', 'kitchen'], true)
-                || Auth::can('kitchen.update_state');
+            $canUpdate = $role !== 'cashier' && (in_array($role, ['owner', 'manager', 'kitchen'], true)
+                || Auth::can('kitchen.update_state'));
             if (!$canUpdate) {
                 Response::forbidden('You have read-only access to Kitchen Display.');
             }
