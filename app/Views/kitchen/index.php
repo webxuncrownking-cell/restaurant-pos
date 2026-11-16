@@ -172,7 +172,7 @@ ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
     <div>
       <div class="kitchen-eyebrow">Live operations</div>
       <h1 class="kitchen-heading"><i class="bi bi-fire me-2 text-primary"></i>Kitchen Display</h1>
-      <p class="kitchen-subtitle">Track incoming tickets, preparation time, ready orders, and service handoff.</p>
+      <p class="kitchen-subtitle">Track incoming tickets, preparation time, ready orders, and service handoff.<?php if (empty($can_update)): ?> <strong>Read-only view.</strong><?php endif; ?></p>
     </div>
     <div class="d-flex flex-wrap align-items-center gap-2">
       <span class="kitchen-live-pill" id="kitchenLiveState"><span class="kitchen-live-dot"></span> Live updates on</span>
@@ -283,7 +283,7 @@ ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
                 </div>
                 <div class="kitchen-item-status-row" data-item-station="<?= htmlspecialchars(trim((string)($item['kitchen_station'] ?? 'Hot Kitchen')) ?: 'Hot Kitchen', ENT_QUOTES, 'UTF-8') ?>">
                   <span class="kitchen-item-status <?= htmlspecialchars($itemStatus, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($itemStatusLabels[$itemStatus] ?? 'Not started', ENT_QUOTES, 'UTF-8') ?></span>
-                  <?php if ($itemNextStatus !== ''): ?>
+                  <?php if (!empty($can_update) && $itemNextStatus !== ''): ?>
                     <form method="POST" action="<?= BASE_URL ?>/kitchen/item-status" class="d-inline-flex">
                       <?= \App\Core\CSRF::formField() ?>
                       <input type="hidden" name="order_id" value="<?= (int)$ticket['id'] ?>">
@@ -306,7 +306,7 @@ ksort($kitchenStations, SORT_NATURAL | SORT_FLAG_CASE);
 
           <div class="kitchen-ticket-actions kitchen-no-print">
             <button type="button" class="btn btn-outline-secondary" onclick="window.printKitchenTicket(<?= (int)$ticket['id'] ?>)"><i class="bi bi-printer me-1"></i> Print</button>
-            <?php if ($nextStatus !== ''): ?>
+            <?php if (!empty($can_update) && $nextStatus !== ''): ?>
               <form method="POST" action="<?= BASE_URL ?>/kitchen/status" class="flex-grow-1">
                 <?= \App\Core\CSRF::formField() ?>
                 <input type="hidden" name="order_id" value="<?= (int)$ticket['id'] ?>">
