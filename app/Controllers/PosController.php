@@ -125,8 +125,11 @@ class PosController
         Auth::requireLogin();
 
         $role = (string)(Auth::roleSlug() ?? '');
-        $allowed = in_array($role, ['owner', 'manager', 'cashier'], true)
-            || Auth::can('pos.access');
+        $allowed = !in_array($role, ['kitchen', 'kitchen_staff'], true)
+            && (
+                in_array($role, ['owner', 'manager', 'cashier'], true)
+                || Auth::can('pos.access')
+            );
 
         if (!$allowed) {
             Response::forbidden('POS Terminal access is available to cashiers, managers, and restaurant owners.');
