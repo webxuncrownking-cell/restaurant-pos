@@ -69,7 +69,7 @@ class PosController
      */
     public function bootstrapApi(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizePosAccess();
         $restaurantId = TenantContext::getRestaurantId();
         $deviceId = (int)$request->get('device_id', 1);
 
