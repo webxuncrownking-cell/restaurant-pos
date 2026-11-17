@@ -75,7 +75,7 @@ class AuthController
     public function showTerminalLogin(Request $request): void
     {
         if (Auth::check()) {
-            Response::redirect('/dashboard');
+            $this->redirectAuthenticatedUser();
         }
 
         $rememberedLogin = trim((string)($_COOKIE['serveflow_remembered_staff'] ?? ''));
