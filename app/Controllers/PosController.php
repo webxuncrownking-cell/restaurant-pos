@@ -27,7 +27,7 @@ class PosController
      */
     public function showTerminal(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizePosAccess();
         $restaurantId = TenantContext::getRestaurantId();
         $user = Auth::user();
 
@@ -86,6 +86,7 @@ class PosController
      */
     public function syncApi(Request $request): void
     {
+        $this->authorizePosAccess();
         $restaurantId = TenantContext::getRestaurantId();
 
         $rawBody = file_get_contents('php://input');
@@ -115,4 +116,21 @@ class PosController
             Response::json(['error' => 'Unable to process this sync request. Check the server log and retry.'], 500);
         }
     }
+    /**
+     * Restrict POS terminal and its APIs to front-of-house operational roles.
+     * Kitchen staff must use Kitchen Display and cannot submit POS sync requests.
+     */
+    private function authorizePosAccess(): void
+    {
+        Auth::requireLogin();
+
+        $role = (string)(Auth::roleSlug() ?? '');
+        $allowed = in_array($role, ['owner', 'manager', 'cashier'], true)
+            || Auth::can('pos.access');
+
+        if (!$allowed) {
+            Response::forbidden('POS Terminal access is available to cashiers, managers, and restaurant owners.');
+        }
+    }
+
 }
