@@ -22,8 +22,7 @@ class BillsController
 {
     public function index(Request $request): void
     {
-        Auth::requireAuth();
-        $restaurantId = (int)(TenantContext::getRestaurantId() ?? 0);
+        $restaurantId = $this->authorize();
         if ($restaurantId <= 0) {
             Session::setFlash('warning', 'Choose a restaurant workspace before opening bills.');
             Response::redirect('/dashboard');
@@ -269,7 +268,20 @@ class BillsController
 
     private function authorize(): int
     {
-        Auth::requireAuth();
+        Auth::requireLogin();
+
+        $role = (string)(Auth::roleSlug() ?? '');
+        $allowed = !in_array($role, ['kitchen', 'kitchen_staff'], true)
+            && (
+                in_array($role, ['owner', 'manager', 'cashier'], true)
+                || Auth::can('bills.view')
+                || Auth::can('bills.process_payment')
+            );
+
+        if (!$allowed) {
+            Response::forbidden('Open Bills & Payments access is available to cashiers, managers, and restaurant owners.');
+        }
+
         $restaurantId = TenantContext::getRestaurantId();
         if (!$restaurantId) {
             Session::setFlash('warning', 'Choose a restaurant workspace before opening bills.');
