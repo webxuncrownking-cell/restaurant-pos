@@ -28,7 +28,7 @@ class AuthController
     {
         // If already logged in, redirect directly to dashboard
         if (Auth::check()) {
-            Response::redirect('/dashboard');
+            $this->redirectAuthenticatedUser();
         }
 
         Response::render('auth/login', [
@@ -65,7 +65,7 @@ class AuthController
         }
 
         Session::setFlash('success', 'Welcome back, ' . htmlspecialchars($result['user']['full_name']) . '!');
-        Response::redirect('/dashboard');
+        $this->redirectAuthenticatedUser();
     }
 
 
@@ -169,7 +169,7 @@ class AuthController
         }
 
         Session::setFlash('success', 'Welcome, ' . htmlspecialchars($result['user']['full_name'], ENT_QUOTES, 'UTF-8') . '!');
-        Response::redirect('/pos');
+        $this->redirectAuthenticatedUser();
     }
 
     public function showChangePassword(Request $request): void
@@ -211,7 +211,20 @@ class AuthController
         }
 
         Session::setFlash('success', 'Your password has been successfully updated.');
-        Response::redirect('/dashboard');
+        $this->redirectAuthenticatedUser();
+    }
+
+    /**
+     * Send kitchen staff directly to their operational workspace after authentication.
+     */
+    private function redirectAuthenticatedUser(): void
+    {
+        $role = Auth::roleSlug();
+        $destination = in_array($role, ['kitchen', 'kitchen_staff'], true)
+            ? '/kitchen'
+            : '/dashboard';
+
+        Response::redirect($destination);
     }
 
     public function logout(Request $request): void
