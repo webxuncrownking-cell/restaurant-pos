@@ -77,7 +77,8 @@ $router = new Router();
 // Root redirect
 $router->get('/', function (Request $req) {
     if (Auth::check()) {
-        Response::redirect('/dashboard');
+        $role = Auth::roleSlug();
+        Response::redirect(in_array($role, ['kitchen', 'kitchen_staff'], true) ? '/kitchen' : '/dashboard');
     } else {
         Response::redirect('/login');
     }
