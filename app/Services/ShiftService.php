@@ -135,6 +135,9 @@ class ShiftService
         if (!$shift || $shift['status'] !== 'open') {
             throw new RuntimeException('Shift is not currently open.');
         }
+        if ((int)$shift['cashier_id'] !== $cashierId) {
+            throw new RuntimeException('You can only record cash movements for your own shift.');
+        }
 
         $sql = "INSERT INTO cash_movements (restaurant_id, shift_id, cashier_id, movement_type, amount, reason, created_at)
                 VALUES (:restaurant_id, :shift_id, :cashier_id, :type, :amount, :reason, NOW())";
