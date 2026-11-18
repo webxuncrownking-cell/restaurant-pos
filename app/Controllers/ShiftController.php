@@ -24,7 +24,7 @@ class ShiftController
      */
     public function index(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizeShiftAccess();
         $restaurantId = TenantContext::getRestaurantId();
         $user = Auth::user();
 
@@ -45,7 +45,7 @@ class ShiftController
      */
     public function showOpen(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizeShiftAccess();
         $restaurantId = TenantContext::getRestaurantId();
         $user = Auth::user();
 
@@ -68,7 +68,7 @@ class ShiftController
      */
     public function open(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizeShiftAccess();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
         $user = Auth::user();
@@ -93,7 +93,7 @@ class ShiftController
      */
     public function showActive(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizeShiftAccess();
         $restaurantId = TenantContext::getRestaurantId();
         $user = Auth::user();
 
@@ -120,7 +120,7 @@ class ShiftController
      */
     public function addMovement(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizeShiftAccess();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
         $user = Auth::user();
@@ -145,7 +145,7 @@ class ShiftController
      */
     public function close(Request $request): void
     {
-        Auth::requireAuth();
+        $this->authorizeShiftAccess();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
 
@@ -166,4 +166,25 @@ class ShiftController
             Response::redirect('/shifts/active');
         }
     }
+    /**
+     * Cash drawer and shift tools are limited to front-of-house roles.
+     * Kitchen staff must not view or submit shift and cash movement actions.
+     */
+    private function authorizeShiftAccess(): void
+    {
+        Auth::requireLogin();
+
+        $role = (string)(Auth::roleSlug() ?? '');
+        $allowed = !in_array($role, ['kitchen', 'kitchen_staff'], true)
+            && (
+                in_array($role, ['owner', 'manager', 'cashier'], true)
+                || Auth::can('shifts.view')
+                || Auth::can('shifts.manage')
+            );
+
+        if (!$allowed) {
+            Response::forbidden('Cashier shift and cash drawer access is available to cashiers, managers, and restaurant owners.');
+        }
+    }
+
 }
