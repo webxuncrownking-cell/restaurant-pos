@@ -126,6 +126,7 @@ class ShiftController
         $user = Auth::user();
 
         $shiftId = (int)$request->post('shift_id');
+        $this->authorizeShiftOwnership($restaurantId, $shiftId, (int)$user['id']);
         $type = (string)$request->post('movement_type');
         $amount = (float)$request->post('amount', 0.0);
         $reason = (string)$request->post('reason', '');
@@ -148,8 +149,10 @@ class ShiftController
         $this->authorizeShiftAccess();
         CSRF::validateToken($request->post('_csrf_token'));
         $restaurantId = TenantContext::getRestaurantId();
+        $user = Auth::user();
 
         $shiftId = (int)$request->post('shift_id');
+        $this->authorizeShiftOwnership($restaurantId, $shiftId, (int)$user['id']);
         $closingCash = (float)$request->post('closing_cash', 0.0);
         $notes = $request->post('notes');
 
@@ -170,6 +173,19 @@ class ShiftController
      * Cash drawer and shift tools are limited to front-of-house roles.
      * Kitchen staff must not view or submit shift and cash movement actions.
      */
+    private function authorizeShiftOwnership(int $restaurantId, int $shiftId, int $userId): void
+    {
+        $role = (string)(Auth::roleSlug() ?? '');
+        if (in_array($role, ['owner', 'manager'], true)) {
+            return;
+        }
+
+        $shift = ShiftService::getShiftById($restaurantId, $shiftId);
+        if (!$shift || (int)$shift['cashier_id'] !== $userId) {
+            Response::forbidden('You can only manage your own cashier shift.');
+        }
+    }
+
     private function authorizeShiftAccess(): void
     {
         Auth::requireLogin();
